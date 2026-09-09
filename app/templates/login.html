@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Caramel - Iniciar Sesión{% endblock %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center min-h-[85vh] py-4">
+
+  <!-- Logo and Welcome -->
+  <div class="text-center mb-6">
+    <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-400 to-amber-200 p-0.5 shadow-2xl mb-3">
+      <div class="w-full h-full bg-[#201813] rounded-2xl flex items-center justify-center">
+        <svg class="w-9 h-9 text-caramel-400 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        </svg>
+      </div>
+    </div>
+    <h1 class="text-3xl font-bold tracking-wide text-[#fdf7f1] font-serif">Caramel</h1>
+    <p class="text-xs text-stone-400 mt-1">Recomendaciones académicas inteligentes</p>
+  </div>
+
+  <!-- Form Card -->
+  <div class="w-full max-w-[380px] bg-[#241c17] p-6 rounded-3xl border border-caramel-500/20 shadow-2xl">
+    <div class="text-center mb-5">
+      <h2 class="text-xl font-bold text-[#fcf8f3]">Iniciar Sesión</h2>
+      <p class="text-xs text-stone-400 mt-0.5">Ingresa tus credenciales para continuar</p>
+    </div>
+
+    {% if error %}
+    <div class="mb-4 p-3 rounded-xl bg-red-950/60 border border-red-500/30 text-red-300 text-xs text-center">
+      {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" action="/login" class="space-y-4">
+      <div>
+        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Usuario o Correo</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">👤</span>
+          <input type="text" name="username" required placeholder="oscar o correo@universidad.edu"
+            class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Contraseña</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">🔒</span>
+          <input type="password" name="password" required placeholder="••••••••"
+            class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition">
+        </div>
+      </div>
+
+      <div class="pt-2">
+        <button type="submit" class="w-full py-3 rounded-full btn-caramel text-sm font-bold tracking-wide shadow-lg">
+          Iniciar Sesión
+        </button>
+      </div>
+    </form>
+
+    <div class="mt-5 text-center">
+      <p class="text-xs text-stone-400">
+        ¿No tienes cuenta? 
+        <a href="/register" class="text-caramel-400 hover:text-caramel-300 font-semibold underline ml-1">Regístrate aquí</a>
+      </p>
+    </div>
+
+    <!-- Quick Demo Accounts -->
+    <div class="mt-6 pt-4 border-t border-caramel-500/15">
+      <p class="text-[11px] text-stone-500 text-center mb-2.5">Acceso rápido con un clic:</p>
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <a href="/demo-switch/1" class="p-2 rounded-xl bg-[#1b1410] border border-caramel-500/20 hover:border-amber-400/40 text-center transition">
+          <div class="font-bold text-amber-300">Oscar</div>
+          <div class="text-[10px] text-stone-400">Sistemas • 3er Tri</div>
+        </a>
+        <a href="/demo-switch/3" class="p-2 rounded-xl bg-[#1b1410] border border-caramel-500/20 hover:border-amber-400/40 text-center transition">
+          <div class="font-bold text-amber-300">Valentina</div>
+          <div class="text-[10px] text-stone-400">Sistemas • 3er Tri</div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

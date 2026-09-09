@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Caramel - Avisos y Notificaciones{% endblock %}
+
+{% block content %}
+<div class="space-y-4 pt-2">
+  <div>
+    <h1 class="text-xl font-bold text-white">Avisos Académicos</h1>
+    <p class="text-xs text-stone-400 mt-0.5">Actualizaciones de tu trimestre y actividad de compañeros</p>
+  </div>
+
+  <div class="space-y-2.5">
+    <div class="p-3.5 rounded-2xl bg-[#261d17] border border-amber-500/30 flex space-x-3 items-start">
+      <span class="text-lg">📢</span>
+      <div class="space-y-1">
+        <h4 class="text-xs font-bold text-amber-300">Nuevo material recomendado para 3er Trimestre</h4>
+        <p class="text-[11px] text-stone-300">Se agregaron guías de ejercicios resueltos de Cálculo Vectorial recomendadas por profesores de la facultad.</p>
+        <span class="text-[9px] text-stone-500">Hoy • 10:30 AM</span>
+      </div>
+    </div>
+
+    <div class="p-3.5 rounded-2xl bg-[#241c16] border border-caramel-500/15 flex space-x-3 items-start">
+      <span class="text-lg">💬</span>
+      <div class="space-y-1">
+        <h4 class="text-xs font-bold text-stone-200">Carlos Mendoza dejó una reseña</h4>
+        <p class="text-[11px] text-stone-300">Calificó con 5★ el libro "Cálculo: Trascendentes Tempranas" y mencionó tips para el parcial.</p>
+        <span class="text-[9px] text-stone-500">Ayer • 4:15 PM</span>
+      </div>
+    </div>
+
+    <div class="p-3.5 rounded-2xl bg-[#241c16] border border-caramel-500/15 flex space-x-3 items-start">
+      <span class="text-lg">⭐</span>
+      <div class="space-y-1">
+        <h4 class="text-xs font-bold text-stone-200">Tendencia en tu carrera</h4>
+        <p class="text-[11px] text-stone-300">"Fundamentos de Sistemas de Bases de Datos" es el documento más consultado esta semana por estudiantes de Ingeniería de Sistemas.</p>
+        <span class="text-[9px] text-stone-500">Hace 2 días</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

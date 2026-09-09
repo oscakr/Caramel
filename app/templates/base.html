@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>{% block title %}Caramel - Recomendador de Documentos Académicos{% endblock %}</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            caramel: {
+              50: '#fbf7f2',
+              100: '#f5ebe0',
+              200: '#edd8c3',
+              300: '#e1be9e',
+              400: '#d49c6d',
+              500: '#c6864d',
+              600: '#b7713d',
+              700: '#985732',
+              800: '#7b462d',
+              900: '#643a27',
+              950: '#361d13',
+            },
+            espresso: {
+              800: '#2b211a',
+              850: '#231b15',
+              900: '#1b1410',
+              950: '#140f0c',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+
+  <!-- Google Fonts & Custom CSS -->
+  <link rel="stylesheet" href="/static/css/caramel.css">
+  
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="h-full bg-[#120e0b] text-[#fbf6f0] antialiased selection:bg-caramel-500 selection:text-white" x-data="{ mobileMenuOpen: false }">
+
+  <!-- Desktop Top Control Bar (Demo Mode & View switcher) -->
+  <div class="hidden md:flex items-center justify-between px-6 py-2 bg-[#1b1410] border-b border-caramel-500/15 text-xs text-stone-400">
+    <div class="flex items-center space-x-3">
+      <span class="flex h-2 w-2 relative">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+      </span>
+      <span class="font-semibold text-caramel-300">Caramel Academic Recommender Engine</span>
+      <span class="text-stone-600">|</span>
+      <span>Prototipo Figma Replicado</span>
+    </div>
+
+    <div class="flex items-center space-x-4">
+      <!-- Demo user switcher -->
+      {% if current_user %}
+      <div class="flex items-center space-x-2">
+        <span class="text-stone-400">Usuario activo:</span>
+        <select onchange="window.location.href='/demo-switch/' + this.value" class="bg-[#271e18] text-amber-200 border border-caramel-500/30 rounded px-2 py-1 text-xs focus:outline-none">
+          <option value="1" {% if current_user.id == 1 %}selected{% endif %}>Oscar (Sistemas - 3er Trimestre)</option>
+          <option value="2" {% if current_user.id == 2 %}selected{% endif %}>Carlos (Sistemas - 4to Trimestre)</option>
+          <option value="3" {% if current_user.id == 3 %}selected{% endif %}>Valentina (Sistemas - 3er Trimestre)</option>
+          <option value="4" {% if current_user.id == 4 %}selected{% endif %}>Andrés (Computación - 3er Trimestre)</option>
+          <option value="5" {% if current_user.id == 5 %}selected{% endif %}>Sofía (Sistemas - 2do Trimestre)</option>
+          <option value="6" {% if current_user.id == 6 %}selected{% endif %}>David (Civil - 4to Trimestre)</option>
+        </select>
+      </div>
+      {% endif %}
+
+      <!-- View Switcher -->
+      <button onclick="toggleViewMode()" class="px-3 py-1 rounded bg-[#2b211a] hover:bg-[#382b22] text-stone-300 border border-caramel-500/20 transition flex items-center space-x-1.5">
+        <svg class="w-3.5 h-3.5 text-caramel-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+        <span id="viewModeLabel">Cambiar a Vista Expandida</span>
+      </button>
+
+      <a href="/recommender-lab" class="px-3 py-1 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition flex items-center space-x-1">
+        <span>⚡ Lab del Algoritmo</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Mobile App Frame Container -->
+  <div class="app-frame-container flex flex-col justify-between">
+    
+    <!-- Top Notch / Status Bar Simulation (Figma aesthetic) -->
+    <div class="pt-3 px-6 pb-2 flex items-center justify-between text-xs text-stone-400 font-medium select-none">
+      <span>9:41</span>
+      <div class="flex items-center space-x-2">
+        <!-- Signal / Wifi / Battery -->
+        <svg class="w-3.5 h-3.5 text-stone-300" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z"/></svg>
+        <div class="w-5 h-2.5 rounded-sm border border-stone-400 p-0.5 flex items-center"><div class="h-full w-3 bg-amber-300 rounded-2xs"></div></div>
+      </div>
+    </div>
+
+    <!-- Main Dynamic Content -->
+    <main class="flex-1 pb-24 px-4 overflow-y-auto">
+      {% block content %}{% endblock %}
+    </main>
+
+    <!-- Floating Bottom Navigation Bar (Matching Figma Screen 2) -->
+    {% if current_user %}
+    <nav class="fixed bottom-3 left-1/2 -translate-x-1/2 w-[92%] max-w-[400px] z-50">
+      <div class="glass-panel rounded-full py-2.5 px-6 shadow-2xl flex items-center justify-between border border-caramel-500/25">
+        <!-- Home -->
+        <a href="/" class="flex flex-col items-center group transition {% if active_nav == 'feed' %}text-caramel-300{% else %}text-stone-400 hover:text-stone-200{% endif %}">
+          <svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+          </svg>
+          <span class="text-[10px] mt-0.5 font-medium">Inicio</span>
+        </a>
+
+        <!-- Explore / Catalog -->
+        <a href="/explore" class="flex flex-col items-center group transition {% if active_nav == 'explore' %}text-caramel-300{% else %}text-stone-400 hover:text-stone-200{% endif %}">
+          <svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          <span class="text-[10px] mt-0.5 font-medium">Explorar</span>
+        </a>
+
+        <!-- Algorithm Lab -->
+        <a href="/recommender-lab" class="flex flex-col items-center group transition {% if active_nav == 'lab' %}text-caramel-300{% else %}text-stone-400 hover:text-stone-200{% endif %}">
+          <div class="relative">
+            <svg class="w-5 h-5 transition-transform group-hover:scale-110 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+          </div>
+          <span class="text-[10px] mt-0.5 font-medium text-amber-300">Motor IA</span>
+        </a>
+
+        <!-- Notifications -->
+        <a href="/notifications" class="flex flex-col items-center group transition relative {% if active_nav == 'notifications' %}text-caramel-300{% else %}text-stone-400 hover:text-stone-200{% endif %}">
+          <svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+          </svg>
+          <span class="absolute -top-1 right-2.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-[#251d18]"></span>
+          <span class="text-[10px] mt-0.5 font-medium">Avisos</span>
+        </a>
+
+        <!-- Profile -->
+        <a href="/profile" class="flex flex-col items-center group transition {% if active_nav == 'profile' %}text-caramel-300{% else %}text-stone-400 hover:text-stone-200{% endif %}">
+          <img src="{{ current_user.avatar_url }}" class="w-5 h-5 rounded-full object-cover border border-caramel-400/50 group-hover:scale-110 transition" alt="Perfil">
+          <span class="text-[10px] mt-0.5 font-medium">Perfil</span>
+        </a>
+      </div>
+    </nav>
+    {% endif %}
+
+  </div>
+
+  <script src="/static/js/app.js"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

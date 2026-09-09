@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Caramel - Laboratorio del Algoritmo de Recomendación{% endblock %}
+
+{% block content %}
+<div class="space-y-6 pt-2 pb-8">
+
+  <!-- Header -->
+  <div class="space-y-1">
+    <div class="flex items-center space-x-2">
+      <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold">
+        Motor IA & Machine Learning
+      </span>
+      <span class="text-xs text-stone-500">v2.4 Híbrido</span>
+    </div>
+    <h1 class="text-2xl font-black text-white tracking-tight">Laboratorio del Algoritmo</h1>
+    <p class="text-xs text-stone-300 leading-relaxed">
+      Inspección transparente y explicabilidad de las recomendaciones generadas para 
+      <strong class="text-amber-300">{{ current_user.full_name }}</strong> ({{ current_user.carrera }}, {{ current_user.trimestre }}º Trimestre).
+    </p>
+  </div>
+
+  <!-- Mathematical Formula Box -->
+  <div class="p-4 rounded-2xl bg-[#251d18] border border-caramel-500/25 space-y-3 shadow-lg">
+    <h3 class="text-xs font-bold text-caramel-300 uppercase tracking-wider flex items-center space-x-1.5">
+      <span>📐</span>
+      <span>Fórmula del Modelo Híbrido Ponderado</span>
+    </h3>
+    
+    <div class="p-3 bg-[#17110e] rounded-xl font-mono text-[11px] text-amber-200 border border-caramel-500/15 overflow-x-auto leading-relaxed">
+      Score = (0.35 × S_acad) + (0.25 × S_social) + (0.25 × S_content) + (0.15 × S_bayes)
+    </div>
+
+    <div class="grid grid-cols-2 gap-2 text-[11px]">
+      <div class="p-2.5 rounded-xl bg-[#1d1612] border border-white/5 space-y-0.5">
+        <div class="font-bold text-amber-400">1. S_acad (35%)</div>
+        <div class="text-stone-400 text-[10px]">Afinidad de Carrera y Trimestre en curso</div>
+      </div>
+      <div class="p-2.5 rounded-xl bg-[#1d1612] border border-white/5 space-y-0.5">
+        <div class="font-bold text-sky-400">2. S_social (25%)</div>
+        <div class="text-stone-400 text-[10px]">Lecturas y valoraciones de amigos y cohorte</div>
+      </div>
+      <div class="p-2.5 rounded-xl bg-[#1d1612] border border-white/5 space-y-0.5">
+        <div class="font-bold text-emerald-400">3. S_content (25%)</div>
+        <div class="text-stone-400 text-[10px]">TF-IDF N-Gramas y Similitud Coseno de temas</div>
+      </div>
+      <div class="p-2.5 rounded-xl bg-[#1d1612] border border-white/5 space-y-0.5">
+        <div class="font-bold text-rose-400">4. S_bayes (15%)</div>
+        <div class="text-stone-400 text-[10px]">Calificación suavizada contra sesgo de pocos votos</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Recommendations with Full Component Breakdown -->
+  <div class="space-y-3">
+    <div class="flex items-center justify-between">
+      <h3 class="text-sm font-bold text-stone-200">Ranking Calculado en Tiempo Real</h3>
+      <span class="text-[11px] text-stone-400">Top {{ recommendations|length }} matches</span>
+    </div>
+
+    <div class="space-y-3">
+      {% for rec in recommendations %}
+      <div class="p-3.5 rounded-2xl bg-[#251d18] border border-caramel-500/20 hover:border-caramel-400/50 transition space-y-3 shadow-md">
+        
+        <!-- Header Info -->
+        <div class="flex items-start justify-between">
+          <div class="flex space-x-3 items-center">
+            <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center justify-center border border-amber-500/30">
+              #{{ loop.index }}
+            </span>
+            <div>
+              <a href="/document/{{ rec.document.id }}" class="text-xs font-bold text-white hover:text-caramel-300 transition line-clamp-1">
+                {{ rec.document.title }}
+              </a>
+              <p class="text-[10px] text-stone-400">{{ rec.document.authors }} • Trimestres: {{ rec.document.trimestres }}</p>
+            </div>
+          </div>
+
+          <!-- Final Composite Score -->
+          <div class="text-right">
+            <div class="text-base font-black text-amber-400">{{ rec.score }}%</div>
+            <div class="text-[9px] text-stone-400 uppercase tracking-wider">Score Final</div>
+          </div>
+        </div>
+
+        <!-- Metric Sub-Scores Progress Bars -->
+        <div class="space-y-1.5 pt-1">
+          <!-- Academic -->
+          <div class="flex items-center space-x-2 text-[10px]">
+            <span class="w-16 text-amber-400 font-medium">Académico</span>
+            <div class="flex-1 h-1.5 rounded-full bg-[#17120e] overflow-hidden">
+              <div class="h-full bg-amber-400 rounded-full" style="width: {{ rec.academic_score }}%;"></div>
+            </div>
+            <span class="w-8 text-right text-stone-300">{{ rec.academic_score }}%</span>
+          </div>
+
+          <!-- Social -->
+          <div class="flex items-center space-x-2 text-[10px]">
+            <span class="w-16 text-sky-400 font-medium">Social</span>
+            <div class="flex-1 h-1.5 rounded-full bg-[#17120e] overflow-hidden">
+              <div class="h-full bg-sky-400 rounded-full" style="width: {{ rec.social_score }}%;"></div>
+            </div>
+            <span class="w-8 text-right text-stone-300">{{ rec.social_score }}%</span>
+          </div>
+
+          <!-- Content -->
+          <div class="flex items-center space-x-2 text-[10px]">
+            <span class="w-16 text-emerald-400 font-medium">TF-IDF Sim</span>
+            <div class="flex-1 h-1.5 rounded-full bg-[#17120e] overflow-hidden">
+              <div class="h-full bg-emerald-400 rounded-full" style="width: {{ rec.content_score }}%;"></div>
+            </div>
+            <span class="w-8 text-right text-stone-300">{{ rec.content_score }}%</span>
+          </div>
+
+          <!-- Bayesian Quality -->
+          <div class="flex items-center space-x-2 text-[10px]">
+            <span class="w-16 text-rose-400 font-medium">Calidad Bayes</span>
+            <div class="flex-1 h-1.5 rounded-full bg-[#17120e] overflow-hidden">
+              <div class="h-full bg-rose-400 rounded-full" style="width: {{ rec.quality_score }}%;"></div>
+            </div>
+            <span class="w-8 text-right text-stone-300">{{ rec.quality_score }}%</span>
+          </div>
+        </div>
+
+        <!-- Explainability Reason -->
+        <div class="p-2 rounded-xl bg-[#1a130f] border border-caramel-500/15 flex items-center space-x-2 text-[10px] text-caramel-200">
+          <span class="text-amber-400 text-xs">💡</span>
+          <span class="font-medium">Motivo del Recomendador: {{ rec.reason }}</span>
+        </div>
+
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

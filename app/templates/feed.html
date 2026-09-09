@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}Caramel - Inicio{% endblock %}
+
+{% block content %}
+<div class="space-y-6 pt-2" x-data="{ searchFilter: '' }">
+
+  <!-- Top Header (Hamburger, Greeting, Profile Avatar matching Figma Screen 2) -->
+  <header class="space-y-3">
+    <div class="flex items-center justify-between">
+      <!-- Hamburger Menu Button -->
+      <button @click="mobileMenuOpen = !mobileMenuOpen" class="w-10 h-10 rounded-full bg-[#261e18] border border-caramel-500/20 flex items-center justify-center text-stone-300 hover:text-caramel-300 hover:border-caramel-500/40 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </button>
+
+      <!-- Academic Career Badge -->
+      <div class="px-3 py-1 rounded-full bg-[#271d17] border border-caramel-500/20 text-[11px] text-caramel-300 flex items-center space-x-1.5">
+        <span>🎓</span>
+        <span class="font-medium">{{ current_user.carrera }}</span>
+        <span class="text-stone-500">•</span>
+        <span class="text-amber-400 font-semibold">{{ current_user.trimestre }}º Tri</span>
+      </div>
+
+      <!-- Avatar with Notification Badge -->
+      <a href="/profile" class="relative group">
+        <img src="{{ current_user.avatar_url }}" class="w-10 h-10 rounded-full object-cover border-2 border-caramel-500/40 group-hover:scale-105 transition" alt="Avatar">
+        <span class="absolute 1 top-0 right-0 w-3 h-3 rounded-full bg-red-500 ring-2 ring-[#1a1411]"></span>
+      </a>
+    </div>
+
+    <!-- Personalized Greeting -->
+    <div class="pt-1">
+      <h1 class="text-2xl font-bold tracking-tight text-[#fdf7f1]">Hola, {{ current_user.full_name.split()[0] }}!</h1>
+      <p class="text-xs text-stone-400 mt-0.5">Explora o califica algún material reciente...</p>
+    </div>
+
+    <!-- Search / Filter Bar -->
+    <div class="relative pt-1">
+      <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
+        <svg class="w-4 h-4 text-caramel-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+      </span>
+      <form action="/explore" method="GET">
+        <input type="text" name="q" placeholder="Buscar por tema, libro, materia o autor..."
+          class="w-full pl-10 pr-4 py-2.5 bg-[#251d18] border border-caramel-500/20 rounded-2xl text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:border-caramel-400 transition shadow-inner">
+      </form>
+    </div>
+  </header>
+
+  <!-- Section 1: "Populares en este trimestre" (Matching Figma Screen 2) -->
+  <section class="space-y-3">
+    <div class="flex items-center justify-between">
+      <h2 class="text-sm font-bold text-stone-200 tracking-wide flex items-center space-x-1.5">
+        <span>Populares en este trimestre</span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/20">{{ current_user.trimestre }}º Trimestre</span>
+      </h2>
+      <div class="flex items-center space-x-1">
+        <button onclick="scrollCarousel('carousel-popular', -1)" class="w-6 h-6 rounded-full bg-[#271e18] hover:bg-[#382b22] text-stone-400 flex items-center justify-center text-xs transition">‹</button>
+        <button onclick="scrollCarousel('carousel-popular', 1)" class="w-6 h-6 rounded-full bg-[#271e18] hover:bg-[#382b22] text-stone-400 flex items-center justify-center text-xs transition">›</button>
+      </div>
+    </div>
+
+    <!-- Horizontal Scrolling Carousel of Books -->
+    <div id="carousel-popular" class="flex space-x-3.5 overflow-x-auto no-scrollbar pb-2 pt-1 scroll-smooth">
+      {% for doc in popular_in_trimester %}
+      <a href="/document/{{ doc.id }}" class="flex-none w-[115px] group">
+        <div class="relative w-[115px] h-[160px] rounded-xl overflow-hidden shadow-lg border border-caramel-500/20 group-hover:border-caramel-400 transition-all duration-300 group-hover:-translate-y-1">
+          <img src="{{ doc.cover_url }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="{{ doc.title }}">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent"></div>
+          
+          <!-- Rating badge -->
+          <div class="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-[10px] text-amber-300 font-bold flex items-center space-x-0.5">
+            <span>★</span>
+            <span>{{ doc.rating_avg }}</span>
+          </div>
+
+          <!-- Title Overlay -->
+          <div class="absolute bottom-2 left-2 right-2">
+            <h3 class="text-[11px] font-bold text-white leading-tight line-clamp-2 drop-shadow-md">{{ doc.title }}</h3>
+            <p class="text-[9px] text-stone-300 truncate mt-0.5">{{ doc.authors.split('&')[0] }}</p>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Section 2: "Listas que podrían servirte" (Matching Figma Screen 2) -->
+  <section class="space-y-3">
+    <div class="flex items-center justify-between">
+      <h2 class="text-sm font-bold text-stone-200 tracking-wide">Listas que podrían servirte</h2>
+      <a href="/explore?type=lists" class="text-[11px] text-caramel-400 hover:text-caramel-300 transition">Ver todas</a>
+    </div>
+
+    <!-- Horizontal Carousel of Stacks / Lists -->
+    <div class="flex space-x-3 overflow-x-auto no-scrollbar pb-2">
+      {% for clist in curated_lists %}
+      <div class="flex-none w-[150px] p-3 rounded-2xl bg-[#261e18] border border-caramel-500/20 hover:border-caramel-500/40 transition flex flex-col justify-between shadow-md">
+        <div>
+          <!-- Stack of Document Mini Covers -->
+          <div class="flex -space-x-4 mb-2.5 overflow-hidden py-1 pl-1">
+            {% for doc in clist.documents[:2] %}
+            <img src="{{ doc.cover_url }}" class="w-11 h-15 rounded-md object-cover border border-white/20 shadow-md transform hover:rotate-0 hover:z-10 transition duration-200 {% if loop.index == 1 %}-rotate-3{% else %}rotate-6{% endif %}" alt="{{ doc.title }}">
+            {% endfor %}
+          </div>
+
+          <h3 class="text-xs font-bold text-stone-100 line-clamp-2 leading-snug">{{ clist.title }}</h3>
+        </div>
+
+        <!-- Curator Avatar and document count -->
+        <div class="flex items-center space-x-2 mt-3 pt-2 border-t border-caramel-500/10">
+          <img src="{{ clist.creator_avatar }}" class="w-4 h-4 rounded-full object-cover" alt="Curador">
+          <span class="text-[10px] text-stone-400 truncate">{{ clist.creator_name }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Section 3: "Recomendados con IA para ti" (Algorithm Hybrid Match) -->
+  <section class="space-y-3">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <h2 class="text-sm font-bold text-stone-200 tracking-wide">Para ti • Motor Caramel IA</h2>
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      </div>
+      <a href="/recommender-lab" class="text-[11px] text-amber-400 hover:underline">Ver métricas</a>
+    </div>
+
+    <div class="space-y-2.5">
+      {% for rec in recommendations[:3] %}
+      <a href="/document/{{ rec.document.id }}" class="block p-3 rounded-2xl bg-[#261e18] border border-caramel-500/20 hover:border-caramel-400/50 hover:bg-[#30261f] transition group shadow-md">
+        <div class="flex space-x-3">
+          <img src="{{ rec.document.cover_url }}" class="w-16 h-22 rounded-xl object-cover border border-white/10 shadow-md group-hover:scale-105 transition duration-300" alt="{{ rec.document.title }}">
+          
+          <div class="flex-1 flex flex-col justify-between py-0.5">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/25">
+                  {{ rec.score }}% Afinidad
+                </span>
+                <span class="text-[11px] font-semibold text-amber-400">★ {{ rec.document.rating_avg }}</span>
+              </div>
+
+              <h3 class="text-xs font-bold text-stone-100 group-hover:text-caramel-300 transition mt-1.5 line-clamp-1">
+                {{ rec.document.title }}
+              </h3>
+              <p class="text-[10px] text-stone-400 line-clamp-1">{{ rec.document.authors }}</p>
+            </div>
+
+            <!-- Explainable Reason Tag -->
+            <div class="mt-2 flex items-center space-x-1 text-[10px] text-caramel-300 bg-[#1c1511] px-2 py-1 rounded-lg border border-caramel-500/15">
+              <span class="text-amber-400">💡</span>
+              <span class="truncate">{{ rec.reason }}</span>
+            </div>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Section 4: "Reviews recientes de tus amigos" (Matching Figma Screen 2) -->
+  <section class="space-y-3 pb-4">
+    <div class="flex items-center justify-between">
+      <h2 class="text-sm font-bold text-stone-200 tracking-wide">Reviews recientes de tus amigos</h2>
+      <span class="text-[10px] text-stone-400">{{ friends_reviews|length }} reseñas</span>
+    </div>
+
+    <div class="space-y-3">
+      {% for rev in friends_reviews %}
+      <div class="p-3.5 rounded-2xl bg-[#251d17] border border-caramel-500/15 hover:border-caramel-500/30 transition shadow-md">
+        <!-- Reviewer Header -->
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center space-x-2.5">
+            <img src="{{ rev.user.avatar_url }}" class="w-7 h-7 rounded-full object-cover border border-caramel-500/30" alt="{{ rev.user.full_name }}">
+            <div>
+              <h4 class="text-xs font-bold text-stone-200">{{ rev.user.full_name }}</h4>
+              <p class="text-[9px] text-stone-400">{{ rev.user.carrera }} • {{ rev.user.trimestre }}º Tri</p>
+            </div>
+          </div>
+
+          <!-- Star Rating -->
+          <div class="flex items-center space-x-0.5 text-amber-400 text-xs">
+            {% for _ in range(rev.rating) %}★{% endfor %}
+            {% for _ in range(5 - rev.rating) %}<span class="text-stone-600">★</span>{% endfor %}
+          </div>
+        </div>
+
+        <!-- Review Body and Book Thumbnail preview -->
+        <div class="flex space-x-3 items-start">
+          <p class="flex-1 text-[11px] text-stone-300 leading-relaxed">
+            "{{ rev.content }}"
+          </p>
+
+          <a href="/document/{{ rev.document.id }}" class="flex-none group">
+            <div class="w-12 h-16 rounded-lg overflow-hidden border border-caramel-500/20 shadow group-hover:scale-105 transition">
+              <img src="{{ rev.document.cover_url }}" class="w-full h-full object-cover" alt="{{ rev.document.title }}">
+            </div>
+          </a>
+        </div>
+
+        <!-- Footer / Likes -->
+        <div class="mt-2.5 pt-2 border-t border-caramel-500/10 flex items-center justify-between text-[10px] text-stone-400">
+          <span class="text-caramel-400 font-medium">Libro: {{ rev.document.title }}</span>
+          <div class="flex items-center space-x-1 text-stone-400 hover:text-red-400 cursor-pointer transition">
+            <span>♥</span>
+            <span>{{ rev.likes_count }}</span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+</div>
+
+<!-- Drawer Menu Modal for Settings / Profile / Logout -->
+<div x-show="mobileMenuOpen" 
+     x-transition:enter="transition ease-out duration-250"
+     x-transition:enter-start="opacity-0 -translate-x-full"
+     x-transition:enter-end="opacity-100 translate-x-0"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-start="opacity-100 translate-x-0"
+     x-transition:leave-end="opacity-0 -translate-x-full"
+     class="fixed inset-0 z-50 flex" style="display: none;">
+  
+  <div class="w-72 bg-[#1e1713] h-full p-5 border-r border-caramel-500/25 flex flex-col justify-between shadow-2xl">
+    <div class="space-y-5">
+      <div class="flex items-center justify-between pb-3 border-b border-caramel-500/20">
+        <div class="flex items-center space-x-2">
+          <div class="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400 font-serif font-bold">C</div>
+          <span class="font-serif font-bold text-base text-caramel-300">Caramel</span>
+        </div>
+        <button @click="mobileMenuOpen = false" class="text-stone-400 hover:text-white text-lg">✕</button>
+      </div>
+
+      <!-- User Card -->
+      <div class="p-3.5 rounded-2xl bg-[#291f19] border border-caramel-500/20 flex items-center space-x-3">
+        <img src="{{ current_user.avatar_url }}" class="w-11 h-11 rounded-full object-cover border border-amber-400/40" alt="Avatar">
+        <div>
+          <div class="font-bold text-xs text-white">{{ current_user.full_name }}</div>
+          <div class="text-[10px] text-caramel-300">{{ current_user.carrera }}</div>
+          <div class="text-[9px] text-stone-400">{{ current_user.email }}</div>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <div class="space-y-1 text-xs">
+        <a href="/" class="block px-3 py-2 rounded-xl bg-amber-500/15 text-amber-300 font-medium">🏠 Inicio</a>
+        <a href="/explore" class="block px-3 py-2 rounded-xl text-stone-300 hover:bg-[#2b211a] hover:text-white transition">🧭 Catálogo Académico</a>
+        <a href="/recommender-lab" class="block px-3 py-2 rounded-xl text-stone-300 hover:bg-[#2b211a] hover:text-white transition">⚡ Simulador de Algoritmo</a>
+        <a href="/profile" class="block px-3 py-2 rounded-xl text-stone-300 hover:bg-[#2b211a] hover:text-white transition">👤 Mi Perfil y Guardados</a>
+      </div>
+    </div>
+
+    <div class="pt-4 border-t border-caramel-500/20">
+      <a href="/logout" class="block w-full py-2.5 rounded-xl bg-red-950/40 border border-red-500/30 text-red-300 text-xs text-center font-medium hover:bg-red-900/40 transition">
+        Cerrar Sesión
+      </a>
+    </div>
+  </div>
+  <div @click="mobileMenuOpen = false" class="flex-1 bg-black/60 backdrop-blur-xs"></div>
+</div>
+{% endblock %}

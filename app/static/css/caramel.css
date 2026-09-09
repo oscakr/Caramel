@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --bg-main: #181310;
+  --bg-surface: #241c17;
+  --bg-card: #2c221c;
+  --bg-card-hover: #382c24;
+  --border-subtle: rgba(217, 155, 92, 0.15);
+  --border-strong: rgba(217, 155, 92, 0.35);
+  --caramel-base: #c6864d;
+  --caramel-accent: #dca067;
+  --caramel-light: #f3d4b6;
+  --caramel-glow: rgba(220, 160, 103, 0.2);
+  --text-main: #fbf6f0;
+  --text-muted: #aa998d;
+  --text-dim: #7a6b61;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #181310;
+}
+::-webkit-scrollbar-thumb {
+  background: #3c2f27;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c6864d;
+}
+
+/* Carousel hiding scrollbars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Smooth glass effect */
+.glass-panel {
+  background: rgba(38, 29, 24, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+}
+
+.card-caramel {
+  background-color: var(--bg-card);
+  border: 1px solid rgba(217, 155, 92, 0.12);
+  transition: all 0.22s ease-out;
+}
+
+.card-caramel:hover {
+  background-color: var(--bg-card-hover);
+  border-color: rgba(217, 155, 92, 0.28);
+  transform: translateY(-2px);
+}
+
+/* Caramel Pill Button */
+.btn-caramel {
+  background: linear-gradient(135deg, #dca067 0%, #c6864d 100%);
+  color: #17110e;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(198, 134, 77, 0.25);
+}
+
+.btn-caramel:hover {
+  background: linear-gradient(135deg, #e7ad76 0%, #d18f56 100%);
+  box-shadow: 0 6px 20px rgba(198, 134, 77, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-caramel-secondary {
+  background-color: #382c23;
+  color: #f3d4b6;
+  border: 1px solid rgba(217, 155, 92, 0.2);
+  transition: all 0.2s ease;
+}
+
+.btn-caramel-secondary:hover {
+  background-color: #45362c;
+  border-color: rgba(217, 155, 92, 0.4);
+  color: #ffffff;
+}
+
+/* Glowing text */
+.text-caramel-glow {
+  color: #dca067;
+  text-shadow: 0 0 16px rgba(220, 160, 103, 0.35);
+}
+
+/* Histogram bar animation */
+.histogram-bar {
+  transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Mobile Frame Wrapper for Desktop Mockup view */
+.app-frame-container {
+  max-width: 440px;
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+  background-color: #1a1411;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(217, 155, 92, 0.15);
+}
+
+@media (min-width: 1024px) {
+  body.view-desktop .app-frame-container {
+    max-width: 1080px;
+    box-shadow: none;
+  }
+}

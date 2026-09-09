@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Caramel - Regístrate{% endblock %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center min-h-[90vh] py-4">
+
+  <!-- Header Collage & Visual Banner (Matching Figma Screen 1) -->
+  <div class="relative w-full max-w-[380px] h-48 rounded-2xl overflow-hidden mb-5 border border-caramel-500/20 shadow-xl">
+    <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800" class="w-full h-full object-cover brightness-75 contrast-110" alt="Ambiente Académico">
+    <div class="absolute inset-0 bg-gradient-to-t from-[#1a1411] via-[#1a1411]/50 to-transparent"></div>
+    
+    <!-- Floating Caramel Brand Monogram (ribbon logo in warm caramel) -->
+    <div class="absolute inset-0 flex flex-col items-center justify-center">
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-400 to-amber-200 p-0.5 shadow-2xl">
+        <div class="w-full h-full bg-[#201813] rounded-2xl flex items-center justify-center">
+          <svg class="w-9 h-9 text-caramel-400 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+        </div>
+      </div>
+      <h1 class="text-2xl font-bold tracking-wide text-[#fdf7f1] mt-2 font-serif">Caramel</h1>
+    </div>
+  </div>
+
+  <!-- Form Card -->
+  <div class="w-full max-w-[380px] bg-[#241c17] p-6 rounded-3xl border border-caramel-500/20 shadow-2xl">
+    <div class="text-center mb-6">
+      <h2 class="text-xl font-bold text-[#fcf8f3]">Regístrate</h2>
+      <p class="text-xs text-stone-400 mt-1">Crea una cuenta para calibrar tus recomendaciones académicas</p>
+    </div>
+
+    {% if error %}
+    <div class="mb-4 p-3 rounded-xl bg-red-950/60 border border-red-500/30 text-red-300 text-xs text-center">
+      {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" action="/register" class="space-y-3.5">
+      <!-- Correo -->
+      <div>
+        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Correo institucional</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">✉</span>
+          <input type="email" name="email" required placeholder="correo@universidad.edu"
+            class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition">
+        </div>
+      </div>
+
+      <!-- Carrera Académica -->
+      <div>
+        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Carrera Académica</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">🎓</span>
+          <select name="carrera" required
+            class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 focus:outline-none focus:border-caramel-400 transition">
+            <option value="Ingeniería de Sistemas">Ingeniería de Sistemas</option>
+            <option value="Computación">Computación / Ciencias de la Computación</option>
+            <option value="Ingeniería Civil">Ingeniería Civil</option>
+            <option value="Ingeniería Industrial">Ingeniería Industrial</option>
+            <option value="Administración">Administración</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Trimestre / Semestre -->
+      <div>
+        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Trimestre o Semestre en curso</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">📅</span>
+          <select name="trimestre" required
+            class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 focus:outline-none focus:border-caramel-400 transition">
+            {% for t in range(1, 13) %}
+            <option value="{{ t }}" {% if t == 3 %}selected{% endif %}>{{ t }}º Trimestre / Semestre</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- Usuario -->
+      <div>
+        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Nombre de usuario</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">👤</span>
+          <input type="text" name="username" required placeholder="tu_usuario"
+            class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition">
+        </div>
+      </div>
+
+      <!-- Contraseña -->
+      <div>
+        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Contraseña</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">🔒</span>
+          <input type="password" name="password" required placeholder="••••••••"
+            class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition">
+        </div>
+      </div>
+
+      <!-- Submit Button (Pill style matching Figma) -->
+      <div class="pt-2">
+        <button type="submit" class="w-full py-3 rounded-full btn-caramel text-sm font-bold tracking-wide shadow-lg">
+          Registrarse
+        </button>
+      </div>
+    </form>
+
+    <div class="mt-5 text-center">
+      <p class="text-xs text-stone-400">
+        ¿Ya tienes una cuenta? 
+        <a href="/login" class="text-caramel-400 hover:text-caramel-300 font-semibold underline ml-1">Iniciar Sesión</a>
+      </p>
+    </div>
+
+    <!-- Quick 1-Click Demo Login Bar -->
+    <div class="mt-6 pt-4 border-t border-caramel-500/15 text-center">
+      <p class="text-[11px] text-stone-500 mb-2.5">O ingresa de inmediato con un perfil de prueba:</p>
+      <div class="flex items-center justify-center space-x-2">
+        <a href="/demo-switch/1" class="px-3 py-1.5 rounded-full bg-[#1b1410] border border-amber-500/30 text-amber-300 text-xs hover:bg-amber-500/20 transition flex items-center space-x-1">
+          <span>👑 Oscar (3º Tri)</span>
+        </a>
+        <a href="/demo-switch/3" class="px-3 py-1.5 rounded-full bg-[#1b1410] border border-caramel-500/20 text-stone-300 text-xs hover:bg-[#2b211a] transition">
+          <span>Valentina</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
