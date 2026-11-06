@@ -100,6 +100,7 @@ def register_submit(
     trimestre: int = Form(...),
     username: str = Form(...),
     password: str = Form(...),
+    titulo_honorifico: Optional[str] = Form(None),
     db: Session = Depends(get_db)
 ):
     """
@@ -107,6 +108,7 @@ def register_submit(
     - Validación obligatoria de dominio institucional (@unimar.edu.ve).
     - Cifrado de contraseña con bcrypt (factor de coste 12).
     - Asignación de rol jerárquico (Estudiante, Docente, Curador).
+    - Asignación de título de saludo institucional ('Casi Ingeniero', 'Ingeniero', 'Profesor').
     - Puntos de reputación iniciales de bienvenida.
     """
     clean_user = username.strip().lower()
@@ -117,7 +119,8 @@ def register_submit(
         "rol_nombre": rol_nombre,
         "carrera": carrera,
         "trimestre": trimestre,
-        "username": username
+        "username": username,
+        "titulo_honorifico": titulo_honorifico
     }
 
     # 1. Validación de correo institucional obligatorio (@unimar.edu.ve)
@@ -157,12 +160,21 @@ def register_submit(
             status_code=status.HTTP_400_BAD_REQUEST
         )
 
-    # Determinar id_rol según catálogo
+    # Determinar id_rol y título de saludo institucional
     id_rol = 1
     if "docente" in rol_nombre.lower():
         id_rol = 2
     elif "curador" in rol_nombre.lower() or "admin" in rol_nombre.lower():
         id_rol = 3
+
+    # Asignación del tratamiento de saludo institucional
+    if id_rol == 1:
+        clean_titulo = "Casi Ingeniero"
+    else:
+        if titulo_honorifico and titulo_honorifico.strip():
+            clean_titulo = titulo_honorifico.strip()
+        else:
+            clean_titulo = "Ingeniero" if "ingenier" in carrera.lower() or "comput" in carrera.lower() else "Profesor"
 
     # Cifrado seguro
     pwd_hash = hash_password(password)
@@ -177,6 +189,7 @@ def register_submit(
         avatar_url=f"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
         id_rol=id_rol,
         rol_nombre=rol_nombre,
+        titulo_honorifico=clean_titulo,
         puntos_reputacion=50 # Puntos de bienvenida por registro
     )
     db.add(new_user)

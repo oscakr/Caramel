@@ -37,6 +37,7 @@ CREATE TABLE usuarios (
     correo_institucional VARCHAR(120) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     id_rol INTEGER NOT NULL REFERENCES roles(id_rol) ON UPDATE CASCADE ON DELETE RESTRICT,
+    titulo_honorifico VARCHAR(50) DEFAULT 'Casi Ingeniero', -- 'Casi Ingeniero', 'Ingeniero', 'Profesor', 'Doctor'
     carrera VARCHAR(100) NOT NULL DEFAULT 'Ingeniería de Sistemas',
     trimestre INTEGER NOT NULL DEFAULT 3,
     avatar_url VARCHAR(255) DEFAULT 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',

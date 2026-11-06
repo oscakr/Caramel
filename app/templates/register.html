@@ -6,6 +6,7 @@
 <div class="flex flex-col items-center justify-center min-h-[90vh] py-4 px-4"
   x-data="{ 
     email: '{{ form_data.email if form_data and form_data.email else '' }}',
+    rol: '{{ form_data.rol_nombre if form_data and form_data.rol_nombre else 'Estudiante' }}',
     isSubmitting: false,
     get isUnimarEmail() { 
       return this.email.trim().toLowerCase().endsWith('@unimar.edu.ve') && this.email.split('@')[0].length >= 2;
@@ -94,13 +95,29 @@
         <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Rol institucional</label>
         <div class="relative">
           <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">🛡</span>
-          <select name="rol_nombre" required
+          <select name="rol_nombre" required x-model="rol"
             class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 focus:outline-none focus:border-caramel-400 transition">
             <option value="Estudiante" {% if form_data and form_data.rol_nombre == 'Estudiante' %}selected{% endif %}>Estudiante</option>
             <option value="Docente de Cátedra" {% if form_data and form_data.rol_nombre == 'Docente de Cátedra' %}selected{% endif %}>Docente de Cátedra</option>
             <option value="Curador/Administrador" {% if form_data and form_data.rol_nombre == 'Curador/Administrador' %}selected{% endif %}>Curador / Administrador</option>
           </select>
         </div>
+      </div>
+
+      <!-- Distinción / Título para Docentes -->
+      <div x-show="rol === 'Docente de Cátedra'" x-transition class="space-y-1">
+        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Distinción / Título Académico</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">🎖</span>
+          <select name="titulo_honorifico"
+            class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 focus:outline-none focus:border-caramel-400 transition">
+            <option value="Ingeniero">Ingeniero (Ing.)</option>
+            <option value="Profesor">Profesor (Prof.)</option>
+            <option value="Doctor">Doctor (Dr.)</option>
+            <option value="Licenciado">Licenciado (Lic.)</option>
+          </select>
+        </div>
+        <p class="text-[10px] text-stone-500 ml-1">Define el tratamiento de saludo con el que la plataforma te recibirá.</p>
       </div>
 
       <!-- Carrera Académica -->

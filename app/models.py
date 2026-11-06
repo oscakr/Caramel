@@ -33,6 +33,7 @@ class Usuario(Base):
     avatar_url = Column(String(255), default="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150")
     puntos_reputacion = Column(Integer, default=0)
     fecha_registro = Column(DateTime, default=datetime.utcnow)
+    titulo_honorifico = Column(String(50), default="Casi Ingeniero")
 
     rol = relationship("Role", foreign_keys=[id_rol], lazy="joined")
     proyectos = relationship("Proyecto", back_populates="autor", foreign_keys="Proyecto.id_autor")
@@ -63,6 +64,20 @@ class Usuario(Base):
     @property
     def rol_nombre(self):
         return self.rol.nombre_rol if self.rol else "Estudiante"
+
+    @property
+    def saludo_titulo(self):
+        if self.titulo_honorifico:
+            return self.titulo_honorifico
+        if self.id_rol == 2:
+            if "ing" in (self.nombre_completo or "").lower():
+                return "Ingeniero"
+            return "Profesor"
+        elif self.id_rol == 3:
+            if "dra" in (self.nombre_completo or "").lower() or "dr" in (self.nombre_completo or "").lower():
+                return "Doctora"
+            return "Profesor"
+        return "Casi Ingeniero"
 
 class Catedra(Base):
     """Tabla CATEDRAS: Unidades curriculares del plan de estudio de UNIMAR."""
@@ -169,11 +184,26 @@ class User(Base):
     id_rol = Column(Integer, ForeignKey("roles.id_rol"), nullable=True)
     rol_nombre = Column(String(50), default="Estudiante")
     puntos_reputacion = Column(Integer, default=0)
+    titulo_honorifico = Column(String(50), default="Casi Ingeniero")
 
     rol = relationship("Role", foreign_keys=[id_rol], lazy="joined")
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
     interactions = relationship("UserInteraction", back_populates="user", cascade="all, delete-orphan")
     bookmarks = relationship("Bookmark", back_populates="user", cascade="all, delete-orphan")
+
+    @property
+    def saludo_titulo(self):
+        if self.titulo_honorifico:
+            return self.titulo_honorifico
+        if self.id_rol == 2:
+            if "ing" in (self.full_name or "").lower():
+                return "Ingeniero"
+            return "Profesor"
+        elif self.id_rol == 3:
+            if "dra" in (self.full_name or "").lower() or "dr" in (self.full_name or "").lower():
+                return "Doctora"
+            return "Profesor"
+        return "Casi Ingeniero"
 
 class Document(Base):
     __tablename__ = "documents"
