@@ -215,6 +215,26 @@ class Document(Base):
     curated_lists = relationship("CuratedList", secondary=curated_list_documents, back_populates="documents")
     interactions = relationship("UserInteraction", back_populates="document", cascade="all, delete-orphan")
 
+    def update_rating_stats(self):
+        """Recalculate average rating and histogram from actual reviews."""
+        if not self.reviews:
+            return
+        c1 = sum(1 for r in self.reviews if r.rating == 1)
+        c2 = sum(1 for r in self.reviews if r.rating == 2)
+        c3 = sum(1 for r in self.reviews if r.rating == 3)
+        c4 = sum(1 for r in self.reviews if r.rating == 4)
+        c5 = sum(1 for r in self.reviews if r.rating == 5)
+        total = len(self.reviews)
+        avg = sum(r.rating for r in self.reviews) / total if total > 0 else 0.0
+
+        self.star_1_count = c1
+        self.star_2_count = c2
+        self.star_3_count = c3
+        self.star_4_count = c4
+        self.star_5_count = c5
+        self.ratings_count = total
+        self.rating_avg = round(avg, 1)
+
 class Review(Base):
     __tablename__ = "reviews"
 
