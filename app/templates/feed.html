@@ -178,13 +178,14 @@
     </div>
   </section>
 
-  <!-- Section 4: "Reviews recientes de tus amigos" -->
+  <!-- Section 4: "Reviews recientes de tus compañeros" -->
   <section class="space-y-3 pb-4">
     <div class="flex items-center justify-between">
-      <h2 class="text-sm font-bold text-stone-200 tracking-wide">Reviews recientes de tus amigos</h2>
+      <h2 class="text-sm font-bold text-stone-200 tracking-wide">Reviews recientes de tus compañeros</h2>
       <span class="text-[10px] text-stone-400">{{ friends_reviews|length }} reseñas</span>
     </div>
 
+    {% if friends_reviews %}
     <div class="space-y-3">
       {% for rev in friends_reviews %}
       <div class="p-3.5 rounded-2xl bg-[#251d17] border border-caramel-500/15 hover:border-caramel-500/30 transition shadow-md">
@@ -229,6 +230,15 @@
       </div>
       {% endfor %}
     </div>
+    {% else %}
+    <div class="p-6 rounded-3xl bg-[#241c17] border border-caramel-500/15 text-center space-y-1.5 shadow-sm">
+      <div class="text-xl">✍️</div>
+      <h3 class="text-xs font-bold text-[#fcf8f3]">Aún no hay reseñas registradas</h3>
+      <p class="text-[11px] text-stone-400 leading-relaxed">
+        Las valoraciones y comentarios aparecerán aquí en tiempo real cuando tus compañeros califiquen los materiales de estudio.
+      </p>
+    </div>
+    {% endif %}
   </section>
 
 </div>

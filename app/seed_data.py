@@ -29,7 +29,7 @@ def seed_database():
 
     print("Seeding Caramel database with Figma prototype data...")
 
-    # 1. Create Users
+    # 1. Create Official Users (Oscar, Prof. Flavio, Dra. Elena)
     default_pwd = hash_password("password123")
     users_data = [
         {
@@ -43,66 +43,6 @@ def seed_database():
             "rol_nombre": "Estudiante",
             "puntos_reputacion": 100,
             "avatar_url": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"
-        },
-        {
-            "username": "carlos_dev",
-            "email": "carlos@unimar.edu.ve",
-            "password": default_pwd,
-            "full_name": "Carlos Mendoza",
-            "carrera": "Ingeniería de Sistemas",
-            "trimestre": 4,
-            "id_rol": 1,
-            "rol_nombre": "Estudiante",
-            "puntos_reputacion": 80,
-            "avatar_url": "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150"
-        },
-        {
-            "username": "valentina_c",
-            "email": "valentina@unimar.edu.ve",
-            "password": default_pwd,
-            "full_name": "Valentina Castro",
-            "carrera": "Ingeniería de Sistemas",
-            "trimestre": 3,
-            "id_rol": 1,
-            "rol_nombre": "Estudiante",
-            "puntos_reputacion": 95,
-            "avatar_url": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150"
-        },
-        {
-            "username": "andres_code",
-            "email": "andres@unimar.edu.ve",
-            "password": default_pwd,
-            "full_name": "Andrés Morales",
-            "carrera": "Computación",
-            "trimestre": 3,
-            "id_rol": 1,
-            "rol_nombre": "Estudiante",
-            "puntos_reputacion": 70,
-            "avatar_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150"
-        },
-        {
-            "username": "sofia_m",
-            "email": "sofia@unimar.edu.ve",
-            "password": default_pwd,
-            "full_name": "Sofía Paredes",
-            "carrera": "Ingeniería de Sistemas",
-            "trimestre": 2,
-            "id_rol": 1,
-            "rol_nombre": "Estudiante",
-            "puntos_reputacion": 65,
-            "avatar_url": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150"
-        },
-        {
-            "username": "david_arq",
-            "email": "david@unimar.edu.ve",
-            "password": default_pwd,
-            "full_name": "David Silva",
-            "carrera": "Ingeniería Civil",
-            "trimestre": 4,
-            "id_rol": 1,
-            "rol_nombre": "Estudiante",
-            "puntos_reputacion": 60,
-            "avatar_url": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150"
         },
         {
             "username": "flavio_decano",
@@ -137,11 +77,7 @@ def seed_database():
         users_created.append(user)
     db.commit()
 
-    # 2. Friendships (Connecting Oscar with Carlos, Valentina, Andrés, Sofía)
     oscar = users_created[0]
-    for friend in users_created[1:]:
-        db.add(Friendship(user_id=oscar.id, friend_id=friend.id))
-    db.commit()
 
     # 3. Create Documents (textbooks & academic papers matching Figma)
     docs_data = [
@@ -418,8 +354,8 @@ def seed_database():
         {
             "title": "Lenguaje SQL y consultas, básico",
             "description": "Domina el modelo relacional, JOINs y diseño de esquemas para tus proyectos de Bases de Datos.",
-            "creator_name": "Valentina Castro",
-            "creator_avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+            "creator_name": "Comunidad UNIMAR",
+            "creator_avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
             "carrera": "Ingeniería de Sistemas",
             "trimestre": 3,
             "badge_color": "border-sky-500/40",
@@ -434,68 +370,7 @@ def seed_database():
         db.add(curated)
     db.commit()
 
-    # 5. Create Realistic Friend Reviews (Mirroring Figma reviews verbatim!)
-    carlos = users_created[1]
-    valentina = users_created[2]
-    andres = users_created[3]
-    sofia = users_created[4]
-
-    reviews_data = [
-        {
-            "user_id": carlos.id,
-            "document_id": doc_calculus.id,
-            "rating": 5,
-            "content": "Excelente libro para entender cálculo diferencial y series. Los ejercicios resueltos de la sección 4 son clave para el parcial. Muy recomendado.",
-            "likes_count": 14
-        },
-        {
-            "user_id": valentina.id,
-            "document_id": doc_db.id,
-            "rating": 5,
-            "content": "Para la segunda mitad del curso este libro es súper específico. Lo recomiendo con los ojos cerrados para bases de datos relacionales sin morir en el intento.",
-            "likes_count": 19
-        },
-        {
-            "user_id": andres.id,
-            "document_id": doc_kotlin.id,
-            "rating": 5,
-            "content": "Los ejemplos de Kotlin van directos al grano y son súper didácticos. Perfecto para quien viene de C++ o Java y necesita arrancar rápido en Android.",
-            "likes_count": 9
-        },
-        {
-            "user_id": sofia.id,
-            "document_id": doc_python.id,
-            "rating": 5,
-            "content": "Salvó mi trimestre con Pandas y NumPy. Las explicaciones de manipulación de arrays son las más claras que he leído.",
-            "likes_count": 11
-        },
-        {
-            "user_id": carlos.id,
-            "document_id": doc_vector.id,
-            "rating": 4,
-            "content": "Los teoremas de Stokes y Gauss están muy bien ilustrados geométricamente. Imprescindible para Cálculo III.",
-            "likes_count": 8
-        },
-        {
-            "user_id": valentina.id,
-            "document_id": doc_calculus.id,
-            "rating": 5,
-            "content": "Explica con mucha paciencia el paso a paso de las integrales por partes y sustitución trigonométrica. Me ayudó a sacar 20.",
-            "likes_count": 16
-        }
-    ]
-
-    for r_data in reviews_data:
-        rev = Review(**r_data)
-        db.add(rev)
-    db.commit()
-
-    # Recalculate stats on documents
-    for doc in docs_created:
-        doc.update_rating_stats()
-    db.commit()
-
-    # 6. Add initial bookmarks and interactions for Oscar
+    # 5. Add initial bookmarks for Oscar (no fake reviews)
     db.add(Bookmark(user_id=oscar.id, document_id=doc_calculus.id))
     db.add(UserInteraction(user_id=oscar.id, document_id=doc_calculus.id, interaction_type="read"))
     db.add(UserInteraction(user_id=oscar.id, document_id=doc_sql.id, interaction_type="save"))

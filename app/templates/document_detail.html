@@ -195,19 +195,21 @@
     </div>
 
     <!-- Social Proof: Friends who read this -->
+    {% if document.reviews and document.reviews|length > 0 %}
     <div class="pt-3 border-t border-caramel-500/15 flex items-center justify-between">
       <div class="flex items-center space-x-2">
         <span class="text-xs">👥</span>
-        <span class="text-[11px] text-stone-300 font-medium">Varios de tus amigos lo han leído:</span>
+        <span class="text-[11px] text-stone-300 font-medium">Varios de tus compañeros lo han leído:</span>
       </div>
       
       <!-- Overlapping friend avatars -->
       <div class="flex -space-x-2">
         {% for rev in document.reviews[:4] %}
-        <img src="{{ rev.user.avatar_url }}" class="w-6 h-6 rounded-full object-cover border-2 border-[#251d17] shadow" title="{{ rev.user.full_name }}" alt="Amigo">
+        <img src="{{ rev.user.avatar_url }}" class="w-6 h-6 rounded-full object-cover border-2 border-[#251d17] shadow" title="{{ rev.user.full_name }}" alt="Compañero">
         {% endfor %}
       </div>
     </div>
+    {% endif %}
   </div>
 
   <!-- Reviews Section -->
@@ -219,6 +221,7 @@
       </button>
     </div>
 
+    {% if document.reviews and document.reviews|length > 0 %}
     <div class="space-y-3">
       {% for rev in document.reviews %}
       <div class="p-3.5 rounded-2xl bg-[#251d17] border border-caramel-500/15 space-y-2">
@@ -251,6 +254,13 @@
       </div>
       {% endfor %}
     </div>
+    {% else %}
+    <div class="p-6 rounded-3xl bg-[#241c17] border border-caramel-500/15 text-center space-y-1">
+      <div class="text-lg">⭐</div>
+      <p class="text-xs font-bold text-white">Sin valoraciones todavía</p>
+      <p class="text-[11px] text-stone-400">Sé el primero en calificar este material para orientar a tus compañeros.</p>
+    </div>
+    {% endif %}
   </div>
 
   <!-- Review Submission Modal -->
