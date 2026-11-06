@@ -212,20 +212,3 @@ def logout():
     redirect = RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
     redirect.delete_cookie(key="caramel_user_id")
     return redirect
-
-@router.get("/demo-switch/{user_id}")
-def demo_switch(user_id: int, db: Session = Depends(get_db)):
-    """Selector rápido de perfiles de prueba para la defensa de tesis."""
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
-
-    redirect = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
-    redirect.set_cookie(
-        key="caramel_user_id",
-        value=str(user.id),
-        max_age=604800,
-        httponly=True,
-        samesite="lax"
-    )
-    return redirect
