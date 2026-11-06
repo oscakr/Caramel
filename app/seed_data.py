@@ -33,10 +33,10 @@ def seed_database():
     default_pwd = hash_password("password123")
     users_data = [
         {
-            "username": "oscar",
-            "email": "oscar@unimar.edu.ve",
+            "username": "oalvarez.7305",
+            "email": "oalvarez.7305@unimar.edu.ve",
             "password": default_pwd,
-            "full_name": "Oscar Rodríguez",
+            "full_name": "Oscar Álvarez",
             "carrera": "Ingeniería de Sistemas",
             "trimestre": 3,
             "id_rol": 1,
