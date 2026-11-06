@@ -47,13 +47,9 @@
 </head>
 <body class="h-full bg-[#120e0b] text-[#fbf6f0] antialiased selection:bg-caramel-500 selection:text-white" x-data="{ mobileMenuOpen: false }">
 
-  <!-- Desktop Top Control Bar (Demo Mode & View switcher) -->
+  <!-- Desktop Top Control Bar -->
   <div class="hidden md:flex items-center justify-between px-6 py-2 bg-[#1b1410] border-b border-caramel-500/15 text-xs text-stone-400">
     <div class="flex items-center space-x-3">
-      <span class="flex h-2 w-2 relative">
-        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-        <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-      </span>
       <span class="font-semibold text-caramel-300">Caramel</span>
       <span class="text-stone-600">|</span>
       <span>Plataforma Académica</span>
@@ -85,11 +81,11 @@
       <!-- View Switcher -->
       <button onclick="toggleViewMode()" class="px-3 py-1 rounded bg-[#2b211a] hover:bg-[#382b22] text-stone-300 border border-caramel-500/20 transition flex items-center space-x-1.5">
         <svg class="w-3.5 h-3.5 text-caramel-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-        <span id="viewModeLabel">Cambiar a Vista Expandida</span>
+        <span id="viewModeLabel">Vista ampliada</span>
       </button>
 
-      <a href="/recommender-lab" class="px-3 py-1 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition flex items-center space-x-1">
-        <span>⚡ Lab del Algoritmo</span>
+      <a href="/recommender-lab" class="px-3 py-1 rounded bg-[#2b211a] hover:bg-[#382b22] text-stone-300 border border-caramel-500/20 transition flex items-center space-x-1">
+        <span>Métricas</span>
       </a>
     </div>
   </div>
