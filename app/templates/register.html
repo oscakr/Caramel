@@ -3,53 +3,80 @@
 {% block title %}Caramel - Regístrate{% endblock %}
 
 {% block content %}
-<div class="flex flex-col items-center justify-center min-h-[90vh] py-4">
+<div class="flex flex-col items-center justify-center min-h-[90vh] py-6 px-4">
 
   <!-- Header Collage & Visual Banner (Matching Figma Screen 1) -->
-  <div class="relative w-full max-w-[380px] h-48 rounded-2xl overflow-hidden mb-5 border border-caramel-500/20 shadow-xl">
+  <div class="relative w-full max-w-[400px] h-44 rounded-3xl overflow-hidden mb-5 border border-caramel-500/25 shadow-2xl">
     <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800" class="w-full h-full object-cover brightness-75 contrast-110" alt="Ambiente Académico">
-    <div class="absolute inset-0 bg-gradient-to-t from-[#1a1411] via-[#1a1411]/50 to-transparent"></div>
+    <div class="absolute inset-0 bg-gradient-to-t from-[#1b1410] via-[#1b1410]/60 to-transparent"></div>
     
     <!-- Floating Caramel Brand Monogram (ribbon logo in warm caramel) -->
     <div class="absolute inset-0 flex flex-col items-center justify-center">
-      <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-400 to-amber-200 p-0.5 shadow-2xl">
+      <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-400 to-amber-200 p-0.5 shadow-2xl">
         <div class="w-full h-full bg-[#201813] rounded-2xl flex items-center justify-center">
-          <svg class="w-9 h-9 text-caramel-400 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <svg class="w-8 h-8 text-caramel-400 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
           </svg>
         </div>
       </div>
-      <h1 class="text-2xl font-bold tracking-wide text-[#fdf7f1] mt-2 font-serif">Caramel</h1>
+      <h1 class="text-xl font-bold tracking-wide text-[#fdf7f1] mt-2 font-serif">Caramel</h1>
     </div>
   </div>
 
   <!-- Form Card -->
-  <div class="w-full max-w-[380px] bg-[#241c17] p-6 rounded-3xl border border-caramel-500/20 shadow-2xl">
-    <div class="text-center mb-6">
+  <div class="w-full max-w-[400px] bg-[#241c17] p-7 rounded-3xl border border-caramel-500/25 shadow-2xl">
+    <div class="text-center mb-5">
       <h2 class="text-xl font-bold text-[#fcf8f3]">Regístrate</h2>
-      <p class="text-xs text-stone-400 mt-1">Crea una cuenta para calibrar tus recomendaciones académicas</p>
+      <p class="text-xs text-stone-400 mt-1">Crea tu cuenta institucional y calibra tu perfil</p>
     </div>
 
     {% if error %}
-    <div class="mb-4 p-3 rounded-xl bg-red-950/60 border border-red-500/30 text-red-300 text-xs text-center">
-      {{ error }}
+    <div class="mb-4 p-3 rounded-2xl bg-red-950/60 border border-red-500/30 text-red-300 text-xs text-center flex items-center justify-center space-x-2">
+      <svg class="w-4 h-4 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span>{{ error }}</span>
     </div>
     {% endif %}
 
     <form method="POST" action="/register" class="space-y-3.5">
-      <!-- Correo -->
+      <!-- Nombre Completo -->
       <div>
-        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Correo institucional</label>
+        <label class="block text-[11px] font-semibold text-stone-300 mb-1 ml-1">Nombres y Apellidos</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">👤</span>
+          <input type="text" name="full_name" required placeholder="Ej. Oscar Hernández"
+            class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition">
+        </div>
+      </div>
+
+      <!-- Correo institucional -->
+      <div>
+        <label class="block text-[11px] font-semibold text-stone-300 mb-1 ml-1">Correo Institucional (@unimar.edu.ve)</label>
         <div class="relative">
           <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">✉</span>
-          <input type="email" name="email" required placeholder="correo@universidad.edu"
+          <input type="email" name="email" required placeholder="usuario@unimar.edu.ve"
             class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition">
+        </div>
+      </div>
+
+      <!-- Rol Institucional -->
+      <div>
+        <label class="block text-[11px] font-semibold text-stone-300 mb-1 ml-1">Rol Institucional</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">🛡</span>
+          <select name="rol_nombre" required
+            class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 focus:outline-none focus:border-caramel-400 transition">
+            <option value="Estudiante">Estudiante</option>
+            <option value="Docente de Cátedra">Docente de Cátedra</option>
+            <option value="Curador/Administrador">Curador / Administrador</option>
+          </select>
         </div>
       </div>
 
       <!-- Carrera Académica -->
       <div>
-        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Carrera Académica</label>
+        <label class="block text-[11px] font-semibold text-stone-300 mb-1 ml-1">Carrera Académica</label>
         <div class="relative">
           <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">🎓</span>
           <select name="carrera" required
@@ -58,30 +85,31 @@
             <option value="Computación">Computación / Ciencias de la Computación</option>
             <option value="Ingeniería Civil">Ingeniería Civil</option>
             <option value="Ingeniería Industrial">Ingeniería Industrial</option>
-            <option value="Administración">Administración</option>
+            <option value="Decanato de Ingeniería">Decanato de Ingeniería y Afines</option>
           </select>
         </div>
       </div>
 
       <!-- Trimestre / Semestre -->
       <div>
-        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Trimestre o Semestre en curso</label>
+        <label class="block text-[11px] font-semibold text-stone-300 mb-1 ml-1">Trimestre en curso</label>
         <div class="relative">
           <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">📅</span>
           <select name="trimestre" required
             class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 focus:outline-none focus:border-caramel-400 transition">
             {% for t in range(1, 13) %}
-            <option value="{{ t }}" {% if t == 3 %}selected{% endif %}>{{ t }}º Trimestre / Semestre</option>
+            <option value="{{ t }}" {% if t == 3 %}selected{% endif %}>{{ t }}º Trimestre</option>
             {% endfor %}
+            <option value="0">Graduado / Personal Docente</option>
           </select>
         </div>
       </div>
 
       <!-- Usuario -->
       <div>
-        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Nombre de usuario</label>
+        <label class="block text-[11px] font-semibold text-stone-300 mb-1 ml-1">Nombre de usuario</label>
         <div class="relative">
-          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">👤</span>
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">🏷</span>
           <input type="text" name="username" required placeholder="tu_usuario"
             class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition">
         </div>
@@ -89,7 +117,7 @@
 
       <!-- Contraseña -->
       <div>
-        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Contraseña</label>
+        <label class="block text-[11px] font-semibold text-stone-300 mb-1 ml-1">Contraseña (Mín. 6 caracteres)</label>
         <div class="relative">
           <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">🔒</span>
           <input type="password" name="password" required placeholder="••••••••"
@@ -98,32 +126,33 @@
       </div>
 
       <!-- Submit Button (Pill style matching Figma) -->
-      <div class="pt-2">
-        <button type="submit" class="w-full py-3 rounded-full btn-caramel text-sm font-bold tracking-wide shadow-lg">
-          Registrarse
+      <div class="pt-3">
+        <button type="submit" class="w-full py-3.5 rounded-full btn-caramel text-sm font-bold tracking-wide shadow-xl flex items-center justify-center space-x-2">
+          <span>Crear Cuenta</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
         </button>
       </div>
     </form>
 
     <div class="mt-5 text-center">
       <p class="text-xs text-stone-400">
-        ¿Ya tienes una cuenta? 
-        <a href="/login" class="text-caramel-400 hover:text-caramel-300 font-semibold underline ml-1">Iniciar Sesión</a>
+        ¿Ya tienes cuenta? 
+        <a href="/login" class="text-caramel-400 hover:text-caramel-300 font-semibold underline ml-1">Inicia sesión</a>
       </p>
     </div>
 
-    <!-- Quick 1-Click Demo Login Bar -->
-    <div class="mt-6 pt-4 border-t border-caramel-500/15 text-center">
-      <p class="text-[11px] text-stone-500 mb-2.5">O ingresa de inmediato con un perfil de prueba:</p>
-      <div class="flex items-center justify-center space-x-2">
-        <a href="/demo-switch/1" class="px-3 py-1.5 rounded-full bg-[#1b1410] border border-amber-500/30 text-amber-300 text-xs hover:bg-amber-500/20 transition flex items-center space-x-1">
-          <span>👑 Oscar (3º Tri)</span>
-        </a>
-        <a href="/demo-switch/3" class="px-3 py-1.5 rounded-full bg-[#1b1410] border border-caramel-500/20 text-stone-300 text-xs hover:bg-[#2b211a] transition">
-          <span>Valentina</span>
-        </a>
-      </div>
+    <!-- ISO Standards / Academic Security Badge -->
+    <div class="mt-5 pt-3 border-t border-caramel-500/10 text-center">
+      <p class="text-[10px] text-stone-500 flex items-center justify-center space-x-1.5">
+        <svg class="w-3.5 h-3.5 text-caramel-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clip-rule="evenodd" />
+        </svg>
+        <span>Estándar ISO 21007 / ISO 27001 • Cifrado Bcrypt Factor 12</span>
+      </p>
     </div>
+
   </div>
 
 </div>

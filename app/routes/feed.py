@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Depends, Request, status
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
@@ -15,6 +15,9 @@ templates = Jinja2Templates(directory="app/templates")
 @router.get("/", response_class=HTMLResponse)
 def home_feed(request: Request, db: Session = Depends(get_db)):
     current_user = get_current_user(request, db)
+    if not current_user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
     recommender = AcademicRecommender(db)
 
     # 1. Populares en este trimestre
@@ -64,6 +67,9 @@ def explore_catalog(
     db: Session = Depends(get_db)
 ):
     current_user = get_current_user(request, db)
+    if not current_user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
     query_builder = db.query(Document)
 
     if q and q.strip():
@@ -102,6 +108,9 @@ def explore_catalog(
 @router.get("/recommender-lab", response_class=HTMLResponse)
 def recommender_lab(request: Request, db: Session = Depends(get_db)):
     current_user = get_current_user(request, db)
+    if not current_user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
     recommender = AcademicRecommender(db)
     recommendations = recommender.get_recommendations(current_user.id, limit=10)
 
@@ -118,6 +127,9 @@ def recommender_lab(request: Request, db: Session = Depends(get_db)):
 @router.get("/profile", response_class=HTMLResponse)
 def user_profile(request: Request, db: Session = Depends(get_db)):
     current_user = get_current_user(request, db)
+    if not current_user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
     return templates.TemplateResponse(
         request=request,
         name="profile.html",
@@ -130,6 +142,9 @@ def user_profile(request: Request, db: Session = Depends(get_db)):
 @router.get("/notifications", response_class=HTMLResponse)
 def notifications_view(request: Request, db: Session = Depends(get_db)):
     current_user = get_current_user(request, db)
+    if not current_user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
     return templates.TemplateResponse(
         request=request,
         name="notifications.html",

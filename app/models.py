@@ -12,18 +12,32 @@ curated_list_documents = Table(
     Column("document_id", Integer, ForeignKey("documents.id"), primary_key=True),
 )
 
+class Role(Base):
+    __tablename__ = "roles"
+
+    id_rol = Column(Integer, primary_key=True, autoincrement=True)
+    nombre_rol = Column(String(50), unique=True, nullable=False) # 'Estudiante', 'Docente de Cátedra', 'Curador/Administrador'
+    permisos = Column(Text, nullable=False, default="{}")
+
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, index=True, nullable=False)
     email = Column(String(120), unique=True, index=True, nullable=False)
-    password = Column(String(100), nullable=False)
-    full_name = Column(String(100), nullable=False)
+    password = Column(String(255), nullable=False)
+    full_name = Column(String(150), nullable=False)
     carrera = Column(String(100), nullable=False, default="Ingeniería de Sistemas")
     trimestre = Column(Integer, nullable=False, default=3)
     avatar_url = Column(String(255), default="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150")
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Roles y reputación comunitaria según norma institucional ISO / Tesis
+    id_rol = Column(Integer, ForeignKey("roles.id_rol"), nullable=True)
+    rol_nombre = Column(String(50), default="Estudiante")
+    puntos_reputacion = Column(Integer, default=0)
+
+    rol = relationship("Role", foreign_keys=[id_rol], lazy="joined")
 
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
     interactions = relationship("UserInteraction", back_populates="user", cascade="all, delete-orphan")

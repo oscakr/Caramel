@@ -13,6 +13,9 @@ templates = Jinja2Templates(directory="app/templates")
 @router.get("/document/{doc_id}", response_class=HTMLResponse)
 def document_detail(doc_id: int, request: Request, db: Session = Depends(get_db)):
     current_user = get_current_user(request, db)
+    if not current_user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
     doc = db.query(Document).filter(Document.id == doc_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Documento académico no encontrado")
@@ -52,6 +55,8 @@ def add_review(
     db: Session = Depends(get_db)
 ):
     current_user = get_current_user(request, db)
+    if not current_user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
     doc = db.query(Document).filter(Document.id == doc_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Documento no encontrado")
@@ -87,6 +92,8 @@ def add_review(
 @router.post("/document/{doc_id}/bookmark")
 def toggle_bookmark(doc_id: int, request: Request, db: Session = Depends(get_db)):
     current_user = get_current_user(request, db)
+    if not current_user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
     existing = db.query(Bookmark).filter(
         Bookmark.user_id == current_user.id,
         Bookmark.document_id == doc_id

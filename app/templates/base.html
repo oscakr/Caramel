@@ -65,14 +65,21 @@
       <div class="flex items-center space-x-2">
         <span class="text-stone-400">Usuario activo:</span>
         <select onchange="window.location.href='/demo-switch/' + this.value" class="bg-[#271e18] text-amber-200 border border-caramel-500/30 rounded px-2 py-1 text-xs focus:outline-none">
-          <option value="1" {% if current_user.id == 1 %}selected{% endif %}>Oscar (Sistemas - 3er Trimestre)</option>
-          <option value="2" {% if current_user.id == 2 %}selected{% endif %}>Carlos (Sistemas - 4to Trimestre)</option>
-          <option value="3" {% if current_user.id == 3 %}selected{% endif %}>Valentina (Sistemas - 3er Trimestre)</option>
-          <option value="4" {% if current_user.id == 4 %}selected{% endif %}>Andrés (Computación - 3er Trimestre)</option>
-          <option value="5" {% if current_user.id == 5 %}selected{% endif %}>Sofía (Sistemas - 2do Trimestre)</option>
-          <option value="6" {% if current_user.id == 6 %}selected{% endif %}>David (Civil - 4to Trimestre)</option>
+          <option value="1" {% if current_user.id == 1 %}selected{% endif %}>Oscar (Estudiante - 3er Tri)</option>
+          <option value="7" {% if current_user.id == 7 %}selected{% endif %}>Prof. Flavio Rosales (Docente de Cátedra)</option>
+          <option value="8" {% if current_user.id == 8 %}selected{% endif %}>Dra. Elena Mendoza (Curador/Admin)</option>
+          <option value="3" {% if current_user.id == 3 %}selected{% endif %}>Valentina (Estudiante - 3er Tri)</option>
+          <option value="2" {% if current_user.id == 2 %}selected{% endif %}>Carlos (Estudiante - 4to Tri)</option>
         </select>
       </div>
+
+      <a href="/logout" class="px-2.5 py-1 rounded bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-500/30 transition text-xs flex items-center space-x-1" title="Cerrar sesión institucional">
+        <span>Salir</span>
+      </a>
+      {% else %}
+      <a href="/login" class="px-3 py-1 rounded bg-[#2b211a] hover:bg-[#382b22] text-amber-300 border border-caramel-500/20 transition text-xs">
+        Iniciar Sesión
+      </a>
       {% endif %}
 
       <!-- View Switcher -->
