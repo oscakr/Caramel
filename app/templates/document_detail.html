@@ -5,7 +5,7 @@
 {% block content %}
 <div class="space-y-5 pt-1 pb-6" x-data="{ reviewModalOpen: false, readModalOpen: false, userRating: 5 }">
 
-  <!-- Header & Back Navigation Button (Matching Figma Screen 3) -->
+  <!-- Header & Back Navigation Button -->
   <div class="relative w-full h-44 rounded-2xl overflow-hidden border border-caramel-500/20 shadow-xl">
     <img src="{{ document.header_banner_url or 'https://images.unsplash.com/photo-1509228468518-180dd4864904?w=1000' }}" 
          class="w-full h-full object-cover brightness-70 contrast-110" alt="{{ document.title }}">
@@ -30,7 +30,7 @@
     </form>
   </div>
 
-  <!-- Document Meta Presentation (Matching Figma Screen 3) -->
+  <!-- Document Meta Presentation -->
   <div class="flex space-x-4 -mt-16 px-2 relative z-10">
     <!-- Main Book Cover -->
     <div class="flex-none w-28 h-40 rounded-xl overflow-hidden shadow-2xl border-2 border-caramel-500/40 bg-[#251d18]">
@@ -62,7 +62,7 @@
     </span>
   </div>
 
-  <!-- Action Buttons (Matching Figma: Leer en linea, Guardar, Descargar) -->
+  <!-- Action Buttons -->
   <div class="grid grid-cols-3 gap-2 pt-1">
     <button @click="readModalOpen = true" class="py-2.5 px-3 rounded-2xl btn-caramel text-xs font-bold flex items-center justify-center space-x-1.5 shadow">
       <span>📖</span>
@@ -90,7 +90,7 @@
     </p>
   </div>
 
-  <!-- Rating Section & 5-tier Histogram (Matching Figma Screen 3 verbatim) -->
+  <!-- Rating Section & 5-tier Histogram -->
   <div class="p-4 rounded-2xl bg-[#251d17] border border-caramel-500/20 space-y-4 shadow-lg">
     <div class="flex items-center justify-between">
       <h3 class="text-xs font-bold text-stone-200 tracking-wide uppercase">Calificación</h3>
@@ -108,7 +108,7 @@
         <div class="text-[10px] text-stone-400">Puntaje Global</div>
       </div>
 
-      <!-- Histogram Bar Chart (Matching the exact stepped bars from Figma!) -->
+      <!-- Histogram Bar Chart -->
       <div class="flex-1 space-y-1.5">
         {% set max_count = [document.star_5_count, document.star_4_count, document.star_3_count, document.star_2_count, document.star_1_count, 1]|max %}
         
@@ -159,7 +159,7 @@
       </div>
     </div>
 
-    <!-- Social Proof: Friends who read this (Matching Figma Screen 3) -->
+    <!-- Social Proof: Friends who read this -->
     <div class="pt-3 border-t border-caramel-500/15 flex items-center justify-between">
       <div class="flex items-center space-x-2">
         <span class="text-xs">👥</span>
@@ -175,7 +175,7 @@
     </div>
   </div>
 
-  <!-- Reviews Section (Matching Figma Screen 3) -->
+  <!-- Reviews Section -->
   <div class="space-y-3">
     <div class="flex items-center justify-between">
       <h3 class="text-sm font-bold text-stone-200">Reviews de la Comunidad</h3>
