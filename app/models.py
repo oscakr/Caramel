@@ -72,6 +72,16 @@ class Document(Base):
     star_2_count = Column(Integer, default=1)
     star_1_count = Column(Integer, default=0)
 
+    # Validación docente y tipo de recurso académico
+    status = Column(String(30), default="aprobado") # 'aprobado', 'pendiente', 'rechazado'
+    material_type = Column(String(50), default="libro") # 'libro', 'video', 'guia'
+    external_url = Column(String(350), nullable=True)
+    uploaded_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    verified_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    uploaded_by = relationship("User", foreign_keys=[uploaded_by_id])
+    verified_by = relationship("User", foreign_keys=[verified_by_id])
+
     reviews = relationship("Review", back_populates="document", cascade="all, delete-orphan", order_by="desc(Review.created_at)")
     curated_lists = relationship("CuratedList", secondary=curated_list_documents, back_populates="documents")
     interactions = relationship("UserInteraction", back_populates="document", cascade="all, delete-orphan")

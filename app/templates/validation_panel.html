@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Caramel - Panel de Validación Docente{% endblock %}
+
+{% block content %}
+<div class="space-y-5 pt-2 pb-10">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between pt-1">
+    <a href="/" class="w-9 h-9 rounded-full bg-[#271e18] border border-caramel-500/20 flex items-center justify-center text-stone-300 hover:text-white transition">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+    </a>
+    <h1 class="text-base font-bold text-white">Panel de Validación Docente</h1>
+    <div class="w-9"></div>
+  </div>
+
+  <p class="text-xs text-stone-400 -mt-2">
+    Revisa los recursos propuestos por la comunidad estudiantil y valida su calidad pedagógica antes de publicarlos en el catálogo.
+  </p>
+
+  <!-- Pending Items List -->
+  <div class="space-y-3.5">
+    {% if pending_documents %}
+      {% for doc in pending_documents %}
+      <div class="p-4 rounded-3xl bg-[#241c17] border border-caramel-500/25 space-y-3 shadow-lg">
+        
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <div class="flex items-center space-x-2 mb-1">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/25">
+                {% if doc.material_type == 'video' %}🎥 Video / Clase{% elif doc.material_type == 'guia' %}📝 Guía Práctica{% else %}📖 Libro{% endif %}
+              </span>
+              <span class="text-[10px] text-stone-400 font-medium">Trimestre {{ doc.trimestres }}</span>
+            </div>
+            <h3 class="text-sm font-bold text-white leading-snug">{{ doc.title }}</h3>
+            <p class="text-xs text-caramel-300 font-medium mt-0.5">Autor/Profesor: {{ doc.authors }}</p>
+          </div>
+        </div>
+
+        <p class="text-xs text-stone-300 leading-relaxed bg-[#1b1410] p-3 rounded-2xl border border-white/5">
+          {{ doc.description }}
+        </p>
+
+        <!-- Resource Link Preview -->
+        {% if doc.external_url %}
+        <div class="flex items-center justify-between text-xs pt-1">
+          <a href="{{ doc.external_url }}" target="_blank" rel="noopener noreferrer" 
+             class="inline-flex items-center space-x-1.5 text-xs text-sky-400 hover:text-sky-300 underline font-mono truncate max-w-[260px]">
+            <span>🔗</span>
+            <span class="truncate">{{ doc.external_url }}</span>
+          </a>
+          <span class="text-[10px] text-stone-500">Materia: {{ doc.materias }}</span>
+        </div>
+        {% endif %}
+
+        <!-- Smooth Action Buttons -->
+        <div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
+          <form action="/document/{{ doc.id }}/validate" method="POST">
+            <input type="hidden" name="action" value="rechazar">
+            <button type="submit" 
+              class="w-full py-2.5 rounded-2xl bg-[#32231c] hover:bg-red-950/60 active:scale-[0.98] border border-red-500/30 text-red-300 text-xs font-semibold transition-all duration-200 cursor-pointer">
+              ✕ Descartar
+            </button>
+          </form>
+
+          <form action="/document/{{ doc.id }}/validate" method="POST">
+            <input type="hidden" name="action" value="aprobar">
+            <button type="submit" 
+              class="w-full py-2.5 rounded-2xl btn-caramel active:scale-[0.98] text-xs font-bold transition-all duration-200 shadow-md hover:shadow-caramel-500/30 hover:brightness-105 cursor-pointer">
+              ✓ Validar y Publicar
+            </button>
+          </form>
+        </div>
+
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="p-8 rounded-3xl bg-[#241c17] border border-caramel-500/15 text-center space-y-2">
+        <div class="text-2xl">✨</div>
+        <h3 class="text-sm font-bold text-white">No hay materiales pendientes</h3>
+        <p class="text-xs text-stone-400">Todos los recursos aportados han sido revisados y validados.</p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

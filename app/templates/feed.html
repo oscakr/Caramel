@@ -30,10 +30,29 @@
       </a>
     </div>
 
-    <!-- Personalized Greeting -->
-    <div class="pt-1">
-      <h1 class="text-2xl font-bold tracking-tight text-[#fdf7f1]">Hola, {{ current_user.full_name.split()[0] }}!</h1>
-      <p class="text-xs text-stone-400 mt-0.5">Explora o califica algún material reciente...</p>
+    <!-- Personalized Greeting & Action Button -->
+    <div class="flex items-center justify-between pt-1">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-[#fdf7f1]">Hola, {{ current_user.full_name.split()[0] }}!</h1>
+        <p class="text-xs text-stone-400 mt-0.5">Explora o aporta material de estudio...</p>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        {% if current_user.id_rol and current_user.id_rol >= 2 %}
+        <a href="/validation-panel" class="py-2 px-3 rounded-2xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center space-x-1.5 transition">
+          <span>🛡</span>
+          <span>Validar</span>
+          {% if pending_validation_count and pending_validation_count > 0 %}
+          <span class="w-4 h-4 rounded-full bg-amber-400 text-[#1b1410] text-[10px] font-black flex items-center justify-center">{{ pending_validation_count }}</span>
+          {% endif %}
+        </a>
+        {% endif %}
+
+        <a href="/upload-material" class="py-2 px-3.5 rounded-2xl btn-caramel text-xs font-bold flex items-center space-x-1.5 shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-250">
+          <span>+</span>
+          <span>Aportar</span>
+        </a>
+      </div>
     </div>
 
     <!-- Search / Filter Bar -->

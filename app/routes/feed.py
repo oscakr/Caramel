@@ -45,6 +45,11 @@ def home_feed(request: Request, db: Session = Depends(get_db)):
     # 4. Hybrid Recommendations with Explainability
     recommendations = recommender.get_recommendations(current_user.id, limit=5)
 
+    # 5. Pending materials count for teachers/curators
+    pending_validation_count = 0
+    if current_user.id_rol and current_user.id_rol >= 2:
+        pending_validation_count = db.query(Document).filter(Document.status == "pendiente").count()
+
     return templates.TemplateResponse(
         request=request,
         name="feed.html",
@@ -55,6 +60,7 @@ def home_feed(request: Request, db: Session = Depends(get_db)):
             "curated_lists": curated_lists,
             "friends_reviews": friends_reviews,
             "recommendations": recommendations,
+            "pending_validation_count": pending_validation_count,
         }
     )
 

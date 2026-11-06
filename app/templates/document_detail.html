@@ -64,10 +64,24 @@
 
   <!-- Action Buttons -->
   <div class="grid grid-cols-3 gap-2 pt-1">
+    {% if document.material_type == 'video' and document.external_url %}
+    <a href="{{ document.external_url }}" target="_blank" rel="noopener noreferrer" 
+       class="py-2.5 px-3 rounded-2xl btn-caramel text-xs font-bold flex items-center justify-center space-x-1.5 shadow">
+      <span>▶</span>
+      <span>Ver Video</span>
+    </a>
+    {% elif document.external_url and document.external_url != '#' %}
+    <a href="{{ document.external_url }}" target="_blank" rel="noopener noreferrer"
+       class="py-2.5 px-3 rounded-2xl btn-caramel text-xs font-bold flex items-center justify-center space-x-1.5 shadow">
+      <span>📖</span>
+      <span>Acceder</span>
+    </a>
+    {% else %}
     <button @click="readModalOpen = true" class="py-2.5 px-3 rounded-2xl btn-caramel text-xs font-bold flex items-center justify-center space-x-1.5 shadow">
       <span>📖</span>
       <span>Leer</span>
     </button>
+    {% endif %}
     
     <form action="/document/{{ document.id }}/bookmark" method="POST" class="w-full">
       <button type="submit" class="w-full py-2.5 px-3 rounded-2xl btn-caramel-secondary text-xs font-semibold flex items-center justify-center space-x-1.5">
@@ -81,6 +95,27 @@
       <span>Calificar</span>
     </button>
   </div>
+
+  <!-- Embedded Video Player if YouTube link exists -->
+  {% if youtube_embed_url %}
+  <div class="space-y-1.5 pt-1">
+    <div class="flex items-center justify-between text-xs text-stone-400 px-1">
+      <span class="font-bold text-amber-300 flex items-center space-x-1.5">
+        <span>▶</span>
+        <span>Reproductor de Clase / Video</span>
+      </span>
+      <span class="text-[10px] text-stone-500">Recurso verificado</span>
+    </div>
+    <div class="w-full aspect-video rounded-2xl overflow-hidden border border-caramel-500/25 bg-black shadow-xl">
+      <iframe src="{{ youtube_embed_url }}" 
+              title="{{ document.title }}" 
+              class="w-full h-full border-0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+              allowfullscreen>
+      </iframe>
+    </div>
+  </div>
+  {% endif %}
 
   <!-- Description Snippet -->
   <div class="p-3.5 rounded-2xl bg-[#241c16] border border-caramel-500/15">
