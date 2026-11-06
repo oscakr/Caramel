@@ -17,12 +17,12 @@ cd /home/oscar/Proyectos/Caramel
 O manualmente:
 ```bash
 source venv/bin/activate
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 ```
 
-* **Plataforma Web:** [http://localhost:8000](http://localhost:8000)
-* **Laboratorio del Algoritmo:** [http://localhost:8000/recommender-lab](http://localhost:8000/recommender-lab)
-* **Documentación Interactiva Swagger / OpenAPI:** [http://localhost:8000/docs](http://localhost:8000/docs)
+* **Plataforma Web:** [http://localhost:8001](http://localhost:8001)
+* **Laboratorio del Algoritmo:** [http://localhost:8001/recommender-lab](http://localhost:8001/recommender-lab)
+* **Documentación Interactiva Swagger / OpenAPI:** [http://localhost:8001/docs](http://localhost:8001/docs)
 
 ---
 

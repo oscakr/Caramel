@@ -5,7 +5,7 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd "$DIR"
 
-PORT="${PORT:-8000}"
+PORT="${PORT:-8001}"
 
 echo "=========================================================="
 echo " Caramel - Plataforma Académica & Algoritmo de Recomendación"

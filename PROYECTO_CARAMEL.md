@@ -173,7 +173,7 @@ cd /home/oscar/Proyectos/Caramel
 ```
 
 El script `./run.sh` se encarga automáticamente de:
-1. Verificar si el puerto 8000 está ocupado y liberarlo de forma segura.
+1. Verificar si el puerto configurado (por defecto 8001) está ocupado y liberarlo de forma segura.
 2. Activar el entorno virtual `venv`.
 3. Iniciar Uvicorn con recarga en caliente (*hot reload*).
 
