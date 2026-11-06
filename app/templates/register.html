@@ -3,7 +3,17 @@
 {% block title %}Caramel - Regístrate{% endblock %}
 
 {% block content %}
-<div class="flex flex-col items-center justify-center min-h-[90vh] py-4 px-4">
+<div class="flex flex-col items-center justify-center min-h-[90vh] py-4 px-4"
+  x-data="{ 
+    email: '{{ form_data.email if form_data and form_data.email else '' }}',
+    isSubmitting: false,
+    get isUnimarEmail() { 
+      return this.email.trim().toLowerCase().endsWith('@unimar.edu.ve') && this.email.split('@')[0].length >= 2;
+    },
+    get hasAtSign() { 
+      return this.email.includes('@'); 
+    }
+  }">
 
   <!-- Header Collage & Visual Banner -->
   <div class="relative w-full max-w-[380px] h-44 rounded-3xl overflow-hidden mb-4 border border-caramel-500/20 shadow-xl">
@@ -27,61 +37,83 @@
   <div class="w-full max-w-[380px] bg-[#241c17] p-6 rounded-3xl border border-caramel-500/20 shadow-2xl">
     <div class="text-center mb-5">
       <h2 class="text-xl font-bold text-[#fcf8f3]">Regístrate</h2>
-      <p class="text-xs text-stone-400 mt-1">Crea una cuenta para calibrar tus recomendaciones</p>
+      <p class="text-xs text-stone-400 mt-1">Crea tu cuenta institucional UNIMAR</p>
     </div>
 
     {% if error %}
-    <div class="mb-4 p-3 rounded-2xl bg-red-950/60 border border-red-500/30 text-red-300 text-xs text-center">
-      {{ error }}
+    <div class="mb-4 p-3 rounded-2xl bg-red-950/70 border border-red-500/40 text-red-300 text-xs text-center space-y-1">
+      <p class="font-semibold">{{ error }}</p>
     </div>
     {% endif %}
 
-    <form method="POST" action="/register" class="space-y-3.5">
+    <form method="POST" action="/register" @submit="isSubmitting = true" class="space-y-3.5">
       <!-- Nombre Completo -->
       <div>
         <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Nombre completo</label>
         <div class="relative">
           <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">👤</span>
-          <input type="text" name="full_name" required placeholder="Tu nombre"
+          <input type="text" name="full_name" required placeholder="Tu nombre y apellido"
+            value="{{ form_data.full_name if form_data and form_data.full_name else '' }}"
             class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition">
         </div>
       </div>
 
-      <!-- Correo -->
+      <!-- Correo Institucional Obligatorio -->
       <div>
-        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Correo electrónico</label>
+        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Correo institucional (@unimar.edu.ve)</label>
         <div class="relative">
           <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">✉</span>
-          <input type="email" name="email" required placeholder="correo@ejemplo.com"
-            class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition">
+          <input type="email" name="email" required placeholder="nombre.apellido@unimar.edu.ve"
+            x-model="email"
+            class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none transition font-mono"
+            :class="isUnimarEmail ? 'border-emerald-500/50 focus:border-emerald-400' : (hasAtSign ? 'border-amber-500/40 focus:border-amber-400' : 'border-caramel-500/25 focus:border-caramel-400')">
+        </div>
+        
+        <!-- Live Domain Feedback Hint -->
+        <div class="text-[10px] mt-1 ml-1">
+          <template x-if="!email">
+            <span class="text-stone-500">Exclusivo para la comunidad universitaria UNIMAR</span>
+          </template>
+          <template x-if="email && isUnimarEmail">
+            <span class="text-emerald-400 font-medium flex items-center space-x-1">
+              <span>✓</span>
+              <span>Dominio institucional válido</span>
+            </span>
+          </template>
+          <template x-if="email && hasAtSign && !isUnimarEmail">
+            <span class="text-amber-400 font-medium flex items-center space-x-1">
+              <span>⚠</span>
+              <span>Debe terminar en @unimar.edu.ve</span>
+            </span>
+          </template>
         </div>
       </div>
 
-      <!-- Rol -->
+      <!-- Rol Académico -->
       <div>
-        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Rol</label>
+        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Rol institucional</label>
         <div class="relative">
           <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">🛡</span>
           <select name="rol_nombre" required
             class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 focus:outline-none focus:border-caramel-400 transition">
-            <option value="Estudiante">Estudiante</option>
-            <option value="Docente de Cátedra">Docente de Cátedra</option>
-            <option value="Curador/Administrador">Curador / Administrador</option>
+            <option value="Estudiante" {% if form_data and form_data.rol_nombre == 'Estudiante' %}selected{% endif %}>Estudiante</option>
+            <option value="Docente de Cátedra" {% if form_data and form_data.rol_nombre == 'Docente de Cátedra' %}selected{% endif %}>Docente de Cátedra</option>
+            <option value="Curador/Administrador" {% if form_data and form_data.rol_nombre == 'Curador/Administrador' %}selected{% endif %}>Curador / Administrador</option>
           </select>
         </div>
       </div>
 
       <!-- Carrera Académica -->
       <div>
-        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Carrera</label>
+        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Carrera / Área</label>
         <div class="relative">
           <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">🎓</span>
           <select name="carrera" required
             class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 focus:outline-none focus:border-caramel-400 transition">
-            <option value="Ingeniería de Sistemas">Ingeniería de Sistemas</option>
-            <option value="Computación">Computación</option>
-            <option value="Ingeniería Civil">Ingeniería Civil</option>
-            <option value="Ingeniería Industrial">Ingeniería Industrial</option>
+            <option value="Ingeniería de Sistemas" {% if form_data and form_data.carrera == 'Ingeniería de Sistemas' %}selected{% endif %}>Ingeniería de Sistemas</option>
+            <option value="Computación" {% if form_data and form_data.carrera == 'Computación' %}selected{% endif %}>Computación</option>
+            <option value="Ingeniería Civil" {% if form_data and form_data.carrera == 'Ingeniería Civil' %}selected{% endif %}>Ingeniería Civil</option>
+            <option value="Ingeniería Industrial" {% if form_data and form_data.carrera == 'Ingeniería Industrial' %}selected{% endif %}>Ingeniería Industrial</option>
           </select>
         </div>
       </div>
@@ -94,19 +126,20 @@
           <select name="trimestre" required
             class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 focus:outline-none focus:border-caramel-400 transition">
             {% for t in range(1, 13) %}
-            <option value="{{ t }}" {% if t == 3 %}selected{% endif %}>{{ t }}º Trimestre</option>
+            <option value="{{ t }}" {% if (form_data and form_data.trimestre == t) or (not form_data and t == 3) %}selected{% endif %}>{{ t }}º Trimestre</option>
             {% endfor %}
-            <option value="0">Graduado / Docente</option>
+            <option value="0" {% if form_data and form_data.trimestre == 0 %}selected{% endif %}>Graduado / Docente</option>
           </select>
         </div>
       </div>
 
-      <!-- Usuario -->
+      <!-- Nombre de Usuario -->
       <div>
         <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Nombre de usuario</label>
         <div class="relative">
           <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">👤</span>
           <input type="text" name="username" required placeholder="tu_usuario"
+            value="{{ form_data.username if form_data and form_data.username else '' }}"
             class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition">
         </div>
       </div>
@@ -116,14 +149,29 @@
         <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">Contraseña</label>
         <div class="relative">
           <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">🔒</span>
-          <input type="password" name="password" required placeholder="••••••••"
+          <input type="password" name="password" required placeholder="Mínimo 6 caracteres"
             class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition">
         </div>
       </div>
 
+      <!-- Super Smooth Button Component -->
       <div class="pt-2">
-        <button type="submit" class="w-full py-3 rounded-full btn-caramel text-sm font-bold tracking-wide shadow-lg">
-          Crear Cuenta
+        <button type="submit" 
+          :disabled="isSubmitting"
+          class="group relative overflow-hidden w-full py-3.5 px-6 rounded-full text-xs sm:text-sm font-bold tracking-wide shadow-xl flex items-center justify-center space-x-2 text-[#18110c] bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] hover:brightness-105 active:scale-[0.985] transition-all duration-300 ease-out cursor-pointer hover:shadow-2xl hover:shadow-caramel-500/30 disabled:opacity-75 disabled:cursor-not-allowed">
+          
+          <!-- Subtle Shimmer Sweep Effect -->
+          <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none"></span>
+
+          <!-- Spinner when submitting -->
+          <template x-if="isSubmitting">
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-[#18110c]" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+          </template>
+
+          <span x-text="isSubmitting ? 'Creando cuenta...' : 'Crear Cuenta Institucional'"></span>
         </button>
       </div>
     </form>

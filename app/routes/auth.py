@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import User, Role
-from ..security import hash_password, verify_password, validate_password_strength
+from ..security import hash_password, verify_password, validate_password_strength, validate_institutional_email
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -87,7 +87,7 @@ def register_page(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
         request=request,
         name="register.html",
-        context={"current_user": None, "error": None}
+        context={"current_user": None, "error": None, "form_data": {}}
     )
 
 @router.post("/register")
@@ -104,24 +104,43 @@ def register_submit(
 ):
     """
     Registro formal de usuarios en las tablas USUARIOS y ROLES:
+    - Validación obligatoria de dominio institucional (@unimar.edu.ve).
     - Cifrado de contraseña con bcrypt (factor de coste 12).
     - Asignación de rol jerárquico (Estudiante, Docente, Curador).
     - Puntos de reputación iniciales de bienvenida.
     """
     clean_user = username.strip().lower()
     clean_email = email.strip().lower()
+    form_data = {
+        "full_name": full_name,
+        "email": email,
+        "rol_nombre": rol_nombre,
+        "carrera": carrera,
+        "trimestre": trimestre,
+        "username": username
+    }
 
-    # Validación de fortaleza de contraseña
+    # 1. Validación de correo institucional obligatorio (@unimar.edu.ve)
+    email_valid, email_msg = validate_institutional_email(clean_email)
+    if not email_valid:
+        return templates.TemplateResponse(
+            request=request,
+            name="register.html",
+            context={"current_user": None, "error": email_msg, "form_data": form_data},
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
+
+    # 2. Validación de fortaleza de contraseña
     is_valid, msg = validate_password_strength(password)
     if not is_valid:
         return templates.TemplateResponse(
             request=request,
             name="register.html",
-            context={"current_user": None, "error": msg},
+            context={"current_user": None, "error": msg, "form_data": form_data},
             status_code=status.HTTP_400_BAD_REQUEST
         )
 
-    # Verificar unicidad
+    # 3. Verificar unicidad de usuario y correo
     existing = db.query(User).filter(
         (User.username.ilike(clean_user)) | (User.email.ilike(clean_email))
     ).first()
@@ -132,7 +151,8 @@ def register_submit(
             name="register.html",
             context={
                 "current_user": None,
-                "error": "El usuario o correo institucional ya se encuentra registrado."
+                "error": "El usuario o correo institucional ya se encuentra registrado.",
+                "form_data": form_data
             },
             status_code=status.HTTP_400_BAD_REQUEST
         )

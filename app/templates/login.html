@@ -39,11 +39,11 @@
     <form method="POST" action="/login" class="space-y-4">
       <div>
         <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">
-          Usuario o correo
+          Correo institucional o usuario
         </label>
         <div class="relative">
           <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">✉</span>
-          <input type="text" name="username" required placeholder="correo@ejemplo.com o usuario"
+          <input type="text" name="username" required placeholder="tu.nombre@unimar.edu.ve o usuario"
             class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition">
         </div>
       </div>
@@ -60,8 +60,11 @@
       </div>
 
       <div class="pt-2">
-        <button type="submit" class="w-full py-3 rounded-full btn-caramel text-sm font-bold tracking-wide shadow-lg">
-          Iniciar Sesión
+        <button type="submit" 
+          class="group relative overflow-hidden w-full py-3.5 px-6 rounded-full text-xs sm:text-sm font-bold tracking-wide shadow-xl flex items-center justify-center space-x-2 text-[#18110c] bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] hover:brightness-105 active:scale-[0.985] transition-all duration-300 ease-out cursor-pointer hover:shadow-2xl hover:shadow-caramel-500/30">
+          <!-- Shimmer effect -->
+          <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none"></span>
+          <span>Iniciar Sesión</span>
         </button>
       </div>
     </form>

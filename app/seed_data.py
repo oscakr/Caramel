@@ -23,7 +23,7 @@ def seed_database():
     users_data = [
         {
             "username": "oscar",
-            "email": "oscar@universidad.edu",
+            "email": "oscar@unimar.edu.ve",
             "password": "password123",
             "full_name": "Oscar Rodríguez",
             "carrera": "Ingeniería de Sistemas",
@@ -32,7 +32,7 @@ def seed_database():
         },
         {
             "username": "carlos_dev",
-            "email": "carlos@universidad.edu",
+            "email": "carlos@unimar.edu.ve",
             "password": "password123",
             "full_name": "Carlos Mendoza",
             "carrera": "Ingeniería de Sistemas",
@@ -41,7 +41,7 @@ def seed_database():
         },
         {
             "username": "valentina_c",
-            "email": "valentina@universidad.edu",
+            "email": "valentina@unimar.edu.ve",
             "password": "password123",
             "full_name": "Valentina Castro",
             "carrera": "Ingeniería de Sistemas",
@@ -50,7 +50,7 @@ def seed_database():
         },
         {
             "username": "andres_code",
-            "email": "andres@universidad.edu",
+            "email": "andres@unimar.edu.ve",
             "password": "password123",
             "full_name": "Andrés Morales",
             "carrera": "Computación",
@@ -59,7 +59,7 @@ def seed_database():
         },
         {
             "username": "sofia_m",
-            "email": "sofia@universidad.edu",
+            "email": "sofia@unimar.edu.ve",
             "password": "password123",
             "full_name": "Sofía Paredes",
             "carrera": "Ingeniería de Sistemas",
@@ -68,7 +68,7 @@ def seed_database():
         },
         {
             "username": "david_arq",
-            "email": "david@universidad.edu",
+            "email": "david@unimar.edu.ve",
             "password": "password123",
             "full_name": "David Silva",
             "carrera": "Ingeniería Civil",
