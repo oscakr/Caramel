@@ -1,9 +1,150 @@
 from datetime import datetime
+import uuid
 from sqlalchemy import (
-    Column, Integer, String, Float, Text, DateTime, ForeignKey, Table
+    Column, Integer, String, Float, Text, DateTime, ForeignKey, Table, BigInteger, SmallInteger
 )
 from sqlalchemy.orm import relationship
 from .database import Base
+
+# ==============================================================================
+# MODELO ENTIDAD-RELACIÓN OFICIAL DE LA TESIS (CUADRO Nº 23 - DICCIONARIO DE DATOS)
+# PostgreSQL 15 en 3FN para Supabase
+# ==============================================================================
+
+class Role(Base):
+    """Tabla ROLES: Catálogo de roles según estándar ISO 21001 y políticas UNIMAR."""
+    __tablename__ = "roles"
+
+    id_rol = Column(Integer, primary_key=True, autoincrement=True)
+    nombre_rol = Column(String(50), unique=True, nullable=False) # 'Estudiante', 'Docente de Cátedra', 'Curador/Administrador'
+    permisos = Column(Text, nullable=False, default="{}")
+
+class Usuario(Base):
+    """Tabla USUARIOS: Comunidad estudiantil y docente registrada con @unimar.edu.ve."""
+    __tablename__ = "usuarios"
+
+    id_usuario = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    nombre_completo = Column(String(150), nullable=False)
+    correo_institucional = Column(String(120), unique=True, nullable=False, index=True)
+    password_hash = Column(String(255), nullable=False) # Hash bcrypt factor 12
+    id_rol = Column(Integer, ForeignKey("roles.id_rol"), nullable=False)
+    carrera = Column(String(100), nullable=False, default="Ingeniería de Sistemas")
+    trimestre = Column(Integer, nullable=False, default=3)
+    avatar_url = Column(String(255), default="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150")
+    puntos_reputacion = Column(Integer, default=0)
+    fecha_registro = Column(DateTime, default=datetime.utcnow)
+
+    rol = relationship("Role", foreign_keys=[id_rol], lazy="joined")
+    proyectos = relationship("Proyecto", back_populates="autor", foreign_keys="Proyecto.id_autor")
+    revisiones = relationship("RevisionPares", back_populates="revisor")
+    valoraciones = relationship("Valoracion", back_populates="usuario")
+
+    # Propiedades de compatibilidad de acceso para la interfaz Caramel:
+    @property
+    def id(self):
+        return str(self.id_usuario)
+
+    @property
+    def username(self):
+        return self.correo_institucional.split("@")[0]
+
+    @property
+    def email(self):
+        return self.correo_institucional
+
+    @property
+    def password(self):
+        return self.password_hash
+
+    @property
+    def full_name(self):
+        return self.nombre_completo
+
+    @property
+    def rol_nombre(self):
+        return self.rol.nombre_rol if self.rol else "Estudiante"
+
+class Catedra(Base):
+    """Tabla CATEDRAS: Unidades curriculares del plan de estudio de UNIMAR."""
+    __tablename__ = "catedras"
+
+    id_catedra = Column(Integer, primary_key=True, autoincrement=True)
+    codigo_materia = Column(String(20), unique=True, nullable=False) # Ej. SIS-101
+    nombre_catedra = Column(String(100), nullable=False) # Ej. Algoritmos y Programación I
+    trimestre = Column(Integer, nullable=False) # 1 al 12
+
+    proyectos = relationship("Proyecto", back_populates="catedra")
+
+class Proyecto(Base):
+    """Tabla PROYECTOS: Proyectos de software y materiales académicos bajo estándar Dublin Core."""
+    __tablename__ = "proyectos"
+
+    id_proyecto = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    titulo = Column(String(200), nullable=False, index=True) # Dublin Core: Title
+    descripcion = Column(Text, nullable=False)               # Dublin Core: Description
+    id_autor = Column(String(36), ForeignKey("usuarios.id_usuario"), nullable=False)
+    id_catedra = Column(Integer, ForeignKey("catedras.id_catedra"), nullable=False)
+    lenguaje_principal = Column(String(50), nullable=False) # Python, Java, C++, JS, SQL
+    tipo_material = Column(String(50), default="proyecto")   # 'proyecto', 'libro', 'video', 'guia'
+    enlace_externo = Column(String(350), nullable=True)
+    cover_url = Column(String(300), default="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400")
+    estado_curaduria = Column(String(30), default="Pendiente") # 'Pendiente', 'Aprobado', 'Destacado', 'Rechazado'
+    id_validador = Column(String(36), ForeignKey("usuarios.id_usuario"), nullable=True)
+    fecha_publicacion = Column(DateTime, default=datetime.utcnow)
+
+    autor = relationship("Usuario", foreign_keys=[id_autor], lazy="joined", back_populates="proyectos")
+    validador = relationship("Usuario", foreign_keys=[id_validador], lazy="joined")
+    catedra = relationship("Catedra", foreign_keys=[id_catedra], lazy="joined", back_populates="proyectos")
+    archivos = relationship("ArchivoCodigo", back_populates="proyecto", cascade="all, delete-orphan")
+    revisiones = relationship("RevisionPares", back_populates="proyecto", cascade="all, delete-orphan")
+    valoraciones = relationship("Valoracion", back_populates="proyecto", cascade="all, delete-orphan")
+
+class ArchivoCodigo(Base):
+    """Tabla ARCHIVOS_CODIGO: Ficheros de código fuente y scripts individuales o zip."""
+    __tablename__ = "archivos_codigo"
+
+    id_archivo = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id_proyecto = Column(String(36), ForeignKey("proyectos.id_proyecto"), nullable=False)
+    nombre_archivo = Column(String(120), nullable=False)
+    extension = Column(String(10), nullable=False) # .py, .java, .cpp, .js, .sql, .zip
+    contenido_codigo = Column(Text, nullable=True)
+    tamanio_bytes = Column(BigInteger, nullable=False)
+    ruta_almacenamiento = Column(String(255), nullable=False)
+
+    proyecto = relationship("Proyecto", back_populates="archivos")
+
+class RevisionPares(Base):
+    """Tabla REVISIONES_PARES: Evaluaciones técnicas y comentarios de calidad de código."""
+    __tablename__ = "revisiones_pares"
+
+    id_revision = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id_proyecto = Column(String(36), ForeignKey("proyectos.id_proyecto"), nullable=False)
+    id_revisor = Column(String(36), ForeignKey("usuarios.id_usuario"), nullable=False)
+    comentario_tecnico = Column(Text, nullable=False)
+    calificacion_criterio = Column(Integer, nullable=True) # 1 a 5
+    linea_referencia = Column(Integer, nullable=True)
+    fecha_revision = Column(DateTime, default=datetime.utcnow)
+
+    proyecto = relationship("Proyecto", back_populates="revisiones")
+    revisor = relationship("Usuario", foreign_keys=[id_revisor], lazy="joined", back_populates="revisiones")
+
+class Valoracion(Base):
+    """Tabla VALORACIONES: Votos comunitarios de utilidad (+1 / -1) para el capital intelectual."""
+    __tablename__ = "valoraciones"
+
+    id_valoracion = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id_proyecto = Column(String(36), ForeignKey("proyectos.id_proyecto"), nullable=False)
+    id_usuario = Column(String(36), ForeignKey("usuarios.id_usuario"), nullable=False)
+    tipo_voto = Column(SmallInteger, nullable=False) # +1 o -1
+    fecha_voto = Column(DateTime, default=datetime.utcnow)
+
+    proyecto = relationship("Proyecto", back_populates="valoraciones")
+    usuario = relationship("Usuario", foreign_keys=[id_usuario], lazy="joined", back_populates="valoraciones")
+
+
+# ==============================================================================
+# MODELOS DE COMPATIBILIDAD CON VISTAS NATIVAS DE CARAMEL
+# ==============================================================================
 
 curated_list_documents = Table(
     "curated_list_documents",
@@ -11,13 +152,6 @@ curated_list_documents = Table(
     Column("curated_list_id", Integer, ForeignKey("curated_lists.id"), primary_key=True),
     Column("document_id", Integer, ForeignKey("documents.id"), primary_key=True),
 )
-
-class Role(Base):
-    __tablename__ = "roles"
-
-    id_rol = Column(Integer, primary_key=True, autoincrement=True)
-    nombre_rol = Column(String(50), unique=True, nullable=False) # 'Estudiante', 'Docente de Cátedra', 'Curador/Administrador'
-    permisos = Column(Text, nullable=False, default="{}")
 
 class User(Base):
     __tablename__ = "users"
@@ -32,13 +166,11 @@ class User(Base):
     avatar_url = Column(String(255), default="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150")
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    # Roles y reputación comunitaria según norma institucional ISO / Tesis
     id_rol = Column(Integer, ForeignKey("roles.id_rol"), nullable=True)
     rol_nombre = Column(String(50), default="Estudiante")
     puntos_reputacion = Column(Integer, default=0)
 
     rol = relationship("Role", foreign_keys=[id_rol], lazy="joined")
-
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
     interactions = relationship("UserInteraction", back_populates="user", cascade="all, delete-orphan")
     bookmarks = relationship("Bookmark", back_populates="user", cascade="all, delete-orphan")
@@ -54,16 +186,15 @@ class Document(Base):
     publisher = Column(String(100), nullable=True)
     cover_url = Column(String(300), nullable=False)
     header_banner_url = Column(String(300), nullable=True)
-    carreras = Column(String(250), nullable=False)  # Comma-separated: "Ingeniería de Sistemas,Computación,Civil"
-    trimestres = Column(String(100), nullable=False) # Comma-separated: "2,3,4"
-    materias = Column(String(250), nullable=False)  # Comma-separated: "Cálculo II,Matemáticas II"
-    tags = Column(String(350), nullable=False)      # Keywords for TF-IDF
+    carreras = Column(String(250), nullable=False)
+    trimestres = Column(String(100), nullable=False)
+    materias = Column(String(250), nullable=False)
+    tags = Column(String(350), nullable=False)
     description = Column(Text, nullable=False)
     pages = Column(Integer, default=650)
     year = Column(Integer, default=2021)
     read_url = Column(String(300), default="#")
     
-    # Rating stats (mirroring Figma's 4.6 and 5-tier histogram)
     rating_avg = Column(Float, default=4.5)
     ratings_count = Column(Integer, default=1)
     star_5_count = Column(Integer, default=10)
@@ -72,39 +203,17 @@ class Document(Base):
     star_2_count = Column(Integer, default=1)
     star_1_count = Column(Integer, default=0)
 
-    # Validación docente y tipo de recurso académico
-    status = Column(String(30), default="aprobado") # 'aprobado', 'pendiente', 'rechazado'
-    material_type = Column(String(50), default="libro") # 'libro', 'video', 'guia'
+    status = Column(String(30), default="aprobado")
+    material_type = Column(String(50), default="libro")
     external_url = Column(String(350), nullable=True)
     uploaded_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     verified_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
     uploaded_by = relationship("User", foreign_keys=[uploaded_by_id])
     verified_by = relationship("User", foreign_keys=[verified_by_id])
-
     reviews = relationship("Review", back_populates="document", cascade="all, delete-orphan", order_by="desc(Review.created_at)")
     curated_lists = relationship("CuratedList", secondary=curated_list_documents, back_populates="documents")
     interactions = relationship("UserInteraction", back_populates="document", cascade="all, delete-orphan")
-
-    def update_rating_stats(self):
-        """Recalculate average rating and histogram from actual reviews."""
-        if not self.reviews:
-            return
-        c1 = sum(1 for r in self.reviews if r.rating == 1)
-        c2 = sum(1 for r in self.reviews if r.rating == 2)
-        c3 = sum(1 for r in self.reviews if r.rating == 3)
-        c4 = sum(1 for r in self.reviews if r.rating == 4)
-        c5 = sum(1 for r in self.reviews if r.rating == 5)
-        total = len(self.reviews)
-        avg = sum(r.rating for r in self.reviews) / total if total > 0 else 0.0
-
-        self.star_1_count = c1
-        self.star_2_count = c2
-        self.star_3_count = c3
-        self.star_4_count = c4
-        self.star_5_count = c5
-        self.ratings_count = total
-        self.rating_avg = round(avg, 1)
 
 class Review(Base):
     __tablename__ = "reviews"
@@ -112,7 +221,7 @@ class Review(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     document_id = Column(Integer, ForeignKey("documents.id"), nullable=False)
-    rating = Column(Integer, nullable=False) # 1 to 5
+    rating = Column(Integer, nullable=False)
     content = Column(Text, nullable=False)
     likes_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -130,7 +239,7 @@ class CuratedList(Base):
     creator_avatar = Column(String(250), default="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150")
     carrera = Column(String(100), nullable=True)
     trimestre = Column(Integer, nullable=True)
-    badge_color = Column(String(50), default="caramel") # styling theme
+    badge_color = Column(String(50), default="caramel")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     documents = relationship("Document", secondary=curated_list_documents, back_populates="curated_lists")
@@ -160,7 +269,7 @@ class UserInteraction(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     document_id = Column(Integer, ForeignKey("documents.id"), nullable=False)
-    interaction_type = Column(String(50), nullable=False) # 'view', 'read', 'save', 'rate'
+    interaction_type = Column(String(50), nullable=False)
     weight = Column(Float, default=1.0)
     created_at = Column(DateTime, default=datetime.utcnow)
 

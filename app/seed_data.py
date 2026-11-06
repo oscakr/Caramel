@@ -4,12 +4,22 @@ curated lists, and peer reviews matching the Caramel Figma prototype.
 """
 
 from sqlalchemy.orm import Session
-from .models import User, Document, Review, CuratedList, Friendship, Bookmark, UserInteraction
+from .models import User, Role, Document, Review, CuratedList, Friendship, Bookmark, UserInteraction
 from .database import SessionLocal, engine, Base
+from .security import hash_password
 
 def seed_database():
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
+
+    # 0. Create Roles if not present
+    if not db.query(Role).first():
+        db.add_all([
+            Role(id_rol=1, nombre_rol="Estudiante", permisos='{"can_read": true, "can_review": true, "can_upload": true}'),
+            Role(id_rol=2, nombre_rol="Docente de Cátedra", permisos='{"can_read": true, "can_review": true, "can_upload": true, "can_validate": true}'),
+            Role(id_rol=3, nombre_rol="Curador/Administrador", permisos='{"can_read": true, "can_review": true, "can_upload": true, "can_validate": true, "can_admin": true}')
+        ])
+        db.commit()
 
     # Check if already seeded
     if db.query(User).first():
@@ -20,60 +30,103 @@ def seed_database():
     print("Seeding Caramel database with Figma prototype data...")
 
     # 1. Create Users
+    default_pwd = hash_password("password123")
     users_data = [
         {
             "username": "oscar",
             "email": "oscar@unimar.edu.ve",
-            "password": "password123",
+            "password": default_pwd,
             "full_name": "Oscar Rodríguez",
             "carrera": "Ingeniería de Sistemas",
             "trimestre": 3,
+            "id_rol": 1,
+            "rol_nombre": "Estudiante",
+            "puntos_reputacion": 100,
             "avatar_url": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"
         },
         {
             "username": "carlos_dev",
             "email": "carlos@unimar.edu.ve",
-            "password": "password123",
+            "password": default_pwd,
             "full_name": "Carlos Mendoza",
             "carrera": "Ingeniería de Sistemas",
             "trimestre": 4,
+            "id_rol": 1,
+            "rol_nombre": "Estudiante",
+            "puntos_reputacion": 80,
             "avatar_url": "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150"
         },
         {
             "username": "valentina_c",
             "email": "valentina@unimar.edu.ve",
-            "password": "password123",
+            "password": default_pwd,
             "full_name": "Valentina Castro",
             "carrera": "Ingeniería de Sistemas",
             "trimestre": 3,
+            "id_rol": 1,
+            "rol_nombre": "Estudiante",
+            "puntos_reputacion": 95,
             "avatar_url": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150"
         },
         {
             "username": "andres_code",
             "email": "andres@unimar.edu.ve",
-            "password": "password123",
+            "password": default_pwd,
             "full_name": "Andrés Morales",
             "carrera": "Computación",
             "trimestre": 3,
+            "id_rol": 1,
+            "rol_nombre": "Estudiante",
+            "puntos_reputacion": 70,
             "avatar_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150"
         },
         {
             "username": "sofia_m",
             "email": "sofia@unimar.edu.ve",
-            "password": "password123",
+            "password": default_pwd,
             "full_name": "Sofía Paredes",
             "carrera": "Ingeniería de Sistemas",
             "trimestre": 2,
+            "id_rol": 1,
+            "rol_nombre": "Estudiante",
+            "puntos_reputacion": 65,
             "avatar_url": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150"
         },
         {
             "username": "david_arq",
             "email": "david@unimar.edu.ve",
-            "password": "password123",
+            "password": default_pwd,
             "full_name": "David Silva",
             "carrera": "Ingeniería Civil",
             "trimestre": 4,
+            "id_rol": 1,
+            "rol_nombre": "Estudiante",
+            "puntos_reputacion": 60,
             "avatar_url": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150"
+        },
+        {
+            "username": "flavio_decano",
+            "email": "flavio.rosales@unimar.edu.ve",
+            "password": default_pwd,
+            "full_name": "Ing. Flavio Rosales",
+            "carrera": "Ingeniería de Sistemas",
+            "trimestre": 0,
+            "id_rol": 2,
+            "rol_nombre": "Docente de Cátedra",
+            "puntos_reputacion": 500,
+            "avatar_url": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150"
+        },
+        {
+            "username": "elena_curadora",
+            "email": "elena.mendoza@unimar.edu.ve",
+            "password": default_pwd,
+            "full_name": "Dra. Elena Mendoza",
+            "carrera": "Decanato de Ingeniería",
+            "trimestre": 0,
+            "id_rol": 3,
+            "rol_nombre": "Curador/Administrador",
+            "puntos_reputacion": 1000,
+            "avatar_url": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150"
         }
     ]
 
