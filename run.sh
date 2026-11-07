@@ -66,7 +66,7 @@ wait_and_open_browser() {
           notify-send "Caramel Listo 🚀" "Plataforma activa en http://localhost:${PORT}" -i applications-education 2>/dev/null || true
         fi
         if command -v xdg-open >/dev/null 2>&1; then
-          xdg-open "http://localhost:${PORT}" >/dev/null 2>&1 &
+          xdg-open "http://localhost:${PORT}/login" >/dev/null 2>&1 &
         fi
         break
       fi
@@ -79,7 +79,7 @@ start_background() {
   if fuser "${PORT}/tcp" >/dev/null 2>&1; then
     echo -e "\033[1;32m[✓] Caramel ya está corriendo en http://localhost:${PORT}\033[0m"
     if command -v xdg-open >/dev/null 2>&1; then
-      xdg-open "http://localhost:${PORT}" >/dev/null 2>&1 &
+      xdg-open "http://localhost:${PORT}/login" >/dev/null 2>&1 &
     fi
     exit 0
   fi

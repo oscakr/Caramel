@@ -26,11 +26,6 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> Optiona
 @router.get("/login", response_class=HTMLResponse)
 def login_page(request: Request, db: Session = Depends(get_db)):
     """Pantalla 1 del prototipo Figma: Iniciar sesión institucional."""
-    current_user = get_current_user(request, db)
-    # Si ya tiene sesión activa y no está pidiendo salir, redirige al feed
-    if current_user and not request.query_params.get("switch"):
-        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
-
     return templates.TemplateResponse(
         request=request,
         name="login.html",
