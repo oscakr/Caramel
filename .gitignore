@@ -7,4 +7,6 @@ venv/
 ghp*
 *token*
 *.txt
+*.log
+.caramel.*
 
