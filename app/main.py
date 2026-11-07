@@ -3,13 +3,22 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
-from .database import engine, Base
+from .database import engine, Base, SessionLocal
+from .models import User
 from .seed_data import seed_database
 from .routes import auth, feed, documents, api_recommender
 
-# Initialize DB tables and seed data
-Base.metadata.create_all(bind=engine)
-seed_database()
+# Initialize DB tables and seed data only when necessary
+try:
+    _db = SessionLocal()
+    _has_users = _db.query(User).first() is not None
+    _db.close()
+    if not _has_users:
+        Base.metadata.create_all(bind=engine)
+        seed_database()
+except Exception:
+    Base.metadata.create_all(bind=engine)
+    seed_database()
 
 app = FastAPI(
     title="Caramel - Plataforma de Recomendación de Documentos Académicos",
@@ -39,4 +48,4 @@ app.include_router(api_recommender.router)
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8001))
-    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=False)

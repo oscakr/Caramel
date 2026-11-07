@@ -50,11 +50,29 @@ start_foreground() {
   echo -e "\033[1;35m[*] Presiona Ctrl+C en cualquier momento para detener.\033[0m"
   echo "================================================================="
 
-  if command -v xdg-open >/dev/null 2>&1 && [ "$1" != "--no-browser" ]; then
-    (sleep 1.2 && xdg-open "http://localhost:${PORT}" >/dev/null 2>&1) &
-  fi
+  wait_and_open_browser "$1"
 
-  exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --reload
+  exec "$DIR/venv/bin/python" -m uvicorn app.main:app --host 0.0.0.0 --port "$PORT"
+}
+
+wait_and_open_browser() {
+  if [ "$1" = "--no-browser" ]; then
+    return 0
+  fi
+  (
+    for i in {1..40}; do
+      if curl -s -m 1 "http://127.0.0.1:${PORT}/login" >/dev/null 2>&1; then
+        if command -v notify-send >/dev/null 2>&1; then
+          notify-send "Caramel Listo 🚀" "Plataforma activa en http://localhost:${PORT}" -i applications-education 2>/dev/null || true
+        fi
+        if command -v xdg-open >/dev/null 2>&1; then
+          xdg-open "http://localhost:${PORT}" >/dev/null 2>&1 &
+        fi
+        break
+      fi
+      sleep 0.5
+    done
+  ) &
 }
 
 start_background() {
@@ -68,10 +86,9 @@ start_background() {
 
   nohup "$DIR/venv/bin/python" -m uvicorn app.main:app --host 0.0.0.0 --port "$PORT" > "$LOG_FILE" 2>&1 &
   echo $! > "$PID_FILE"
-  sleep 1
 
   echo "================================================================="
-  echo -e "\033[1;32m[✓] Caramel iniciado exitosamente en segundo plano!\033[0m"
+  echo -e "\033[1;32m[✓] Conectando con Supabase e iniciando servidor...\033[0m"
   echo -e "\033[1;32m[✓] Base de Datos:\033[0m Supabase Cloud PostgreSQL (24/7)"
   echo -e "\033[1;32m[✓] Acceso Local:\033[0m  http://localhost:${PORT}"
   if [ "$LOCAL_IP" != "localhost" ]; then
@@ -80,13 +97,7 @@ start_background() {
   echo -e "\033[0;37mPara detenerlo ejecuta: caramel stop\033[0m"
   echo "================================================================="
 
-  if command -v notify-send >/dev/null 2>&1; then
-    notify-send "Caramel Activo 🚀" "Servidor en http://localhost:${PORT}\nConectado a Supabase en la nube" -i applications-education 2>/dev/null || true
-  fi
-
-  if command -v xdg-open >/dev/null 2>&1; then
-    (sleep 0.8 && xdg-open "http://localhost:${PORT}" >/dev/null 2>&1) &
-  fi
+  wait_and_open_browser "$1"
 }
 
 stop_server() {
