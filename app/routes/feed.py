@@ -117,6 +117,10 @@ def recommender_lab(request: Request, db: Session = Depends(get_db)):
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
+    # Acceso estrictamente reservado para rango CEO (Oscar Álvarez)
+    if not getattr(current_user, "is_ceo", False):
+        return RedirectResponse(url="/?error=unauthorized_ceo", status_code=status.HTTP_303_SEE_OTHER)
+
     recommender = AcademicRecommender(db)
     recommendations = recommender.get_recommendations(current_user.id, limit=10)
 

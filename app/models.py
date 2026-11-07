@@ -79,6 +79,14 @@ class Usuario(Base):
             return "Profesor"
         return "Casi Ingeniero"
 
+    @property
+    def is_ceo(self) -> bool:
+        return (
+            self.correo_institucional == "oalvarez.7305@unimar.edu.ve"
+            or (self.rol and self.rol.nombre_rol == "CEO")
+            or self.rol_nombre == "CEO"
+        )
+
 class Catedra(Base):
     """Tabla CATEDRAS: Unidades curriculares del plan de estudio de UNIMAR."""
     __tablename__ = "catedras"
@@ -204,6 +212,15 @@ class User(Base):
                 return "Doctora"
             return "Profesor"
         return "Casi Ingeniero"
+
+    @property
+    def is_ceo(self) -> bool:
+        return (
+            self.email == "oalvarez.7305@unimar.edu.ve"
+            or self.username == "oalvarez.7305"
+            or self.rol_nombre == "CEO"
+            or (self.rol and self.rol.nombre_rol == "CEO")
+        )
 
 class Document(Base):
     __tablename__ = "documents"

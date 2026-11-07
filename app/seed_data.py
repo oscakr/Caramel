@@ -17,7 +17,8 @@ def seed_database():
         db.add_all([
             Role(id_rol=1, nombre_rol="Estudiante", permisos='{"can_read": true, "can_review": true, "can_upload": true}'),
             Role(id_rol=2, nombre_rol="Docente de Cátedra", permisos='{"can_read": true, "can_review": true, "can_upload": true, "can_validate": true}'),
-            Role(id_rol=3, nombre_rol="Curador/Administrador", permisos='{"can_read": true, "can_review": true, "can_upload": true, "can_validate": true, "can_admin": true}')
+            Role(id_rol=3, nombre_rol="Curador/Administrador", permisos='{"can_read": true, "can_review": true, "can_upload": true, "can_validate": true, "can_admin": true}'),
+            Role(id_rol=4, nombre_rol="CEO", permisos='{"can_read": true, "can_review": true, "can_upload": true, "can_validate": true, "can_admin": true, "is_ceo": true}')
         ])
         db.commit()
 
@@ -39,8 +40,8 @@ def seed_database():
             "full_name": "Oscar Álvarez",
             "carrera": "Ingeniería de Sistemas",
             "trimestre": 3,
-            "id_rol": 1,
-            "rol_nombre": "Estudiante",
+            "id_rol": 4,
+            "rol_nombre": "CEO",
             "puntos_reputacion": 100,
             "avatar_url": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"
         },

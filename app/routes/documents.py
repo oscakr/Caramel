@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import User, Document, Review, Bookmark, UserInteraction
+from ..models import User, Document, Review, Bookmark, UserInteraction, Catedra
 from .auth import get_current_user
 
 router = APIRouter()
@@ -138,10 +138,12 @@ def upload_material_page(request: Request, db: Session = Depends(get_db)):
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
+    catedras = db.query(Catedra).order_by(Catedra.trimestre, Catedra.nombre_catedra).all()
+
     return templates.TemplateResponse(
         request=request,
         name="upload_material.html",
-        context={"current_user": current_user, "active_nav": "explore", "success": False}
+        context={"current_user": current_user, "active_nav": "explore", "catedras": catedras, "success": False}
     )
 
 @router.post("/upload-material")
@@ -197,10 +199,11 @@ def upload_material_submit(
     db.add(new_doc)
     db.commit()
 
+    catedras = db.query(Catedra).order_by(Catedra.trimestre, Catedra.nombre_catedra).all()
     return templates.TemplateResponse(
         request=request,
         name="upload_material.html",
-        context={"current_user": current_user, "active_nav": "explore", "success": True}
+        context={"current_user": current_user, "active_nav": "explore", "catedras": catedras, "success": True}
     )
 
 @router.get("/validation-panel", response_class=HTMLResponse)

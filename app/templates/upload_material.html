@@ -111,9 +111,27 @@
     <!-- Materia y Trimestre -->
     <div class="grid grid-cols-2 gap-3">
       <div>
-        <label class="block text-[11px] font-medium text-stone-300 mb-1 ml-1">Asignatura / Materia</label>
-        <input type="text" name="materias" required placeholder="Ej. Algoritmos I, Cálculo II"
+        <label class="block text-[11px] font-medium text-stone-300 mb-1 ml-1">Asignatura / Cátedra UNIMAR</label>
+        <input type="text" name="materias" list="catedrasList" required placeholder="Ej. Estructuras de Datos, Cálculo II"
           class="w-full px-3.5 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition-colors">
+        <datalist id="catedrasList">
+          {% if catedras %}
+            {% for c in catedras %}
+            <option value="{{ c.nombre_catedra }}">{{ c.codigo_materia }} • Trimestre {{ c.trimestre }}</option>
+            {% endfor %}
+          {% else %}
+            <option value="Algoritmos y Programación I">
+            <option value="Cálculo I">
+            <option value="Algoritmos y Programación II">
+            <option value="Cálculo II">
+            <option value="Estructuras de Datos">
+            <option value="Arquitectura del Computador">
+            <option value="Base de Datos I">
+            <option value="Sistemas Operativos">
+            <option value="Redes de Computadoras">
+            <option value="Ingeniería de Software">
+          {% endif %}
+        </datalist>
       </div>
 
       <div>
