@@ -210,9 +210,11 @@ async def upload_material_submit(
     if not materias_clean:
         materias_clean = "Programación IV"
 
-    title_clean = (title or "").strip()
-    authors_clean = (authors or "").strip() or current_user.nombre_completo or current_user.username or "Estudiante UNIMAR"
-    desc_clean = (description or "").strip() or f"Material académico propuesto para la cátedra {materias_clean}."
+    # El título del material es automáticamente el nombre de la cátedra
+    title_clean = materias_clean
+    # El aportador se toma directamente de la sesión del usuario autenticado
+    authors_clean = current_user.nombre_completo or current_user.username or current_user.email or "Estudiante UNIMAR"
+    desc_clean = (description or "").strip() or f"Material académico propuesto para la cátedra {materias_clean}. Pendiente de revisión docente para asignación temática en el plan de evaluación."
 
     cover = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400"
     read_link = "#"
