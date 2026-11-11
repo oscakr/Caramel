@@ -3,28 +3,194 @@
 {% block title %}Caramel - Aportar Material de Estudio{% endblock %}
 
 {% block content %}
-<div class="space-y-5 pt-1 pb-10" x-data="{ 
-  materialType: 'libro',
+<div class="space-y-6 pt-2 pb-14" x-data="{
+  step: 1, // 1: Cátedra, 2: Tipo de archivo, 3: Contenido/Upload, 4: Confirmación
+  selectedCatedra: 'Programación IV',
+  selectedTrimestre: 4,
+  materialType: 'pdf', // 'pdf', 'video', 'zip'
+  
+  // Datos del formulario
+  youtubeUrl: '',
+  title: '',
+  authors: '{{ current_user.nombre_completo or current_user.username }}',
+  description: '',
+  
+  // Gestión de archivo local
+  file: null,
+  fileName: '',
+  fileSizeMB: 0,
+  isDragging: false,
+  
+  // Estados de proceso y validación
   isSubmitting: false,
-  urlHint: 'https://drive.google.com/... o enlace a repositorio de PDF',
-  titleHint: 'Ej. Cálculo Vectorial y Aplicaciones - Stewart',
-  updateType(type) {
+  isCheckingYoutube: false,
+  errorMessage: '',
+  isSuccess: false,
+
+  selectCatedra(catedra, trimestre) {
+    this.selectedCatedra = catedra;
+    this.selectedTrimestre = trimestre || 4;
+    this.errorMessage = '';
+    this.step = 2;
+  },
+
+  selectMaterialType(type) {
     this.materialType = type;
-    if (type === 'libro') {
-      this.titleHint = 'Ej. Cálculo Vectorial y Aplicaciones - Stewart';
-      this.urlHint = 'https://drive.google.com/... o enlace a repositorio digital';
-    } else if (type === 'video') {
-      this.titleHint = 'Ej. Clase Magistral: Estructuras de Datos y Complejidad';
-      this.urlHint = 'https://www.youtube.com/watch?v=... o enlace de video';
-    } else if (type === 'guia') {
-      this.titleHint = 'Ej. Guía Práctica: Laboratorio de Redes y Protocolos';
-      this.urlHint = 'https://drive.google.com/... o enlace a guía en PDF';
+    this.errorMessage = '';
+    this.file = null;
+    this.fileName = '';
+    this.fileSizeMB = 0;
+    this.step = 3;
+  },
+
+  handleFileSelect(event) {
+    const selected = event.target.files[0];
+    if (selected) {
+      this.validateAndSetFile(selected);
     }
+  },
+
+  handleFileDrop(event) {
+    this.isDragging = false;
+    const dropped = event.dataTransfer.files[0];
+    if (dropped) {
+      this.validateAndSetFile(dropped);
+    }
+  },
+
+  validateAndSetFile(fileObj) {
+    this.errorMessage = '';
+    const sizeInMB = fileObj.size / (1024 * 1024);
+    
+    if (sizeInMB > 30) {
+      this.errorMessage = `⚠️ El archivo supera el límite de 30 MB (peso: ${sizeInMB.toFixed(1)} MB). Por favor selecciona un archivo más ligero.`;
+      this.file = null;
+      this.fileName = '';
+      this.fileSizeMB = 0;
+      return;
+    }
+
+    const ext = fileObj.name.split('.').pop().toLowerCase();
+    if (this.materialType === 'pdf' && ext !== 'pdf') {
+      this.errorMessage = '⚠️ Formato incorrecto. Para esta opción sólo se admiten archivos .pdf';
+      this.file = null;
+      this.fileName = '';
+      this.fileSizeMB = 0;
+      return;
+    }
+
+    if (this.materialType === 'zip' && ext !== 'zip') {
+      this.errorMessage = '⚠️ Formato incorrecto. Para esta opción debes subir un archivo comprimido .zip';
+      this.file = null;
+      this.fileName = '';
+      this.fileSizeMB = 0;
+      return;
+    }
+
+    this.file = fileObj;
+    this.fileName = fileObj.name;
+    this.fileSizeMB = sizeInMB.toFixed(2);
+    if (!this.title) {
+      this.title = fileObj.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+    }
+  },
+
+  async submitUpload() {
+    this.errorMessage = '';
+
+    // Validación según tipo
+    if (this.materialType === 'video') {
+      const cleanUrl = (this.youtubeUrl || '').trim();
+      if (!cleanUrl) {
+        this.errorMessage = 'Por favor pega el enlace de YouTube antes de enviar.';
+        return;
+      }
+
+      // 1. Loader de verificación en tiempo real (consultando BD docente)
+      this.isCheckingYoutube = true;
+      try {
+        const checkResp = await fetch('/api/check-youtube-duplicate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: cleanUrl })
+        });
+        const checkData = await checkResp.json();
+        this.isCheckingYoutube = false;
+
+        if (checkData.duplicate) {
+          this.errorMessage = checkData.message || '¡El video que intentas aprobar ya fue validado anteriormente, más atento Casi Ingeniero!';
+          return;
+        }
+      } catch (err) {
+        this.isCheckingYoutube = false;
+      }
+    } else {
+      if (!this.file) {
+        this.errorMessage = 'Por favor selecciona o arrastra el archivo antes de enviar.';
+        return;
+      }
+    }
+
+    this.isSubmitting = true;
+    const formData = new FormData();
+    formData.append('materias', this.selectedCatedra);
+    formData.append('trimestres', this.selectedTrimestre);
+    formData.append('material_type', this.materialType);
+    formData.append('title', this.title || (this.materialType === 'video' ? `Clase Audiovisual: ${this.selectedCatedra}` : this.fileName));
+    formData.append('authors', this.authors || '{{ current_user.nombre_completo or current_user.username }}');
+    formData.append('description', this.description || `Aporte académico para ${this.selectedCatedra}.`);
+
+    if (this.materialType === 'video') {
+      formData.append('external_url', this.youtubeUrl.trim());
+    } else if (this.file) {
+      formData.append('file', this.file);
+    }
+
+    try {
+      const response = await fetch('/upload-material', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+      this.isSubmitting = false;
+
+      if (response.ok && result.success) {
+        this.isSuccess = true;
+        this.step = 4;
+      } else {
+        this.errorMessage = result.error || 'Ocurrió un error al enviar el material a revisión docente.';
+      }
+    } catch (e) {
+      this.isSubmitting = false;
+      this.errorMessage = 'Error de comunicación con el servidor. Revisa tu conexión a internet.';
+    }
+  },
+
+  resetForm() {
+    this.step = 1;
+    this.selectedCatedra = 'Programación IV';
+    this.selectedTrimestre = 4;
+    this.materialType = 'pdf';
+    this.youtubeUrl = '';
+    this.file = null;
+    this.fileName = '';
+    this.fileSizeMB = 0;
+    this.title = '';
+    this.description = '';
+    this.errorMessage = '';
+    this.isSuccess = false;
+    this.isSubmitting = false;
+    this.isCheckingYoutube = false;
   }
 }">
 
   <!-- Header & Back Navigation -->
-  <div class="flex items-center justify-between pt-2">
+  <div class="flex items-center justify-between pt-1">
     <a href="/" class="w-9 h-9 rounded-full bg-[#271e18] border border-caramel-500/20 flex items-center justify-center text-stone-300 hover:text-white hover:border-caramel-400 transition-all duration-200">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -34,160 +200,442 @@
     <div class="w-9"></div>
   </div>
 
-  <!-- Verification Process Note -->
-  <div class="p-4 rounded-3xl bg-[#241c17] border border-caramel-500/20 flex space-x-3 items-start shadow-md">
-    <div class="p-2.5 rounded-2xl bg-amber-500/15 text-amber-300 border border-amber-500/25 shrink-0">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-      </svg>
-    </div>
-    <div class="space-y-0.5">
-      <h3 class="text-xs font-bold text-[#fcf8f3]">Validación Académica</h3>
-      <p class="text-[11px] text-stone-400 leading-relaxed">
-        Todo aporte es evaluado por un docente o curador de la cátedra antes de ser catalogado, asegurando la calidad y pertinencia del contenido para la comunidad estudiantil.
-      </p>
-    </div>
+  <!-- Outer Tagline Minimalista -->
+  <div class="text-center pt-2">
+    <p class="text-[11px] font-bold tracking-[0.28em] text-stone-400 uppercase">
+      ONE QUESTION AT A <span class="text-amber-400 font-black">TIME</span>
+    </p>
   </div>
 
-  {% if success %}
-  <div class="p-4 rounded-3xl bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 text-xs text-center space-y-2 shadow-lg">
-    <div class="text-base">✨</div>
-    <p class="font-bold text-sm text-emerald-200">Material enviado a revisión</p>
-    <p class="text-[11px] text-emerald-300/80">Tu material ha ingresado a la cola de verificación del cuerpo docente. ¡Gracias por enriquecer la plataforma!</p>
-    <div class="pt-2">
-      <a href="/" class="inline-block px-5 py-2 rounded-full bg-emerald-600/30 hover:bg-emerald-600/50 text-white text-xs font-semibold transition-all">Volver al Inicio</a>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- Upload Form -->
-  <form method="POST" action="/upload-material" @submit="isSubmitting = true" class="space-y-4 bg-[#231b16] p-5 rounded-3xl border border-caramel-500/20 shadow-xl">
+  <!-- Central Card Eleva y Estilizada -->
+  <div class="max-w-xl mx-auto bg-[#231b16] border border-caramel-500/25 rounded-[30px] p-6 sm:p-9 shadow-2xl relative overflow-hidden transition-all duration-300">
     
-    <!-- Tipo de Material Selector -->
-    <div>
-      <label class="block text-[11px] font-medium text-stone-300 mb-1.5 ml-1">Tipo de Material</label>
-      <div class="grid grid-cols-3 gap-2">
-        <!-- Libro -->
-        <button type="button" @click="updateType('libro')"
-          class="p-3 rounded-2xl border text-center transition-all duration-200"
-          :class="materialType === 'libro' ? 'border-amber-400 bg-amber-500/15 text-amber-200 shadow-md ring-1 ring-amber-400/40' : 'border-caramel-500/20 bg-[#1b1410] text-stone-400 hover:text-stone-200 hover:border-caramel-500/40'">
-          <div class="text-base">📖</div>
-          <div class="text-[11px] font-bold mt-1">Libro / PDF</div>
+    <!-- Indicador de Progreso con 3 Puntos -->
+    <div class="text-center space-y-2.5 mb-6">
+      <p class="text-[10px] font-extrabold tracking-[0.2em] text-stone-400 uppercase"
+         x-text="step === 1 ? 'STEP 1 OF 3' : (step === 2 ? 'STEP 2 OF 3' : (step === 3 ? 'STEP 3 OF 3' : 'FINALIZADO'))">
+      </p>
+      
+      <!-- 3 Puntos Interactivos -->
+      <div class="flex items-center justify-center space-x-3">
+        <!-- Punto 1 -->
+        <button type="button" @click="step > 1 && (step = 1)"
+          :title="step > 1 ? 'Volver al paso 1' : ''"
+          class="w-3 h-3 rounded-full transition-all duration-300"
+          :class="{
+            'bg-emerald-400 hover:scale-125 shadow-md shadow-emerald-500/30 cursor-pointer': step > 1,
+            'bg-amber-400 ring-4 ring-amber-400/25 shadow-md': step === 1,
+            'bg-stone-700': step < 1
+          }">
         </button>
 
-        <!-- Video -->
-        <button type="button" @click="updateType('video')"
-          class="p-3 rounded-2xl border text-center transition-all duration-200"
-          :class="materialType === 'video' ? 'border-amber-400 bg-amber-500/15 text-amber-200 shadow-md ring-1 ring-amber-400/40' : 'border-caramel-500/20 bg-[#1b1410] text-stone-400 hover:text-stone-200 hover:border-caramel-500/40'">
-          <div class="text-base">🎥</div>
-          <div class="text-[11px] font-bold mt-1">Video / Clase</div>
+        <!-- Punto 2 -->
+        <button type="button" @click="step > 2 && (step = 2)"
+          :title="step > 2 ? 'Volver al paso 2' : ''"
+          class="w-3 h-3 rounded-full transition-all duration-300"
+          :class="{
+            'bg-emerald-400 hover:scale-125 shadow-md shadow-emerald-500/30 cursor-pointer': step > 2,
+            'bg-amber-400 ring-4 ring-amber-400/25 shadow-md': step === 2,
+            'bg-stone-700': step < 2
+          }">
         </button>
 
-        <!-- Guía -->
-        <button type="button" @click="updateType('guia')"
-          class="p-3 rounded-2xl border text-center transition-all duration-200"
-          :class="materialType === 'guia' ? 'border-amber-400 bg-amber-500/15 text-amber-200 shadow-md ring-1 ring-amber-400/40' : 'border-caramel-500/20 bg-[#1b1410] text-stone-400 hover:text-stone-200 hover:border-caramel-500/40'">
-          <div class="text-base">📝</div>
-          <div class="text-[11px] font-bold mt-1">Guía Práctica</div>
+        <!-- Punto 3 -->
+        <button type="button" @click="step > 3 && (step = 3)"
+          class="w-3 h-3 rounded-full transition-all duration-300"
+          :class="{
+            'bg-emerald-400 shadow-md shadow-emerald-500/30': step === 4,
+            'bg-amber-400 ring-4 ring-amber-400/25 shadow-md': step === 3,
+            'bg-stone-700': step < 3
+          }">
         </button>
-      </div>
-      <input type="hidden" name="material_type" :value="materialType">
-    </div>
-
-    <!-- Título -->
-    <div>
-      <label class="block text-[11px] font-medium text-stone-300 mb-1 ml-1">Título del Material</label>
-      <input type="text" name="title" required :placeholder="titleHint"
-        class="w-full px-3.5 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition-colors">
-    </div>
-
-    <!-- Autor o Profesor -->
-    <div>
-      <label class="block text-[11px] font-medium text-stone-300 mb-1 ml-1">Autor o Expositor</label>
-      <input type="text" name="authors" required placeholder="Ej. Prof. Gilbert Strang, Ing. Roberto Salas o Autor del libro"
-        class="w-full px-3.5 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition-colors">
-    </div>
-
-    <!-- Materia y Trimestre -->
-    <div class="grid grid-cols-2 gap-3">
-      <div>
-        <label class="block text-[11px] font-medium text-stone-300 mb-1 ml-1">Asignatura / Cátedra UNIMAR</label>
-        <input type="text" name="materias" list="catedrasList" required placeholder="Ej. Estructuras de Datos, Cálculo II"
-          class="w-full px-3.5 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition-colors">
-        <datalist id="catedrasList">
-          {% if catedras %}
-            {% for c in catedras %}
-            <option value="{{ c.nombre_catedra }}">{{ c.codigo_materia }} • Trimestre {{ c.trimestre }}</option>
-            {% endfor %}
-          {% else %}
-            <option value="Algoritmos y Programación I">
-            <option value="Cálculo I">
-            <option value="Algoritmos y Programación II">
-            <option value="Cálculo II">
-            <option value="Estructuras de Datos">
-            <option value="Arquitectura del Computador">
-            <option value="Base de Datos I">
-            <option value="Sistemas Operativos">
-            <option value="Redes de Computadoras">
-            <option value="Ingeniería de Software">
-          {% endif %}
-        </datalist>
-      </div>
-
-      <div>
-        <label class="block text-[11px] font-medium text-stone-300 mb-1 ml-1">Trimestre sugerido</label>
-        <select name="trimestres" required
-          class="w-full px-3.5 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 focus:outline-none focus:border-caramel-400 transition-colors">
-          {% for t in range(1, 13) %}
-          <option value="{{ t }}">{{ t }}º Trimestre</option>
-          {% endfor %}
-        </select>
       </div>
     </div>
 
-    <!-- Enlace al Recurso (URL) -->
-    <div>
-      <label class="block text-[11px] font-medium text-stone-300 mb-1 ml-1">Enlace del Recurso Digital</label>
-      <input type="url" name="external_url" required :placeholder="urlHint"
-        class="w-full px-3.5 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition font-mono">
+    <!-- ========================================== -->
+    <!-- PASO 1 DE 3: ¿Para qué cátedra está destinado tu contenido? -->
+    <!-- ========================================== -->
+    <div x-show="step === 1" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6 text-center">
+      
+      <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug">
+        ¿Para qué cátedra está destinado tu contenido?
+      </h2>
+
+      <!-- Píldoras de Selección Directa (2 arriba, 1 centrada abajo) -->
+      <div class="space-y-3 pt-2">
+        <div class="grid grid-cols-2 gap-3 sm:gap-4">
+          <!-- Programación III -->
+          <button type="button" @click="selectCatedra('Programación III', 3)"
+            class="group py-4 px-4 rounded-2xl border border-caramel-500/25 bg-[#1b1410] hover:border-amber-400 hover:bg-amber-500/10 active:scale-95 transition-all duration-200 shadow-md text-stone-200 hover:text-white flex flex-col items-center justify-center space-y-1">
+            <span class="text-base font-black tracking-wide group-hover:text-amber-300 transition-colors">Programación III</span>
+            <span class="text-[10px] text-stone-400 font-medium">3º Trimestre</span>
+          </button>
+
+          <!-- Programación IV -->
+          <button type="button" @click="selectCatedra('Programación IV', 4)"
+            class="group py-4 px-4 rounded-2xl border border-caramel-500/25 bg-[#1b1410] hover:border-amber-400 hover:bg-amber-500/10 active:scale-95 transition-all duration-200 shadow-md text-stone-200 hover:text-white flex flex-col items-center justify-center space-y-1">
+            <span class="text-base font-black tracking-wide group-hover:text-amber-300 transition-colors">Programación IV</span>
+            <span class="text-[10px] text-stone-400 font-medium">4º Trimestre</span>
+          </button>
+        </div>
+
+        <!-- Bases de Datos I (Centrada abajo) -->
+        <div class="flex justify-center">
+          <button type="button" @click="selectCatedra('Bases de Datos I', 4)"
+            class="group w-full sm:w-3/4 py-4 px-5 rounded-2xl border border-caramel-500/25 bg-[#1b1410] hover:border-amber-400 hover:bg-amber-500/10 active:scale-95 transition-all duration-200 shadow-md text-stone-200 hover:text-white flex flex-col items-center justify-center space-y-1">
+            <span class="text-base font-black tracking-wide group-hover:text-amber-300 transition-colors">Bases de Datos I</span>
+            <span class="text-[10px] text-stone-400 font-medium">4º Trimestre</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Selector Desplegable Opcional para otras cátedras -->
+      <div class="pt-5 border-t border-caramel-500/15 text-left">
+        <label class="block text-[11px] font-semibold text-stone-400 text-center mb-2">
+          ¿Otra cátedra? Selecciona una del pensum de la carrera:
+        </label>
+        <div class="relative">
+          <select @change="if($event.target.value) { const opt = $event.target.selectedOptions[0]; selectCatedra(opt.value, parseInt(opt.dataset.trim || '1')); }"
+            class="w-full px-4 py-3 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 focus:outline-none focus:border-caramel-400 transition-colors appearance-none cursor-pointer">
+            <option value="">Desplegar catálogo de cátedras UNIMAR...</option>
+            {% if catedras %}
+              {% for c in catedras %}
+              <option value="{{ c.nombre_catedra }}" data-trim="{{ c.trimestre }}">
+                {{ c.codigo_materia }} • {{ c.nombre_catedra }} (Trimestre {{ c.trimestre }})
+              </option>
+              {% endfor %}
+            {% else %}
+              <option value="Algoritmos y Programación I" data-trim="1">Algoritmos y Programación I</option>
+              <option value="Algoritmos y Programación II" data-trim="2">Algoritmos y Programación II</option>
+              <option value="Estructuras de Datos" data-trim="3">Estructuras de Datos</option>
+              <option value="Arquitectura del Computador" data-trim="3">Arquitectura del Computador</option>
+              <option value="Sistemas Operativos" data-trim="5">Sistemas Operativos</option>
+              <option value="Redes de Computadoras" data-trim="6">Redes de Computadoras</option>
+              <option value="Ingeniería de Software" data-trim="7">Ingeniería de Software</option>
+            {% endif %}
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-stone-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+
     </div>
 
-    <!-- Descripción / Sinopsis -->
-    <div>
-      <label class="block text-[11px] font-medium text-stone-300 mb-1 ml-1">Descripción y Contenido Clave</label>
-      <textarea name="description" rows="3" required placeholder="Explica de forma concisa qué temas cubre el recurso y por qué es valioso para los estudiantes..."
-        class="w-full px-3.5 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition resize-none"></textarea>
-    </div>
+    <!-- ========================================== -->
+    <!-- PASO 2 DE 3: ¿Qué tipo de material es el que deseas subir? -->
+    <!-- ========================================== -->
+    <div x-show="step === 2" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6 text-center">
+      
+      <div class="space-y-1">
+        <span class="inline-block px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/25 text-[11px] font-bold" x-text="'Cátedra: ' + selectedCatedra"></span>
+        <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug pt-1">
+          ¿Qué tipo de material es el que deseas subir?
+        </h2>
+      </div>
 
-    <!-- Super Smooth Button Component -->
-    <div class="pt-3">
-      <button type="submit" 
-        :disabled="isSubmitting"
-        class="group relative overflow-hidden w-full py-3.5 px-6 rounded-full text-xs sm:text-sm font-bold tracking-wide shadow-xl flex items-center justify-center space-x-2.5 text-[#18110c] bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] hover:brightness-105 active:scale-[0.985] transition-all duration-300 ease-out cursor-pointer hover:shadow-2xl hover:shadow-caramel-500/30 disabled:opacity-75 disabled:cursor-not-allowed">
+      <!-- Opciones tipo píldora interactiva -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
         
-        <!-- Subtle Shimmer Sweep Effect -->
-        <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none"></span>
+        <!-- Opción PDF -->
+        <button type="button" @click="selectMaterialType('pdf')"
+          class="p-5 rounded-2xl border border-caramel-500/25 bg-[#1b1410] hover:border-amber-400 hover:bg-amber-500/10 text-stone-300 hover:text-white font-bold transition-all duration-200 active:scale-95 shadow-md flex flex-col items-center justify-center space-y-2 group">
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-300 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+            📄
+          </div>
+          <div class="text-sm font-bold">PDF</div>
+          <span class="text-[10px] text-stone-400 font-medium">Libros o Guías</span>
+        </button>
 
-        <!-- Spinner when submitting -->
-        <template x-if="isSubmitting">
-          <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-[#18110c]" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-          </svg>
-        </template>
+        <!-- Opción Link de YouTube -->
+        <button type="button" @click="selectMaterialType('video')"
+          class="p-5 rounded-2xl border border-caramel-500/25 bg-[#1b1410] hover:border-amber-400 hover:bg-amber-500/10 text-stone-300 hover:text-white font-bold transition-all duration-200 active:scale-95 shadow-md flex flex-col items-center justify-center space-y-2 group">
+          <div class="w-12 h-12 rounded-2xl bg-red-500/15 text-red-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+            🎥
+          </div>
+          <div class="text-sm font-bold">Link de YouTube</div>
+          <span class="text-[10px] text-stone-400 font-medium">Clase o Tutorial</span>
+        </button>
 
-        <!-- Icon when default -->
-        <template x-if="!isSubmitting">
-          <svg class="w-4 h-4 transition-transform duration-300 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-          </svg>
-        </template>
+        <!-- Opción ZIP de Proyecto -->
+        <button type="button" @click="selectMaterialType('zip')"
+          class="p-5 rounded-2xl border border-caramel-500/25 bg-[#1b1410] hover:border-amber-400 hover:bg-amber-500/10 text-stone-300 hover:text-white font-bold transition-all duration-200 active:scale-95 shadow-md flex flex-col items-center justify-center space-y-2 group">
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-300 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+            📦
+          </div>
+          <div class="text-sm font-bold">ZIP de proyecto</div>
+          <span class="text-[10px] text-stone-400 font-medium">Código Fuente</span>
+        </button>
 
-        <span x-text="isSubmitting ? 'Enviando a validación docente...' : 'Enviar Material a Validación'"></span>
-      </button>
+      </div>
+
+      <div class="pt-2">
+        <button type="button" @click="step = 1" class="text-xs text-stone-400 hover:text-caramel-300 transition-colors">
+          ← Cambiar de cátedra
+        </button>
+      </div>
+
     </div>
 
-  </form>
+    <!-- ========================================== -->
+    <!-- PASO 3 DE 3: Vistas Dinámicas según la opción elegida -->
+    <!-- ========================================== -->
+    <div x-show="step === 3" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-5">
+      
+      <!-- Feedback de Cátedra & Tipo -->
+      <div class="flex items-center justify-between text-xs pb-1 border-b border-caramel-500/15">
+        <div class="flex items-center space-x-2">
+          <span class="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/25 text-[10px] font-bold" x-text="selectedCatedra"></span>
+          <span class="text-stone-400 text-[11px]" x-text="materialType === 'video' ? '• Enlace YouTube' : (materialType === 'pdf' ? '• Archivo PDF' : '• Paquete ZIP')"></span>
+        </div>
+        <button type="button" @click="step = 2" class="text-[11px] text-stone-400 hover:text-caramel-300 transition-colors">
+          Cambiar tipo
+        </button>
+      </div>
+
+      <!-- ALERTA DE ERROR / DUPLICADO EXACTO -->
+      <div x-show="errorMessage" x-transition class="p-3.5 rounded-2xl bg-red-950/70 border border-red-500/50 text-red-200 text-xs flex items-start space-x-2.5 shadow-lg">
+        <span class="text-base shrink-0">⚠️</span>
+        <div class="flex-1 font-semibold leading-relaxed" x-text="errorMessage"></div>
+      </div>
+
+      <!-- ======================= -->
+      <!-- CASO A: LINK DE YOUTUBE -->
+      <!-- ======================= -->
+      <template x-if="materialType === 'video'">
+        <div class="space-y-4">
+          <div class="text-center space-y-1">
+            <h2 class="text-lg sm:text-xl font-bold text-white">
+              Pega aquí tu link de YouTube: <span class="text-amber-400" x-text="selectedCatedra"></span>
+            </h2>
+            <p class="text-xs text-stone-400">Verificaremos de forma automática que el contenido sea inédito y relevante para la cátedra.</p>
+          </div>
+
+          <!-- Campo estilizado como en el video -->
+          <div>
+            <label class="block text-[11px] font-medium text-stone-300 mb-1.5 ml-1">Enlace del video</label>
+            <div class="relative">
+              <input type="url" x-model="youtubeUrl" placeholder="https://www.youtube.com/watch?v=..."
+                :class="errorMessage ? 'border-red-500 ring-1 ring-red-500/50' : 'border-caramel-500/25 focus:border-amber-400'"
+                class="w-full pl-10 pr-4 py-3 bg-[#1b1410] border rounded-2xl text-xs text-stone-100 placeholder-stone-600 focus:outline-none transition-all font-mono">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-red-400">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metadatos opcionales para una mejor catalogación Dublin Core -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div>
+              <label class="block text-[11px] font-medium text-stone-300 mb-1 ml-1">Título del Video</label>
+              <input type="text" x-model="title" placeholder="Ej. Árboles AVL y Balanceo"
+                class="w-full px-3.5 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 focus:outline-none focus:border-caramel-400">
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-stone-300 mb-1 ml-1">Profesor / Expositor</label>
+              <input type="text" x-model="authors" placeholder="Ej. Prof. Gilbert Strang / Canal Académico"
+                class="w-full px-3.5 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 focus:outline-none focus:border-caramel-400">
+            </div>
+          </div>
+
+          <!-- Loader de Verificación en Tiempo Real -->
+          <div x-show="isCheckingYoutube" x-transition class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-center space-x-3 shadow-md">
+            <svg class="animate-spin h-4 w-4 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <div class="space-y-0.5">
+              <p class="font-bold">⌛ Consultando base de datos docente...</p>
+              <p class="text-[10px] text-amber-300/80">Verificando que este enlace no haya sido editado anteriormente...</p>
+            </div>
+          </div>
+
+        </div>
+      </template>
+
+      <!-- ======================= -->
+      <!-- CASO B: ARCHIVO PDF     -->
+      <!-- ======================= -->
+      <template x-if="materialType === 'pdf'">
+        <div class="space-y-4">
+          <div class="text-center space-y-1">
+            <h2 class="text-lg sm:text-xl font-bold text-white">
+              Arroja aquí tu contenido de PDF
+            </h2>
+            <p class="text-xs text-stone-400">Libros de texto, apuntes estructurados o guías prácticas de laboratorio.</p>
+          </div>
+
+          <!-- Dropzone con Drag & Drop y límite de 30 MB -->
+          <div 
+            @dragover.prevent="isDragging = true"
+            @dragleave.prevent="isDragging = false"
+            @drop.prevent="handleFileDrop($event)"
+            class="relative border-2 border-dashed rounded-3xl p-6 sm:p-8 text-center transition-all duration-200 cursor-pointer"
+            :class="isDragging ? 'border-amber-400 bg-amber-500/15' : 'border-caramel-500/30 bg-[#1b1410] hover:border-amber-400/60 hover:bg-[#201712]'">
+            
+            <input type="file" accept=".pdf" @change="handleFileSelect($event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+            
+            <div class="space-y-2 pointer-events-none">
+              <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-500/15 text-amber-300 flex items-center justify-center text-2xl">
+                📄
+              </div>
+              <p class="text-xs font-bold text-white">Arrastra y suelta tu archivo PDF aquí o <span class="text-amber-400 underline">explora tus carpetas</span></p>
+              <p class="text-[10px] text-stone-400">Límite explícito de <span class="text-amber-300 font-semibold">30 MB</span> por archivo</p>
+            </div>
+
+            <!-- Previsualización de Archivo Seleccionado -->
+            <template x-if="fileName">
+              <div class="mt-4 p-3 rounded-2xl bg-[#271e18] border border-emerald-500/40 text-left flex items-center justify-between">
+                <div class="flex items-center space-x-2.5 truncate">
+                  <span class="text-emerald-400 text-lg">✓</span>
+                  <div class="truncate">
+                    <p class="text-xs font-bold text-emerald-200 truncate" x-text="fileName"></p>
+                    <p class="text-[10px] text-stone-400" x-text="fileSizeMB + ' MB'"></p>
+                  </div>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Listo</span>
+              </div>
+            </template>
+          </div>
+
+          <!-- Metadatos opcionales -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div>
+              <label class="block text-[11px] font-medium text-stone-300 mb-1 ml-1">Título del Documento</label>
+              <input type="text" x-model="title" placeholder="Ej. Guía Práctica de Recursión"
+                class="w-full px-3.5 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 focus:outline-none focus:border-caramel-400">
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-stone-300 mb-1 ml-1">Autor o Profesor</label>
+              <input type="text" x-model="authors" placeholder="Ej. Prof. Gilbert Strang / Ing. Oscar Álvarez"
+                class="w-full px-3.5 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 focus:outline-none focus:border-caramel-400">
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- ======================= -->
+      <!-- CASO C: ZIP DE PROYECTO -->
+      <!-- ======================= -->
+      <template x-if="materialType === 'zip'">
+        <div class="space-y-4">
+          <div class="text-center space-y-1">
+            <h2 class="text-lg sm:text-xl font-bold text-white">
+              Arroja aquí tu contenido ZIP
+            </h2>
+            <p class="text-xs text-stone-400">Código fuente comprimido del proyecto (.py, .java, .cpp, .js, .sql).</p>
+          </div>
+
+          <!-- Dropzone con indicador de peso en MB y límite de 30 MB -->
+          <div 
+            @dragover.prevent="isDragging = true"
+            @dragleave.prevent="isDragging = false"
+            @drop.prevent="handleFileDrop($event)"
+            class="relative border-2 border-dashed rounded-3xl p-6 sm:p-8 text-center transition-all duration-200 cursor-pointer"
+            :class="isDragging ? 'border-amber-400 bg-amber-500/15' : 'border-caramel-500/30 bg-[#1b1410] hover:border-amber-400/60 hover:bg-[#201712]'">
+            
+            <input type="file" accept=".zip" @change="handleFileSelect($event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+            
+            <div class="space-y-2 pointer-events-none">
+              <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-500/15 text-amber-300 flex items-center justify-center text-2xl">
+                📦
+              </div>
+              <p class="text-xs font-bold text-white">Arrastra y suelta tu archivo ZIP aquí o <span class="text-amber-400 underline">explora tus archivos</span></p>
+              <p class="text-[10px] text-stone-400">Indicador de peso en MB y límite estricto de <span class="text-amber-300 font-semibold">30 MB</span></p>
+            </div>
+
+            <!-- Previsualización de Archivo Seleccionado -->
+            <template x-if="fileName">
+              <div class="mt-4 p-3 rounded-2xl bg-[#271e18] border border-emerald-500/40 text-left flex items-center justify-between">
+                <div class="flex items-center space-x-2.5 truncate">
+                  <span class="text-emerald-400 text-lg">✓</span>
+                  <div class="truncate">
+                    <p class="text-xs font-bold text-emerald-200 truncate" x-text="fileName"></p>
+                    <p class="text-[10px] text-stone-400" x-text="fileSizeMB + ' MB'"></p>
+                  </div>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Empaquetado</span>
+              </div>
+            </template>
+          </div>
+
+          <!-- Metadatos opcionales -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div>
+              <label class="block text-[11px] font-medium text-stone-300 mb-1 ml-1">Título del Proyecto</label>
+              <input type="text" x-model="title" placeholder="Ej. Sistema de Inventario en Python"
+                class="w-full px-3.5 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 focus:outline-none focus:border-caramel-400">
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-stone-300 mb-1 ml-1">Desarrollador / Estudiante</label>
+              <input type="text" x-model="authors" placeholder="Ej. Oscar Álvarez"
+                class="w-full px-3.5 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 focus:outline-none focus:border-caramel-400">
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- Botón de Envío "Enviar para primer review" -->
+      <div class="pt-4">
+        <button type="button" @click="submitUpload()"
+          :disabled="isSubmitting || isCheckingYoutube"
+          class="group relative overflow-hidden w-full py-4 px-6 rounded-2xl text-xs sm:text-sm font-black tracking-wide shadow-xl flex items-center justify-center space-x-2.5 text-[#18110c] bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] hover:brightness-105 active:scale-[0.985] transition-all duration-300 ease-out cursor-pointer hover:shadow-2xl hover:shadow-caramel-500/30 disabled:opacity-60 disabled:cursor-not-allowed">
+          
+          <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none"></span>
+
+          <!-- Spinner durante envío -->
+          <template x-if="isSubmitting">
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-[#18110c]" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+          </template>
+
+          <span x-text="isSubmitting ? 'Procesando y enviando a revisión...' : 'Enviar para primer review'"></span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PANTALLA DE ÉXITO / CONFIRMACIÓN          -->
+    <!-- ========================================== -->
+    <div x-show="step === 4 || isSuccess" x-transition:enter="transition ease-out duration-400" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="py-6 text-center space-y-5">
+      
+      <!-- Círculo Verde Grande con Checkmark Animado -->
+      <div class="w-20 h-20 mx-auto rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 text-3xl shadow-2xl shadow-emerald-500/30 animate-pulse">
+        ✓
+      </div>
+
+      <div class="space-y-1.5">
+        <h2 class="text-2xl font-black text-white tracking-tight">¡Listo!</h2>
+        <p class="text-sm font-semibold text-stone-300 max-w-sm mx-auto leading-relaxed">
+          Un profesor estará revisando tu contenido para determinar si es útil para su primer review.
+        </p>
+        <p class="text-xs text-caramel-400 font-bold pt-1">
+          ¡Muchas gracias {{ current_user.nombre_completo or current_user.username or 'Casi Ingeniero' }}!
+        </p>
+      </div>
+
+      <!-- Botones de Acción -->
+      <div class="pt-5 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <button type="button" @click="resetForm()"
+          class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#1b1410] border border-caramel-500/25 hover:border-amber-400 text-xs font-bold text-stone-200 hover:text-white transition-all shadow-md">
+          Subir otro material
+        </button>
+        <a href="/"
+          class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] text-xs font-black text-[#18110c] hover:brightness-105 transition-all shadow-lg text-center">
+          Volver al Inicio
+        </a>
+      </div>
+
+    </div>
+
+  </div>
 
 </div>
 {% endblock %}
