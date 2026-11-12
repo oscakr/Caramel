@@ -4,7 +4,7 @@
 **Institución:** Universidad de Margarita (UNIMAR) - Decanato de Ingeniería  
 **Estudiante / CEO:** Oscar Álvarez (`oalvarez.7305@unimar.edu.ve`)  
 **Base de Datos:** Supabase PostgreSQL Cloud (AWS `us-west-2` activo 24/7)  
-**Última actualización:** 06 de Noviembre de 2026  
+**Última actualización:** 11 de Noviembre de 2026  
 
 ---
 
@@ -44,19 +44,19 @@ Para que el motor híbrido (`TF-IDF` + `Filtrado Curricular`) recomiende con pre
 
 ## 2. Modificación y Dinamismo del Formulario de Aportes
 
-El formulario de aportes (`/upload-material`) debe evolucionar para ofrecer una experiencia más guiada y libre de errores:
+El formulario de aportes (`/upload-material`) fue perfeccionado siguiendo la premisa **"ONE QUESTION AT A TIME"**:
 
-### Mejoras a Implementar:
-- [ ] **Dropdowns Encadenados / Dependientes (Carrera ➔ Trimestre ➔ Cátedra):**
-  * Al seleccionar la Carrera (ej. *Ingeniería de Sistemas*), el selector de Trimestres debe habilitar únicamente los trimestres vigentes.
-  * Al elegir el Trimestre (ej. *3º Trimestre*), el campo de Asignatura debe autocompletarse con las materias exclusivas de ese trimestre (`SIS-301 Estructuras de Datos`, `SIS-302 Arquitectura del Computador`, etc.).
-- [ ] **Previsualización Dinámica del Enlace en Tiempo Real:**
-  * Si el usuario pega una URL de YouTube, mostrar una mini previsualización del video embebido antes de publicar.
-  * Si es un enlace a PDF o Drive, mostrar un ícono de documento verificado.
-- [ ] **Soporte para Carga de Snippets de Código (Cuadro Nº 23):**
-  * Si el tipo de material seleccionado es `código`, desplegar un editor de texto o campo de carga de archivo (`.cpp`, `.py`, `.sql`, `.java`) para alimentar directamente la tabla `ARCHIVOS_CODIGO`.
-- [ ] **Validación Preventiva de Duplicados:**
-  * Alerta instantánea en caso de que un compañero intente registrar un libro o enlace que ya existe en el catálogo.
+### Mejoras Completadas:
+- [x] **Selector Ágil de Cátedras del Eje de Programación (Paso 1):**
+  * Catálogo oficial enfocado estrictamente en las 7 materias troncales de desarrollo: *Programación I, II, III y IV, Estructura de Datos, Bases de Datos I y II*.
+  * 3 botones táctiles principales con selector dinámico *smooth* (`⇄`) y buscador instantáneo para alternar materias sin recargar.
+- [x] **Eliminación de Casillas Redundantes (Paso 3):**
+  * Título asignado automáticamente con el nombre de la cátedra seleccionada (el docente en su panel define el tema específico en el plan de evaluación).
+  * Aportador vinculado automáticamente desde la sesión institucional activa del usuario.
+- [x] **Validación Preventiva de Duplicados en Vivo:**
+  * Alerta instantánea en caso de intentar subir un video de YouTube ya existente: *`⚠️ ¡El video que intentas aprobar ya fue validado anteriormente, más atento Casi Ingeniero!`*
+- [x] **Carga Local de Archivos con Límite de 30 MB:**
+  * Dropzones optimizados para PDF y paquetes comprimidos ZIP con cálculo dinámico de peso en MB y validación de tipos MIME.
 
 ---
 

@@ -60,14 +60,20 @@ flowchart LR
     S3 -->|Aprobación exitosa| S4["Confirmación: ¡Listo!"]
 ```
 
-### 📍 Paso 1 de 3: Selección de Cátedra
+### 📍 Paso 1 de 3: Selección de Cátedra (Pensum del Eje de Programación)
 * **Pregunta:** `¿Para qué cátedra está destinado tu contenido?`
-* **Botones Principales (Distribución 2 arriba, 1 centrado abajo):**
-  * `Programación III` (3º Trimestre)
-  * `Programación IV` (4º Trimestre)
-  * `Bases de Datos I` (4º Trimestre - Centrado)
-* **Selector Desplegable:** Permite explorar y seleccionar cualquier otra asignatura del pensum de UNIMAR.
-* **Comportamiento:** Al hacer clic, se selecciona la materia y avanza con microinteracción táctil al Paso 2.
+* **Catálogo Oficial Acotado:** Se restringe rigurosamente al eje académico de desarrollo y software de UNIMAR (7 asignaturas):
+  1. `Programación I` (1º Trimestre)
+  2. `Programación II` (2º Trimestre)
+  3. `Programación III` (3º Trimestre)
+  4. `Programación IV` (4º Trimestre)
+  5. `Estructura de Datos` (3º Trimestre)
+  6. `Bases de Datos I` (4º Trimestre)
+  7. `Bases de Datos II` (5º Trimestre)
+* **Botones Principales en Pantalla (2 arriba, 1 centrado abajo):**
+  * Inicialmente: `Programación III`, `Programación IV` y `Bases de Datos I`.
+  * **Interacción Smooth de Reemplazo (`⇄`):** Cada botón cuenta con un icono interactivo que abre un panel flotante (*drawer/modal*) con búsqueda en tiempo real. El estudiante puede buscar cualquier otra asignatura de las 7 y sustituir el botón en caliente con una transición suave.
+* **Comportamiento:** Al pulsar la materia deseada, se selecciona con respuesta háptica/visual y avanza automáticamente al Paso 2.
 
 ### 📍 Paso 2 de 3: Selección del Tipo de Material
 * **Pregunta:** `¿Qué tipo de material es el que deseas subir?`
@@ -77,22 +83,26 @@ flowchart LR
   3. `📦 ZIP de proyecto` (Código fuente completo empaquetado).
 * **Navegación:** Permite regresar al Paso 1 con el botón `← Cambiar de cátedra` o haciendo clic en el Punto 1.
 
-### 📍 Paso 3 de 3: Vistas Dinámicas Especializadas
+### 📍 Paso 3 de 3: Vistas Dinámicas Especializadas (Ultra-Minimalista)
+> **Principio de Diseño:** Siguiendo la premisa *"ONE QUESTION AT A TIME"*, se eliminaron completamente las casillas manuales de título y aportador.  
+> * **Título Automático:** El material toma como título el nombre de la cátedra seleccionada. El profesor asignará el área o tema específico del plan de evaluación durante la revisión en el panel docente.  
+> * **Aportador Automático:** Se asocia de manera transparente desde la sesión institucional activa del usuario.
+
 * **Caso YouTube (`materialType === 'video'`):**
-  * Título: `Pega aquí tu link de YouTube: [Cátedra Seleccionada]`
-  * Campo con ícono de YouTube y formato: `https://www.youtube.com/watch?v=...`
+  * Título: `Pega aquí tu link de YouTube para: [Cátedra Seleccionada]`
+  * Campo único con ícono de YouTube y formato: `https://www.youtube.com/watch?v=...`
   * Loader reactivo:
-    > *⌛ Consultando base de datos docente... Verificando que este enlace no haya sido editado anteriormente...*
+    > *⌛ Consultando base de datos docente... Verificando que este enlace no haya sido aportado anteriormente...*
   * Alerta de duplicado en caso de existir en BD:
     > *⚠️ ¡El video que intentas aprobar ya fue validado anteriormente, más atento Casi Ingeniero!*
   * Botón: `Enviar para primer review`
 * **Caso PDF (`materialType === 'pdf'`):**
-  * Encabezado: `Arroja aquí tu contenido de PDF`
-  * Dropzone (arrastrar/soltar o seleccionar archivo) con límite explícito de **30 MB**.
-  * Validación en cliente: Si el archivo supera 30 MB o no es `.pdf`, bloquea el formulario inmediatamente.
+  * Encabezado: `Arroja aquí tu contenido de PDF para: [Cátedra Seleccionada]`
+  * Dropzone (arrastrar/soltar o seleccionar archivo) con límite explícito de **30 MB** y previsualización con checkmark verde.
+  * Validación instantánea de tipo MIME y peso.
   * Botón: `Enviar para primer review`
 * **Caso ZIP (`materialType === 'zip'`):**
-  * Encabezado: `Arroja aquí tu contenido ZIP`
+  * Encabezado: `Arroja aquí tu contenido ZIP para: [Cátedra Seleccionada]`
   * Dropzone con medidor dinámico de peso en MB y límite de **30 MB**.
   * Validación de extensión `.zip` y tamaño máximo.
   * Botón: `Enviar para primer review`
