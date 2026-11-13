@@ -1,11 +1,11 @@
-# 🧭 BLUEPRINT TÉCNICO MAESTRO: PROYECTO CARAMEL
+# BLUEPRINT TÉCNICO MAESTRO: PROYECTO CARAMEL
 **Plataforma Web Colaborativa para la Gestión del Capital Intelectual en el Eje de Programación**  
 *Universidad de Margarita (UNIMAR) • Decanato de Ingeniería y Afines*  
-*Trabajo Especial de Grado — Oscar Álvarez*
+*Trabajo Especial de Grado — Oscar Alvarez*
 
 ---
 
-## 📌 Índice de Contenidos
+## Índice de Contenidos
 1. [Visión General de la Arquitectura](#1-visión-general-de-la-arquitectura)
 2. [Flujo de Aportaciones Multi-Step (Recuperado al 100%)](#2-flujo-de-aportaciones-multi-step)
 3. [Motor de Validación Inteligente de YouTube y Duplicados](#3-motor-de-validación-inteligente-de-youtube)
@@ -60,30 +60,23 @@ flowchart LR
     S3 -->|Aprobación exitosa| S4["Confirmación: ¡Listo!"]
 ```
 
-### 📍 Paso 1 de 3: Selección de Cátedra (Pensum del Eje de Programación)
+### Paso 1 de 3: Selección de Cátedra (Materias de tu Trimestre)
 * **Pregunta:** `¿Para qué cátedra está destinado tu contenido?`
-* **Catálogo Oficial Acotado:** Se restringe rigurosamente al eje académico de desarrollo y software de UNIMAR (7 asignaturas):
-  1. `Programación I` (1º Trimestre)
-  2. `Programación II` (2º Trimestre)
-  3. `Programación III` (3º Trimestre)
-  4. `Programación IV` (4º Trimestre)
-  5. `Estructura de Datos` (3º Trimestre)
-  6. `Bases de Datos I` (4º Trimestre)
-  7. `Bases de Datos II` (5º Trimestre)
+* **Catálogo Oficial Dinámico por Trimestre:** Se adapta automáticamente al trimestre actual del estudiante (UNIMAR Ingeniería de Sistemas), cargando las cátedras pertinentes del plan de estudio de su cohorte.
 * **Botones Principales en Pantalla (2 arriba, 1 centrado abajo):**
-  * Inicialmente: `Programación III`, `Programación IV` y `Bases de Datos I`.
-  * **Interacción Smooth de Reemplazo (`⇄`):** Cada botón cuenta con un icono interactivo que abre un panel flotante (*drawer/modal*) con búsqueda en tiempo real. El estudiante puede buscar cualquier otra asignatura de las 7 y sustituir el botón en caliente con una transición suave.
-* **Comportamiento:** Al pulsar la materia deseada, se selecciona con respuesta háptica/visual y avanza automáticamente al Paso 2.
+  * Presenta 3 cátedras iniciales del trimestre en curso.
+  * **Interacción Ágil de Reemplazo Aleatorio (``):** Cada botón cuenta con un icono de flecha con el mensaje *"Reemplazarla por otra de tu trimestre"*. Al hacer clic en la flecha, se sustituye instantáneamente por otra materia aleatoria de su trimestre que **no se encuentre presente** en ninguna de las 3 opciones activas en pantalla, garantizando dinamismo y eliminando la fricción de menús o listas emergentes.
+* **Comportamiento:** Al pulsar la materia deseada, se selecciona con respuesta visual y avanza automáticamente al Paso 2.
 
-### 📍 Paso 2 de 3: Selección del Tipo de Material
+### Paso 2 de 3: Selección del Tipo de Material
 * **Pregunta:** `¿Qué tipo de material es el que deseas subir?`
 * **Opciones en píldoras interactivas:**
-  1. `📄 PDF` (Libros, resúmenes o guías de laboratorio).
-  2. `🎥 Link de YouTube` (Clases magistrales, conferencias o tutoriales).
-  3. `📦 ZIP de proyecto` (Código fuente completo empaquetado).
+  1. `PDF` (Libros, resúmenes o guías de laboratorio).
+  2. `Link de YouTube` (Clases magistrales, conferencias o tutoriales).
+  3. `ZIP de proyecto` (Código fuente completo empaquetado).
 * **Navegación:** Permite regresar al Paso 1 con el botón `← Cambiar de cátedra` o haciendo clic en el Punto 1.
 
-### 📍 Paso 3 de 3: Vistas Dinámicas Especializadas (Ultra-Minimalista)
+### Paso 3 de 3: Vistas Dinámicas Especializadas (Ultra-Minimalista)
 > **Principio de Diseño:** Siguiendo la premisa *"ONE QUESTION AT A TIME"*, se eliminaron completamente las casillas manuales de título y aportador.  
 > * **Título Automático:** El material toma como título el nombre de la cátedra seleccionada. El profesor asignará el área o tema específico del plan de evaluación durante la revisión en el panel docente.  
 > * **Aportador Automático:** Se asocia de manera transparente desde la sesión institucional activa del usuario.
@@ -92,9 +85,9 @@ flowchart LR
   * Título: `Pega aquí tu link de YouTube para: [Cátedra Seleccionada]`
   * Campo único con ícono de YouTube y formato: `https://www.youtube.com/watch?v=...`
   * Loader reactivo:
-    > *⌛ Consultando base de datos docente... Verificando que este enlace no haya sido aportado anteriormente...*
+    > *Consultando base de datos docente... Verificando que este enlace no haya sido aportado anteriormente...*
   * Alerta de duplicado en caso de existir en BD:
-    > *⚠️ ¡El video que intentas aprobar ya fue validado anteriormente, más atento Casi Ingeniero!*
+    > *¡El video que intentas aprobar ya fue validado anteriormente, más atento Casi Ingeniero!*
   * Botón: `Enviar para primer review`
 * **Caso PDF (`materialType === 'pdf'`):**
   * Encabezado: `Arroja aquí tu contenido de PDF para: [Cátedra Seleccionada]`
@@ -107,12 +100,12 @@ flowchart LR
   * Validación de extensión `.zip` y tamaño máximo.
   * Botón: `Enviar para primer review`
 
-### 📍 Pantalla de Éxito / Confirmación
+### Pantalla de Éxito / Confirmación
 * Los 3 puntos cambian a color verde esmeralda.
-* Círculo verde grande con animación de checkmark (`✓`).
+* Círculo verde grande con animación de checkmark (``).
 * Mensaje pedagógico:
   > *"¡Listo! Un profesor estará revisando tu contenido para determinar si es útil para su primer review."*
-* Agradecimiento institucional: *"¡Muchas gracias Oscar Álvarez!"*
+* Agradecimiento institucional: *"¡Muchas gracias Oscar Alvarez!"*
 * Acciones: `Subir otro material` (resetea al Paso 1) y `Volver al Inicio` (redirige a `/`).
 
 ---
@@ -191,7 +184,7 @@ def extract_youtube_id(url: str | None) -> str | None:
 
 ## 7. Guía de Ejecución: Linux vs Windows
 
-### 🐧 En Linux (Arch Linux, Ubuntu, etc.)
+### En Linux (Arch Linux, Ubuntu, etc.)
 El script tradicional sigue funcionando exactamente igual:
 ```bash
 chmod +x run.sh
@@ -200,7 +193,7 @@ chmod +x run.sh
 caramel
 ```
 
-### 🪟 En Windows (Tu entorno actual)
+### En Windows (Tu entorno actual)
 Tienes dos opciones nativas listas para usar sin necesidad de bash:
 
 #### Opción A: Mediante doble clic o CMD
@@ -242,4 +235,4 @@ git push -u origin master
 ```
 
 Además, cuentas con la copia física comprimida lista para llevar:  
-📦 [Caramel-RECUPERADO.zip](file:///C:/Users/Admin/Downloads/Caramel/Caramel-RECUPERADO.zip)
+[Caramel-RECUPERADO.zip](file:///C:/Users/Admin/Downloads/Caramel/Caramel-RECUPERADO.zip)

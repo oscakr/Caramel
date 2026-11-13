@@ -7,16 +7,14 @@
 
   <!-- Header Collage & Visual Banner -->
   <div class="relative w-full max-w-[380px] h-44 rounded-3xl overflow-hidden mb-4 border border-caramel-500/20 shadow-xl">
-    <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800" class="w-full h-full object-cover brightness-75 contrast-110" alt="Caramel">
-    <div class="absolute inset-0 bg-gradient-to-t from-[#1b1410] via-[#1b1410]/50 to-transparent"></div>
+    <img src="/static/img/login_banner.jpg" class="w-full h-full object-cover brightness-85 contrast-105" alt="Caramel Banner">
+    <div class="absolute inset-0 bg-gradient-to-t from-[#1b1410] via-[#1b1410]/40 to-transparent"></div>
     
     <!-- Floating Caramel Brand Monogram -->
     <div class="absolute inset-0 flex flex-col items-center justify-center">
       <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-400 to-amber-200 p-0.5 shadow-2xl">
-        <div class="w-full h-full bg-[#201813] rounded-2xl flex items-center justify-center">
-          <svg class="w-8 h-8 text-caramel-400 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          </svg>
+        <div class="w-full h-full bg-[#201813] rounded-2xl flex items-center justify-center p-2.5">
+          <img src="/static/img/caramel_logo.png" class="w-full h-full object-contain drop-shadow-md" alt="Logo Caramel">
         </div>
       </div>
       <h1 class="text-2xl font-bold tracking-wide text-[#fdf7f1] mt-2 font-serif">Caramel</h1>
@@ -42,7 +40,7 @@
           Correo institucional o usuario
         </label>
         <div class="relative">
-          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">✉</span>
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></span>
           <input type="text" name="username" required placeholder="tu.nombre@unimar.edu.ve o usuario"
             class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition">
         </div>
@@ -53,7 +51,7 @@
           Contraseña
         </label>
         <div class="relative">
-          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400 text-xs">🔒</span>
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span>
           <input type="password" name="password" required placeholder="••••••••"
             class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition">
         </div>
@@ -72,7 +70,7 @@
     <div class="mt-5 text-center">
       <p class="text-xs text-stone-400">
         ¿No tienes cuenta? 
-        <a href="/register" class="text-caramel-400 hover:text-caramel-300 font-semibold underline ml-1">Regístrate aquí</a>
+        <a href="/register" class="text-caramel-400 hover:text-[#7FB3A6] font-semibold underline ml-1">Regístrate aquí</a>
       </p>
     </div>
 

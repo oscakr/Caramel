@@ -15,7 +15,7 @@
             caramel: {
               50: '#fbf7f2',
               100: '#f5ebe0',
-              200: '#edd8c3',
+              200: '#E6D4BA', // Tono crema pergamino cálido institucional
               300: '#e1be9e',
               400: '#d49c6d',
               500: '#c6864d',
@@ -25,11 +25,43 @@
               900: '#643a27',
               950: '#361d13',
             },
+            crema: {
+              DEFAULT: '#E6D4BA',
+              light: '#f2e8d9',
+              dark: '#cfb99b',
+            },
             espresso: {
               800: '#2b211a',
               850: '#231b15',
               900: '#1b1410',
               950: '#140f0c',
+            },
+            // Reemplazo integral de tonos por la nueva paleta institucional #7FB3A6 / #2F4A44
+            amber: {
+              50: '#f0f7f5',
+              100: '#ddede9',
+              200: '#bfddd6',
+              300: '#9ecbc0',
+              400: '#8dbfae',
+              500: '#7FB3A6',
+              600: '#639589',
+              700: '#48736a',
+              800: '#2F4A44',
+              900: '#203430',
+              950: '#13211e',
+            },
+            yellow: {
+              50: '#f0f7f5',
+              100: '#ddede9',
+              200: '#bfddd6',
+              300: '#9ecbc0',
+              400: '#8dbfae',
+              500: '#7FB3A6',
+              600: '#639589',
+              700: '#48736a',
+              800: '#2F4A44',
+              900: '#203430',
+              950: '#13211e',
             }
           }
         }
@@ -49,30 +81,31 @@
 
   <!-- Desktop Top Control Bar -->
   <div class="hidden md:flex items-center justify-between px-6 py-2 bg-[#1b1410] border-b border-caramel-500/15 text-xs text-stone-400">
-    <div class="flex items-center space-x-3 cursor-pointer select-none group"
+    <div class="flex items-center space-x-2.5 cursor-pointer select-none group"
          title="Caramel"
          @click="
            clearTimeout(ceoTimer);
            ceoClicks++;
            if (ceoClicks === 3) {
-             ceoToast = '⚡ 3 clics restantes para modo CEO...';
+             ceoToast = '3 clics restantes para modo CEO...';
            } else if (ceoClicks === 4) {
-             ceoToast = '⚡ 2 clics restantes...';
+             ceoToast = '2 clics restantes...';
            } else if (ceoClicks === 5) {
-             ceoToast = '⚡ 1 clic restante...';
+             ceoToast = '1 clic restante...';
            } else if (ceoClicks >= 6) {
              ceoClicks = 0;
              {% if current_user and current_user.is_ceo %}
-               ceoToast = '👑 ¡Acceso CEO Concedido! Iniciando Simulador...';
+               ceoToast = '¡Acceso CEO Concedido! Iniciando Simulador...';
                setTimeout(() => { window.location.href = '/recommender-lab'; }, 600);
              {% else %}
-               ceoToast = '⛔ Acceso restringido: Exclusivo para rango CEO';
+               ceoToast = 'Acceso restringido: Exclusivo para rango CEO';
                setTimeout(() => { ceoToast = ''; }, 3000);
              {% endif %}
            }
            ceoTimer = setTimeout(() => { ceoClicks = 0; ceoToast = ''; }, 3500);
          ">
-      <span class="font-semibold text-caramel-300 group-hover:text-amber-200 transition">Caramel</span>
+      <img src="/static/img/caramel_logo.png" class="w-5 h-5 object-contain group-hover:scale-110 transition-transform" alt="Caramel">
+      <span class="font-semibold text-caramel-300 group-hover:text-[#7FB3A6] transition">Caramel</span>
       <span class="text-stone-600">|</span>
       <span>Plataforma Académica</span>
       <span x-show="ceoToast" x-transition class="ml-2 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] border border-amber-500/30" x-text="ceoToast"></span>
@@ -95,23 +128,73 @@
       {% endif %}
 
       <!-- View Switcher -->
-      <button onclick="toggleViewMode()" class="px-3 py-1 rounded bg-[#2b211a] hover:bg-[#382b22] text-stone-300 border border-caramel-500/20 transition flex items-center space-x-1.5">
+      <button onclick="toggleViewMode()" class="px-3 py-1 rounded bg-[#2b211a] hover:bg-[#382b22] text-stone-300 border border-caramel-500/20 transition flex items-center space-x-1.5 cursor-pointer">
         <svg class="w-3.5 h-3.5 text-caramel-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
         <span id="viewModeLabel">Vista ampliada</span>
       </button>
+
+      <script>
+        // Inline override so browser cache is bypassed
+        (function() {
+          window.toggleViewMode = function() {
+            document.body.classList.toggle('view-desktop');
+            var isDesktop = document.body.classList.contains('view-desktop');
+            try { localStorage.setItem('caramel_view_mode', isDesktop ? 'desktop' : 'mobile'); } catch(e){}
+            var label = document.getElementById('viewModeLabel');
+            if (label) {
+              label.textContent = isDesktop ? 'Vista Móvil' : 'Vista ampliada';
+            }
+          };
+          
+          function initViewMode() {
+            var saved = 'mobile';
+            try { saved = localStorage.getItem('caramel_view_mode') || 'mobile'; } catch(e){}
+            var isDesk = (saved === 'desktop');
+            if (isDesk) {
+              document.body.classList.add('view-desktop');
+            }
+            var label = document.getElementById('viewModeLabel');
+            if (label) {
+              label.textContent = isDesk ? 'Vista Móvil' : 'Vista ampliada';
+            }
+          }
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initViewMode);
+          } else {
+            initViewMode();
+          }
+        })();
+      </script>
     </div>
   </div>
 
   <!-- Mobile App Frame Container -->
   <div class="app-frame-container flex flex-col justify-between">
     
-    <!-- Top Notch / Status Bar -->
-    <div class="pt-3 px-6 pb-2 flex items-center justify-between text-xs text-stone-400 font-medium select-none">
-      <span>9:41</span>
+    <!-- Top Notch / Status Bar (Visible exclusivamente en Vista Móvil con Hardware Real) -->
+    <div class="mobile-status-bar pt-3 px-6 pb-2 items-center justify-between text-xs text-stone-400 font-medium select-none">
+      <!-- Reloj Real del Sistema del Dispositivo -->
+      <span id="mobile-system-clock" class="font-semibold text-stone-300 tracking-tight">--:--</span>
+      
+      <!-- Indicadores de Hardware (WiFi y Batería Real del Dispositivo) -->
       <div class="flex items-center space-x-2">
-        <!-- Signal / Wifi / Battery -->
-        <svg class="w-3.5 h-3.5 text-stone-300" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z"/></svg>
-        <div class="w-5 h-2.5 rounded-sm border border-stone-400 p-0.5 flex items-center"><div class="h-full w-3 bg-amber-300 rounded-2xs"></div></div>
+        <!-- WiFi / Señal -->
+        <svg class="w-3.5 h-3.5 text-stone-400" fill="currentColor" viewBox="0 0 24 24" title="Conexión activa">
+          <path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z"/>
+        </svg>
+
+        <!-- Batería Real del Dispositivo (Web Battery API) -->
+        <div id="mobile-battery-container" class="flex items-center space-x-1" title="Batería del equipo">
+          <span id="mobile-battery-text" class="text-[10px] font-mono text-stone-400 font-semibold"></span>
+          <!-- Indicador de Carga Eléctrica -->
+          <svg id="mobile-battery-bolt" class="w-3 h-3 text-[#7FB3A6] hidden animate-pulse" fill="currentColor" viewBox="0 0 20 20" title="Cargando">
+            <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.381z" clip-rule="evenodd"/>
+          </svg>
+          <!-- Contorno de la Pila con Relleno Dinámico -->
+          <div class="w-5 h-2.5 rounded-xs border border-stone-400 p-[1px] flex items-center">
+            <div id="mobile-battery-level" class="h-full bg-[#7FB3A6] rounded-3xs transition-all duration-500" style="width: 100%;"></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -125,7 +208,7 @@
     <nav class="fixed bottom-3 left-1/2 -translate-x-1/2 w-[92%] max-w-[400px] z-50">
       <div class="glass-panel rounded-full py-2.5 px-6 shadow-2xl flex items-center justify-between border border-caramel-500/25">
         <!-- Home -->
-        <a href="/" class="flex flex-col items-center group transition {% if active_nav == 'feed' %}text-caramel-300{% else %}text-stone-400 hover:text-stone-200{% endif %}">
+        <a href="/" class="flex flex-col items-center group transition {% if active_nav == 'feed' %}text-caramel-300{% else %}text-stone-400 hover:text-[#7FB3A6]{% endif %}">
           <svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
           </svg>
@@ -133,7 +216,7 @@
         </a>
 
         <!-- Explore / Catalog -->
-        <a href="/explore" class="flex flex-col items-center group transition {% if active_nav == 'explore' %}text-caramel-300{% else %}text-stone-400 hover:text-stone-200{% endif %}">
+        <a href="/explore" class="flex flex-col items-center group transition {% if active_nav == 'explore' %}text-caramel-300{% else %}text-stone-400 hover:text-[#7FB3A6]{% endif %}">
           <svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
           </svg>
@@ -141,7 +224,7 @@
         </a>
 
         <!-- Notifications -->
-        <a href="/notifications" class="flex flex-col items-center group transition relative {% if active_nav == 'notifications' %}text-caramel-300{% else %}text-stone-400 hover:text-stone-200{% endif %}">
+        <a href="/notifications" class="flex flex-col items-center group transition relative {% if active_nav == 'notifications' %}text-caramel-300{% else %}text-stone-400 hover:text-[#7FB3A6]{% endif %}">
           <svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
           </svg>
@@ -150,7 +233,7 @@
         </a>
 
         <!-- Profile -->
-        <a href="/profile" class="flex flex-col items-center group transition {% if active_nav == 'profile' %}text-caramel-300{% else %}text-stone-400 hover:text-stone-200{% endif %}">
+        <a href="/profile" class="flex flex-col items-center group transition {% if active_nav == 'profile' %}text-caramel-300{% else %}text-stone-400 hover:text-[#7FB3A6]{% endif %}">
           <img src="{{ current_user.avatar_url }}" class="w-5 h-5 rounded-full object-cover border border-caramel-400/50 group-hover:scale-110 transition" alt="Perfil">
           <span class="text-[10px] mt-0.5 font-medium">Perfil</span>
         </a>
@@ -181,27 +264,27 @@
                  clearTimeout(ceoTimer);
                  ceoClicks++;
                  if (ceoClicks === 3) {
-                   ceoToast = '⚡ 3 clics restantes para modo CEO...';
+                   ceoToast = '3 clics restantes para modo CEO...';
                  } else if (ceoClicks === 4) {
-                   ceoToast = '⚡ 2 clics restantes...';
+                   ceoToast = '2 clics restantes...';
                  } else if (ceoClicks === 5) {
-                   ceoToast = '⚡ 1 clic restante...';
+                   ceoToast = '1 clic restante...';
                  } else if (ceoClicks >= 6) {
                    ceoClicks = 0;
                    {% if current_user and current_user.is_ceo %}
-                     ceoToast = '👑 ¡Acceso CEO Concedido! Abriendo Simulador...';
+                     ceoToast = '¡Acceso CEO Concedido! Abriendo Simulador...';
                      setTimeout(() => { window.location.href = '/recommender-lab'; }, 600);
                    {% else %}
-                     ceoToast = '⛔ Acceso restringido: Exclusivo para rango CEO';
+                     ceoToast = 'Acceso restringido: Exclusivo para rango CEO';
                      setTimeout(() => { ceoToast = ''; }, 3000);
                    {% endif %}
                  }
                  ceoTimer = setTimeout(() => { ceoClicks = 0; ceoToast = ''; }, 3500);
                ">
-            <div class="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400 font-serif font-bold group-hover:scale-110 transition-transform">C</div>
-            <span class="font-serif font-bold text-base text-caramel-300 group-hover:text-amber-200 transition-colors">Caramel</span>
+            <img src="/static/img/caramel_logo.png" class="w-7 h-7 object-contain group-hover:scale-110 transition-transform" alt="Caramel">
+            <span class="font-serif font-bold text-base text-caramel-300 group-hover:text-[#7FB3A6] transition-colors">Caramel</span>
           </div>
-          <button @click="mobileMenuOpen = false" class="text-stone-400 hover:text-white text-lg transition">✕</button>
+          <button @click="mobileMenuOpen = false" class="text-stone-400 hover:text-white p-1 transition" aria-label="Cerrar"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
         </div>
 
         <!-- Feedback Toast for CEO Click Sequence -->
@@ -219,10 +302,10 @@
 
         <!-- Clean Institutional Navigation Links (Publicly Safe) -->
         <div class="space-y-1 text-xs">
-          <a href="/" class="block px-3 py-2 rounded-xl {% if active_nav == 'feed' %}bg-amber-500/15 text-amber-300 font-medium{% else %}text-stone-300 hover:bg-[#2b211a] hover:text-white transition{% endif %}">🏠 Inicio</a>
-          <a href="/explore" class="block px-3 py-2 rounded-xl {% if active_nav == 'explore' %}bg-amber-500/15 text-amber-300 font-medium{% else %}text-stone-300 hover:bg-[#2b211a] hover:text-white transition{% endif %}">🧭 Catálogo Académico</a>
-          <a href="/upload-material" class="block px-3 py-2 rounded-xl text-stone-300 hover:bg-[#2b211a] hover:text-white transition">📤 Aportar Material</a>
-          <a href="/profile" class="block px-3 py-2 rounded-xl {% if active_nav == 'profile' %}bg-amber-500/15 text-amber-300 font-medium{% else %}text-stone-300 hover:bg-[#2b211a] hover:text-white transition{% endif %}">👤 Mi Perfil y Guardados</a>
+          <a href="/" class="block px-3 py-2 rounded-xl {% if active_nav == 'feed' %}bg-amber-500/15 text-amber-300 font-medium{% else %}text-stone-300 hover:bg-[#2b211a] hover:text-[#7FB3A6] transition{% endif %}">Inicio</a>
+          <a href="/explore" class="block px-3 py-2 rounded-xl {% if active_nav == 'explore' %}bg-amber-500/15 text-amber-300 font-medium{% else %}text-stone-300 hover:bg-[#2b211a] hover:text-[#7FB3A6] transition{% endif %}">Catálogo Académico</a>
+          <a href="/upload-material" class="block px-3 py-2 rounded-xl text-stone-300 hover:bg-[#2b211a] hover:text-[#7FB3A6] transition">Aportar Material</a>
+          <a href="/profile" class="block px-3 py-2 rounded-xl {% if active_nav == 'profile' %}bg-amber-500/15 text-amber-300 font-medium{% else %}text-stone-300 hover:bg-[#2b211a] hover:text-[#7FB3A6] transition{% endif %}">Mi Perfil y Guardados</a>
         </div>
       </div>
 
@@ -236,7 +319,7 @@
   </div>
   {% endif %}
 
-  <script src="/static/js/app.js"></script>
+  <script src="/static/js/app.js?v=20261113b"></script>
   {% block extra_scripts %}{% endblock %}
 </body>
 </html>

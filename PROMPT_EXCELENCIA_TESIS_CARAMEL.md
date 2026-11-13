@@ -1,4 +1,4 @@
-# 🎓 Requerimientos y Especificaciones Técnicas - Plataforma Web Colaborativa (Caramel - UNIMAR)
+# Requerimientos y Especificaciones Técnicas - Plataforma Web Colaborativa (Caramel - UNIMAR)
 
 > **Documento fuente:** `PROMPTexcelenciatesisCARAMEL.docx`  
 > **Universidad:** Universidad de Margarita (UNIMAR) - Decanato de Ingeniería y Afines  

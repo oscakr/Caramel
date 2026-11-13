@@ -37,7 +37,7 @@ def seed_database():
             "username": "oalvarez.7305",
             "email": "oalvarez.7305@unimar.edu.ve",
             "password": default_pwd,
-            "full_name": "Oscar Álvarez",
+            "full_name": "Oscar Alvarez",
             "carrera": "Ingeniería de Sistemas",
             "trimestre": 3,
             "id_rol": 4,
@@ -315,7 +315,26 @@ def seed_database():
     ]
 
     docs_created = []
-    for d_data in docs_data:
+    # Institutional Verification Assignments:
+    # Flavio (Docente): Calculus, Vector, Databases, Data Structures
+    # Elena (Curadora): Operations Research, Linear Algebra, Physics
+    # Oscar (CEO): Kotlin, Python Data Science, SQL
+    doc_verifiers = {
+        0: users_created[1].id,  # Ing. Flavio Rosales (Docente)
+        1: users_created[1].id,  # Ing. Flavio Rosales (Docente)
+        2: users_created[2].id,  # Dra. Elena Mendoza (Curador)
+        3: users_created[1].id,  # Ing. Flavio Rosales (Docente)
+        4: users_created[0].id,  # Oscar Alvarez (CEO)
+        5: users_created[0].id,  # Oscar Alvarez (CEO)
+        6: users_created[0].id,  # Oscar Alvarez (CEO)
+        7: users_created[1].id,  # Ing. Flavio Rosales (Docente)
+        8: users_created[2].id,  # Dra. Elena Mendoza (Curador)
+        9: users_created[2].id,  # Dra. Elena Mendoza (Curador)
+    }
+
+    for idx, d_data in enumerate(docs_data):
+        d_data["verified_by_id"] = doc_verifiers.get(idx, users_created[1].id)
+        d_data["status"] = "aprobado"
         doc = Document(**d_data)
         db.add(doc)
         docs_created.append(doc)

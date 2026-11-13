@@ -20,7 +20,7 @@
 
     <!-- Bookmark Button -->
     <form action="/document/{{ document.id }}/bookmark" method="POST" class="absolute top-3 right-3">
-      <button type="submit" class="w-9 h-9 rounded-full bg-black/60 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:text-amber-400 transition shadow">
+      <button type="submit" class="w-9 h-9 rounded-full bg-black/60 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:text-[#7FB3A6] transition shadow">
         {% if is_bookmarked %}
         <svg class="w-5 h-5 text-amber-400 fill-amber-400" viewBox="0 0 24 24"><path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
         {% else %}
@@ -45,7 +45,7 @@
         </span>
         <h1 class="text-xl font-extrabold text-[#fdf8f4] leading-tight">{{ document.title }}</h1>
         <p class="text-xs text-caramel-300 font-medium">Por: {{ document.authors }}</p>
-        <p class="text-[10px] text-stone-400">{{ document.publisher }} • {{ document.pages }} págs • {{ document.year }}</p>
+        <p class="text-[10px] text-[#E6D4BA]/80 font-medium">{{ document.publisher }} • {{ document.pages }} págs • {{ document.year }}</p>
       </div>
     </div>
   </div>
@@ -54,11 +54,11 @@
   <div class="flex flex-wrap gap-1.5 pt-1">
     {% for mat in document.materias.split(',') %}
     <span class="px-2.5 py-1 rounded-full bg-[#271d17] border border-caramel-500/20 text-[10px] text-stone-300 font-medium">
-      📚 {{ mat.strip() }}
+      {{ mat.strip() }}
     </span>
     {% endfor %}
     <span class="px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-[10px] text-amber-300 font-medium">
-      🎯 Trimestres: {{ document.trimestres }}
+      Trimestres: {{ document.trimestres }}
     </span>
   </div>
 
@@ -67,31 +67,31 @@
     {% if document.material_type == 'video' and document.external_url %}
     <a href="{{ document.external_url }}" target="_blank" rel="noopener noreferrer" 
        class="py-2.5 px-3 rounded-2xl btn-caramel text-xs font-bold flex items-center justify-center space-x-1.5 shadow">
-      <span>▶</span>
+      <svg class="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 20 20"><path d="M4 4l12 6-12 6V4z"/></svg>
       <span>Ver Video</span>
     </a>
     {% elif document.external_url and document.external_url != '#' %}
     <a href="{{ document.external_url }}" target="_blank" rel="noopener noreferrer"
        class="py-2.5 px-3 rounded-2xl btn-caramel text-xs font-bold flex items-center justify-center space-x-1.5 shadow">
-      <span>📖</span>
+      <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
       <span>Acceder</span>
     </a>
     {% else %}
     <button @click="readModalOpen = true" class="py-2.5 px-3 rounded-2xl btn-caramel text-xs font-bold flex items-center justify-center space-x-1.5 shadow">
-      <span>📖</span>
+      <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
       <span>Leer</span>
     </button>
     {% endif %}
     
     <form action="/document/{{ document.id }}/bookmark" method="POST" class="w-full">
       <button type="submit" class="w-full py-2.5 px-3 rounded-2xl btn-caramel-secondary text-xs font-semibold flex items-center justify-center space-x-1.5">
-        <span>💾</span>
+        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
         <span>{% if is_bookmarked %}Guardado{% else %}Guardar{% endif %}</span>
       </button>
     </form>
 
     <button @click="reviewModalOpen = true" class="py-2.5 px-3 rounded-2xl bg-[#32251d] hover:bg-[#3d2e24] text-stone-200 border border-caramel-500/20 text-xs font-semibold flex items-center justify-center space-x-1.5 transition">
-      <span>✍️</span>
+      <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
       <span>Calificar</span>
     </button>
   </div>
@@ -101,10 +101,10 @@
   <div class="space-y-1.5 pt-1">
     <div class="flex items-center justify-between text-xs text-stone-400 px-1">
       <span class="font-bold text-amber-300 flex items-center space-x-1.5">
-        <span>▶</span>
+        <svg class="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 20 20"><path d="M4 4l12 6-12 6V4z"/></svg>
         <span>Reproductor de Clase / Video</span>
       </span>
-      <span class="text-[10px] text-stone-500">Recurso verificado</span>
+      <span class="text-[10px] text-stone-500">Recurso verificado por {{ document.verifier_name }}</span>
     </div>
     <div class="w-full aspect-video rounded-2xl overflow-hidden border border-caramel-500/25 bg-black shadow-xl">
       <iframe src="{{ youtube_embed_url }}" 
@@ -120,7 +120,7 @@
   <!-- Description Snippet -->
   <div class="p-3.5 rounded-2xl bg-[#241c16] border border-caramel-500/15">
     <h3 class="text-xs font-bold text-stone-200 mb-1.5">Sinopsis y Contenido Académico</h3>
-    <p class="text-xs text-stone-300 leading-relaxed">
+    <p class="text-xs text-[#E6D4BA]/90 leading-relaxed font-normal">
       {{ document.description }}
     </p>
   </div>
@@ -137,8 +137,8 @@
       <div class="text-center space-y-1">
         <div class="text-4xl font-extrabold text-amber-300 tracking-tight">{{ document.rating_avg }}</div>
         <div class="flex items-center justify-center space-x-0.5 text-amber-400 text-sm">
-          {% for _ in range(document.rating_avg|round|int) %}★{% endfor %}
-          {% for _ in range(5 - (document.rating_avg|round|int)) %}<span class="text-stone-600">★</span>{% endfor %}
+          {% for _ in range(document.rating_avg|round|int) %}<svg class="w-3 h-3 text-amber-400 fill-current inline-block" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>{% endfor %}
+          {% for _ in range(5 - (document.rating_avg|round|int)) %}<svg class="w-3 h-3 text-stone-600 fill-current inline-block" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>{% endfor %}
         </div>
         <div class="text-[10px] text-stone-400">Puntaje Global</div>
       </div>
@@ -198,7 +198,7 @@
     {% if document.reviews and document.reviews|length > 0 %}
     <div class="pt-3 border-t border-caramel-500/15 flex items-center justify-between">
       <div class="flex items-center space-x-2">
-        <span class="text-xs">👥</span>
+        <svg class="w-4 h-4 text-caramel-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
         <span class="text-[11px] text-stone-300 font-medium">Varios de tus compañeros lo han leído:</span>
       </div>
       
@@ -216,7 +216,7 @@
   <div class="space-y-3">
     <div class="flex items-center justify-between">
       <h3 class="text-sm font-bold text-stone-200">Reviews de la Comunidad</h3>
-      <button @click="reviewModalOpen = true" class="text-xs text-caramel-300 hover:text-caramel-200 font-semibold underline">
+      <button @click="reviewModalOpen = true" class="text-xs text-caramel-300 hover:text-[#7FB3A6] font-semibold underline">
         + Dejar Reseña
       </button>
     </div>
@@ -235,8 +235,8 @@
           </div>
 
           <div class="flex items-center space-x-0.5 text-amber-400 text-xs">
-            {% for _ in range(rev.rating) %}★{% endfor %}
-            {% for _ in range(5 - rev.rating) %}<span class="text-stone-600">★</span>{% endfor %}
+            {% for _ in range(rev.rating) %}<svg class="w-3 h-3 text-amber-400 fill-current inline-block" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>{% endfor %}
+            {% for _ in range(5 - rev.rating) %}<svg class="w-3 h-3 text-stone-600 fill-current inline-block" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>{% endfor %}
           </div>
         </div>
 
@@ -246,8 +246,8 @@
 
         <div class="flex items-center justify-between pt-1 text-[10px] text-stone-400">
           <span>{{ rev.created_at.strftime('%d/%m/%Y') }}</span>
-          <div class="flex items-center space-x-1 cursor-pointer hover:text-amber-400 transition">
-            <span>♥</span>
+          <div class="flex items-center space-x-1 cursor-pointer hover:text-[#7FB3A6] transition">
+            <svg class="w-3 h-3 text-stone-400 hover:text-red-400 shrink-0 inline-block" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/></svg>
             <span>{{ rev.likes_count }} útiles</span>
           </div>
         </div>
@@ -256,7 +256,7 @@
     </div>
     {% else %}
     <div class="p-6 rounded-3xl bg-[#241c17] border border-caramel-500/15 text-center space-y-1">
-      <div class="text-lg">⭐</div>
+      <svg class="w-8 h-8 mx-auto text-amber-400/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
       <p class="text-xs font-bold text-white">Sin valoraciones todavía</p>
       <p class="text-[11px] text-stone-400">Sé el primero en calificar este material para orientar a tus compañeros.</p>
     </div>
@@ -270,7 +270,7 @@
     <div class="relative w-full max-w-sm bg-[#221a15] rounded-3xl p-5 border border-caramel-500/30 shadow-2xl z-10 space-y-4">
       <div class="flex items-center justify-between pb-2 border-b border-caramel-500/20">
         <h4 class="text-sm font-bold text-stone-100">Calificar {{ document.title }}</h4>
-        <button @click="reviewModalOpen = false" class="text-stone-400 hover:text-white">✕</button>
+        <button @click="reviewModalOpen = false" class="text-stone-400 hover:text-white p-1 transition" aria-label="Cerrar"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
       </div>
 
       <form action="/document/{{ document.id }}/review" method="POST" class="space-y-4">
@@ -280,9 +280,7 @@
           <div class="flex items-center justify-center space-x-2 text-2xl">
             <input type="hidden" name="rating" id="selectedRatingInput" value="5">
             {% for i in range(1, 6) %}
-            <button type="button" onclick="selectStarRating({{ i }})" id="star-btn-{{ i }}" class="text-amber-400 hover:scale-125 transition">
-              ★
-            </button>
+            <button type="button" onclick="selectStarRating({{ i }})" id="star-btn-{{ i }}" class="text-amber-400 hover:scale-125 transition inline-flex items-center justify-center p-1" aria-label="Calificar"><svg class="w-6 h-6 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg></button>
             {% endfor %}
           </div>
         </div>
@@ -310,7 +308,7 @@
           <h3 class="text-base font-bold text-white">{{ document.title }}</h3>
           <p class="text-xs text-caramel-300">Visor de Lectura Académica • Capítulo 1 Muestrario</p>
         </div>
-        <button @click="readModalOpen = false" class="text-stone-400 hover:text-white">✕</button>
+        <button @click="readModalOpen = false" class="text-stone-400 hover:text-white p-1 transition" aria-label="Cerrar"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
       </div>
 
       <div class="p-4 rounded-2xl bg-[#140f0c] border border-caramel-500/15 space-y-3 font-serif text-xs text-stone-300 leading-relaxed">
@@ -328,7 +326,7 @@
 
       <div class="flex items-center justify-between pt-2">
         <span class="text-[10px] text-stone-500">Documento indexado para el algoritmo de Caramel</span>
-        <button @click="readModalOpen = false" class="px-4 py-2 rounded-xl bg-amber-500/20 text-amber-300 text-xs font-bold hover:bg-amber-500/30 transition">
+        <button @click="readModalOpen = false" class="px-4 py-2 rounded-xl bg-amber-500/20 text-[#7FB3A6] text-xs font-bold hover:bg-[#7FB3A6]/30 transition">
           Cerrar Visor
         </button>
       </div>

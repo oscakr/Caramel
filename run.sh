@@ -41,10 +41,10 @@ start_foreground() {
   fi
 
   source venv/bin/activate
-  echo -e "\033[1;32m[✓] Base de Datos:\033[0m Supabase Cloud PostgreSQL (Activa 24/7 en la nube)"
-  echo -e "\033[1;32m[✓] Acceso Local:\033[0m  http://localhost:${PORT}"
+  echo -e "\033[1;32m[OK] Base de Datos:\033[0m Supabase Cloud PostgreSQL (Activa 24/7 en la nube)"
+  echo -e "\033[1;32m[OK] Acceso Local:\033[0m  http://localhost:${PORT}"
   if [ "$LOCAL_IP" != "localhost" ]; then
-    echo -e "\033[1;32m[✓] Acceso WiFi:\033[0m   http://${LOCAL_IP}:${PORT} (Para tus compañeros)"
+    echo -e "\033[1;32m[OK] Acceso WiFi:\033[0m   http://${LOCAL_IP}:${PORT} (Para tus compañeros)"
   fi
   echo -e "\033[0;37m-----------------------------------------------------------------\033[0m"
   echo -e "\033[1;35m[*] Presiona Ctrl+C en cualquier momento para detener.\033[0m"
@@ -63,7 +63,7 @@ wait_and_open_browser() {
     for i in {1..40}; do
       if curl -s -m 1 "http://127.0.0.1:${PORT}/login" >/dev/null 2>&1; then
         if command -v notify-send >/dev/null 2>&1; then
-          notify-send "Caramel Listo 🚀" "Plataforma activa en http://localhost:${PORT}" -i applications-education 2>/dev/null || true
+          notify-send "Caramel Listo" "Plataforma activa en http://localhost:${PORT}" -i applications-education 2>/dev/null || true
         fi
         if command -v xdg-open >/dev/null 2>&1; then
           xdg-open "http://localhost:${PORT}/login" >/dev/null 2>&1 &
@@ -77,7 +77,7 @@ wait_and_open_browser() {
 
 start_background() {
   if fuser "${PORT}/tcp" >/dev/null 2>&1; then
-    echo -e "\033[1;32m[✓] Caramel ya está corriendo en http://localhost:${PORT}\033[0m"
+    echo -e "\033[1;32m[OK] Caramel ya está corriendo en http://localhost:${PORT}\033[0m"
     if command -v xdg-open >/dev/null 2>&1; then
       xdg-open "http://localhost:${PORT}/login" >/dev/null 2>&1 &
     fi
@@ -88,11 +88,11 @@ start_background() {
   echo $! > "$PID_FILE"
 
   echo "================================================================="
-  echo -e "\033[1;32m[✓] Conectando con Supabase e iniciando servidor...\033[0m"
-  echo -e "\033[1;32m[✓] Base de Datos:\033[0m Supabase Cloud PostgreSQL (24/7)"
-  echo -e "\033[1;32m[✓] Acceso Local:\033[0m  http://localhost:${PORT}"
+  echo -e "\033[1;32m[OK] Conectando con Supabase e iniciando servidor...\033[0m"
+  echo -e "\033[1;32m[OK] Base de Datos:\033[0m Supabase Cloud PostgreSQL (24/7)"
+  echo -e "\033[1;32m[OK] Acceso Local:\033[0m  http://localhost:${PORT}"
   if [ "$LOCAL_IP" != "localhost" ]; then
-    echo -e "\033[1;32m[✓] Acceso WiFi:\033[0m   http://${LOCAL_IP}:${PORT}"
+    echo -e "\033[1;32m[OK] Acceso WiFi:\033[0m   http://${LOCAL_IP}:${PORT}"
   fi
   echo -e "\033[0;37mPara detenerlo ejecuta: caramel stop\033[0m"
   echo "================================================================="
@@ -104,7 +104,7 @@ stop_server() {
   if fuser "${PORT}/tcp" >/dev/null 2>&1; then
     fuser -k "${PORT}/tcp" >/dev/null 2>&1 || true
     rm -f "$PID_FILE"
-    echo -e "\033[1;32m[✓] Servidor Caramel detenido correctamente.\033[0m"
+    echo -e "\033[1;32m[OK] Servidor Caramel detenido correctamente.\033[0m"
     if command -v notify-send >/dev/null 2>&1; then
       notify-send "Caramel" "Servidor detenido correctamente." -i applications-education 2>/dev/null || true
     fi
@@ -115,11 +115,11 @@ stop_server() {
 
 status_server() {
   if fuser "${PORT}/tcp" >/dev/null 2>&1; then
-    echo -e "\033[1;32m[✓] Caramel está ACTIVO y corriendo en el puerto ${PORT}\033[0m"
+    echo -e "\033[1;32m[OK] Caramel está ACTIVO y corriendo en el puerto ${PORT}\033[0m"
     echo "    Local: http://localhost:${PORT}"
     echo "    WiFi:  http://${LOCAL_IP}:${PORT}"
   else
-    echo -e "\033[1;31m[✗] Caramel está DETENIDO.\033[0m"
+    echo -e "\033[1;31m[ERROR] Caramel está DETENIDO.\033[0m"
   fi
 }
 

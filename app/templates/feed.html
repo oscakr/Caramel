@@ -3,13 +3,64 @@
 {% block title %}Caramel - Inicio{% endblock %}
 
 {% block content %}
-<div class="space-y-6 pt-2" x-data="{ searchFilter: '' }">
+<div class="space-y-6 pt-2" x-data="{ searchFilter: '', showDocentePendingModal: {{ 'true' if current_user.is_docente_pending_validation else 'false' }} }">
+
+  <!-- Modal Pop-Up de Espera por Validación del CEO para Docentes/Curadores -->
+  {% if current_user.is_docente_pending_validation %}
+  <div x-show="showDocentePendingModal" 
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0 scale-95"
+       x-transition:enter-end="opacity-100 scale-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100 scale-100"
+       x-transition:leave-end="opacity-0 scale-95"
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+       style="display: none;">
+    <div class="relative w-full max-w-sm rounded-3xl bg-[#241c17] border border-amber-500/40 p-6 shadow-2xl space-y-4 text-center">
+      
+      <!-- Glowing Verification Badge Icon -->
+      <div class="mx-auto w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shadow-inner">
+        <svg class="w-8 h-8 text-amber-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+      </div>
+
+      <!-- Pill Badge -->
+      <div>
+        <span class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+          Comprobación Institucional UNIMAR
+        </span>
+      </div>
+
+      <!-- Pop-Up Text (Requisito Explícito) -->
+      <div class="p-4 rounded-2xl bg-[#1b1410] border border-caramel-500/20 text-left space-y-2 shadow-inner">
+        <p class="text-xs text-stone-200 leading-relaxed font-medium">
+          Se está comprobando su identidad como especialista o preparador de las cátedras de la Universidad de Margarita dispuestas en este software, ¡aguante un pelo!
+        </p>
+        <p class="text-xs text-[#7FB3A6] font-bold">
+          Gracias sr. Docente {{ current_user.full_name }}
+        </p>
+      </div>
+
+      <p class="text-[11px] text-[#E6D4BA]/80 leading-normal">
+        El CEO de la plataforma (<span class="text-white font-semibold">Oscar Alvarez</span>) habilitará sus credenciales para que pueda visualizar el badge de <span class="font-bold text-amber-300">VALIDAR</span>. Mientras tanto, puede consultar todo el material académico disponible.
+      </p>
+
+      <!-- Action Button -->
+      <button @click="showDocentePendingModal = false" 
+              class="w-full py-2.5 rounded-2xl bg-amber-500 hover:bg-[#7FB3A6] text-stone-950 font-bold text-xs transition duration-200 shadow-md cursor-pointer active:scale-95">
+        Entendido, explorar catálogo
+      </button>
+
+    </div>
+  </div>
+  {% endif %}
 
   <!-- Top Header (Hamburger, Greeting, Profile Avatar) -->
   <header class="space-y-3">
     <div class="flex items-center justify-between">
       <!-- Hamburger Menu Button -->
-      <button @click="mobileMenuOpen = !mobileMenuOpen" class="w-10 h-10 rounded-full bg-[#261e18] border border-caramel-500/20 flex items-center justify-center text-stone-300 hover:text-caramel-300 hover:border-caramel-500/40 transition">
+      <button @click="mobileMenuOpen = !mobileMenuOpen" class="w-10 h-10 rounded-full bg-[#261e18] border border-caramel-500/20 flex items-center justify-center text-stone-300 hover:text-[#7FB3A6] hover:border-[#7FB3A6] transition">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
         </svg>
@@ -17,7 +68,7 @@
 
       <!-- Academic Career Badge -->
       <div class="px-3 py-1 rounded-full bg-[#271d17] border border-caramel-500/20 text-[11px] text-caramel-300 flex items-center space-x-1.5">
-        <span>🎓</span>
+        <svg class="w-3.5 h-3.5 text-caramel-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
         <span class="font-medium">{{ current_user.carrera }}</span>
         <span class="text-stone-500">•</span>
         <span class="text-amber-400 font-semibold">{{ current_user.trimestre }}º Tri</span>
@@ -38,14 +89,19 @@
       </div>
 
       <div class="flex items-center space-x-2">
-        {% if current_user.id_rol and current_user.id_rol >= 2 %}
-        <a href="/validation-panel" class="py-2 px-3 rounded-2xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center space-x-1.5 transition">
-          <span>🛡</span>
+        {% if current_user.can_validate %}
+        <a href="/validation-panel" class="py-2 px-3 rounded-2xl bg-amber-500/15 hover:bg-[#7FB3A6]/25 text-[#7FB3A6] border border-amber-500/30 text-xs font-semibold flex items-center space-x-1.5 transition">
+          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
           <span>Validar</span>
           {% if pending_validation_count and pending_validation_count > 0 %}
-          <span class="w-4 h-4 rounded-full bg-amber-400 text-[#1b1410] text-[10px] font-black flex items-center justify-center">{{ pending_validation_count }}</span>
+          <span class="w-4 h-4 rounded-full bg-amber-400 text-stone-950 text-[10px] font-black flex items-center justify-center">{{ pending_validation_count }}</span>
           {% endif %}
         </a>
+        {% elif current_user.is_docente_pending_validation %}
+        <button @click="showDocentePendingModal = true" class="py-2 px-3 rounded-2xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer" title="Ver estado de comprobación de identidad">
+          <svg class="w-3.5 h-3.5 text-amber-400 animate-spin" style="animation-duration: 4s;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span>Espera CEO</span>
+        </button>
         {% endif %}
 
         <a href="/upload-material" class="py-2 px-3.5 rounded-2xl btn-caramel text-xs font-bold flex items-center space-x-1.5 shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-250">
@@ -86,20 +142,20 @@
     <div id="carousel-popular" class="flex space-x-3.5 overflow-x-auto no-scrollbar pb-2 pt-1 scroll-smooth">
       {% for doc in popular_in_trimester %}
       <a href="/document/{{ doc.id }}" class="flex-none w-[115px] group">
-        <div class="relative w-[115px] h-[160px] rounded-xl overflow-hidden shadow-lg border border-caramel-500/20 group-hover:border-caramel-400 transition-all duration-300 group-hover:-translate-y-1">
+        <div class="relative w-[115px] h-[160px] rounded-xl overflow-hidden shadow-lg border border-caramel-500/20 group-hover:border-[#7FB3A6] transition-all duration-300 group-hover:-translate-y-1">
           <img src="{{ doc.cover_url }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="{{ doc.title }}">
           <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent"></div>
           
           <!-- Rating badge -->
           <div class="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-[10px] text-amber-300 font-bold flex items-center space-x-0.5">
-            <span>★</span>
+            <svg class="w-3 h-3 text-amber-400 fill-current inline-block" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
             <span>{{ doc.rating_avg }}</span>
           </div>
 
           <!-- Title Overlay -->
           <div class="absolute bottom-2 left-2 right-2">
-            <h3 class="text-[11px] font-bold text-white leading-tight line-clamp-2 drop-shadow-md">{{ doc.title }}</h3>
-            <p class="text-[9px] text-stone-300 truncate mt-0.5">{{ doc.authors.split('&')[0] }}</p>
+            <h3 class="text-[11px] font-bold text-white leading-tight line-clamp-2 drop-shadow-md group-hover:text-[#7FB3A6] transition-colors">{{ doc.title }}</h3>
+            <p class="text-[9px] text-[#E6D4BA]/90 truncate mt-0.5">{{ doc.authors.split('&')[0] }}</p>
           </div>
         </div>
       </a>
@@ -111,13 +167,13 @@
   <section class="space-y-3">
     <div class="flex items-center justify-between">
       <h2 class="text-sm font-bold text-stone-200 tracking-wide">Listas que podrían servirte</h2>
-      <a href="/explore?type=lists" class="text-[11px] text-caramel-400 hover:text-caramel-300 transition">Ver todas</a>
+      <a href="/explore?type=lists" class="text-[11px] text-caramel-400 hover:text-[#7FB3A6] transition">Ver todas</a>
     </div>
 
     <!-- Horizontal Carousel of Stacks / Lists -->
     <div class="flex space-x-3 overflow-x-auto no-scrollbar pb-2">
       {% for clist in curated_lists %}
-      <div class="flex-none w-[150px] p-3 rounded-2xl bg-[#261e18] border border-caramel-500/20 hover:border-caramel-500/40 transition flex flex-col justify-between shadow-md">
+      <div class="flex-none w-[150px] p-3 rounded-2xl bg-[#261e18] border border-caramel-500/20 hover:border-[#7FB3A6] transition flex flex-col justify-between shadow-md">
         <div>
           <!-- Stack of Document Mini Covers -->
           <div class="flex -space-x-4 mb-2.5 overflow-hidden py-1 pl-1">
@@ -147,7 +203,7 @@
 
     <div class="space-y-2.5">
       {% for rec in recommendations[:3] %}
-      <a href="/document/{{ rec.document.id }}" class="block p-3 rounded-2xl bg-[#261e18] border border-caramel-500/20 hover:border-caramel-400/50 hover:bg-[#30261f] transition group shadow-md">
+      <a href="/document/{{ rec.document.id }}" class="block p-3 rounded-2xl bg-[#261e18] border border-caramel-500/20 hover:border-[#7FB3A6] hover:bg-[#30261f] transition group shadow-md">
         <div class="flex space-x-3">
           <img src="{{ rec.document.cover_url }}" class="w-16 h-22 rounded-xl object-cover border border-white/10 shadow-md group-hover:scale-105 transition duration-300" alt="{{ rec.document.title }}">
           
@@ -157,10 +213,10 @@
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/25">
                   {{ rec.score }}% Afinidad
                 </span>
-                <span class="text-[11px] font-semibold text-amber-400">★ {{ rec.document.rating_avg }}</span>
+                <span class="text-[11px] font-semibold text-amber-400 flex items-center space-x-1"><svg class="w-3 h-3 text-amber-400 fill-current inline-block" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg><span>{{ rec.document.rating_avg }}</span></span>
               </div>
 
-              <h3 class="text-xs font-bold text-stone-100 group-hover:text-caramel-300 transition mt-1.5 line-clamp-1">
+              <h3 class="text-xs font-bold text-stone-100 group-hover:text-[#7FB3A6] transition mt-1.5 line-clamp-1">
                 {{ rec.document.title }}
               </h3>
               <p class="text-[10px] text-stone-400 line-clamp-1">{{ rec.document.authors }}</p>
@@ -168,7 +224,7 @@
 
             <!-- Explainable Reason Tag -->
             <div class="mt-2 flex items-center space-x-1 text-[10px] text-caramel-300 bg-[#1c1511] px-2 py-1 rounded-lg border border-caramel-500/15">
-              <span class="text-amber-400">💡</span>
+              <svg class="w-3 h-3 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               <span class="truncate">{{ rec.reason }}</span>
             </div>
           </div>
@@ -188,7 +244,7 @@
     {% if friends_reviews %}
     <div class="space-y-3">
       {% for rev in friends_reviews %}
-      <div class="p-3.5 rounded-2xl bg-[#251d17] border border-caramel-500/15 hover:border-caramel-500/30 transition shadow-md">
+      <div class="p-3.5 rounded-2xl bg-[#251d17] border border-caramel-500/15 hover:border-[#7FB3A6] transition shadow-md">
         <!-- Reviewer Header -->
         <div class="flex items-center justify-between mb-2">
           <div class="flex items-center space-x-2.5">
@@ -201,8 +257,8 @@
 
           <!-- Star Rating -->
           <div class="flex items-center space-x-0.5 text-amber-400 text-xs">
-            {% for _ in range(rev.rating) %}★{% endfor %}
-            {% for _ in range(5 - rev.rating) %}<span class="text-stone-600">★</span>{% endfor %}
+            {% for _ in range(rev.rating) %}<svg class="w-3 h-3 text-amber-400 fill-current inline-block" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>{% endfor %}
+            {% for _ in range(5 - rev.rating) %}<svg class="w-3 h-3 text-stone-600 fill-current inline-block" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>{% endfor %}
           </div>
         </div>
 
@@ -223,7 +279,7 @@
         <div class="mt-2.5 pt-2 border-t border-caramel-500/10 flex items-center justify-between text-[10px] text-stone-400">
           <span class="text-caramel-400 font-medium">Libro: {{ rev.document.title }}</span>
           <div class="flex items-center space-x-1 text-stone-400 hover:text-red-400 cursor-pointer transition">
-            <span>♥</span>
+            <svg class="w-3 h-3 text-stone-400 hover:text-red-400 shrink-0 inline-block" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/></svg>
             <span>{{ rev.likes_count }}</span>
           </div>
         </div>
@@ -232,7 +288,7 @@
     </div>
     {% else %}
     <div class="p-6 rounded-3xl bg-[#241c17] border border-caramel-500/15 text-center space-y-1.5 shadow-sm">
-      <div class="text-xl">✍️</div>
+      <svg class="w-8 h-8 mx-auto text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
       <h3 class="text-xs font-bold text-[#fcf8f3]">Aún no hay reseñas registradas</h3>
       <p class="text-[11px] text-stone-400 leading-relaxed">
         Las valoraciones y comentarios aparecerán aquí en tiempo real cuando tus compañeros califiquen los materiales de estudio.

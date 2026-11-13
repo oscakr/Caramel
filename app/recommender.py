@@ -185,7 +185,7 @@ class AcademicRecommender:
             if user.trimestre in doc_trimestres and any(user_carrera in c for c in doc_carreras):
                 reasons.append(f"Clave para tu {user.trimestre}º Trimestre de {user.carrera}")
             elif friends_high_rating_count > 0:
-                reasons.append(f"Recomendado por {friends_high_rating_count} de tus amigos con 5★")
+                reasons.append(f"Recomendado por {friends_high_rating_count} de tus amigos con 5 estrellas")
             elif content_score > 0.45:
                 reasons.append(f"{int(content_score * 100)}% de afinidad con tus lecturas de estudio")
             elif doc.rating_avg >= 4.7:

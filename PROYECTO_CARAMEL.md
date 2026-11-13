@@ -1,4 +1,4 @@
-# 🍮 Caramel: Plataforma de Recomendación de Documentos Académicos
+# Caramel: Plataforma de Recomendación de Documentos Académicos
 **Tipo de Proyecto:** Plataforma Web & Motor de Recomendación Inteligente (Hybrid AI)  
 **Prototipo Figma Base:** [Caramel Prototype (Figma)](https://www.figma.com/proto/HENzhk9zdmNOt8vP13dkxQ/Caramel-Prototype?node-id=36-21)  
 **Arquitectura:** Monolito Reactivo en Python (FastAPI + Jinja2 + Tailwind CSS + Alpine.js + Scikit-Learn)  
@@ -7,7 +7,7 @@
 
 ---
 
-## 📋 1. Resumen Ejecutivo del Proyecto
+## 1. Resumen Ejecutivo del Proyecto
 
 **Caramel** es una plataforma web universitaria diseñada para optimizar el descubrimiento y consumo de material bibliográfico y documentos académicos (libros canónicos, guías de ejercicios, papers y apuntes de cátedra).
 
@@ -17,7 +17,7 @@ Toda la experiencia de usuario y diseño visual reproduce fielmente el prototipo
 
 ---
 
-## 🎯 2. Objetivos Principales
+## 2. Objetivos Principales
 
 1. **Replicación Fiel del Diseño (Pixel-Perfect):** Trasladar la identidad visual, paleta cromática, tipografías y componentes interactivos del prototipo de Figma a una aplicación web responsiva de alto rendimiento.
 2. **Recomendación Contextual Inteligente:** Eliminar la necesidad de búsquedas manuales tediosas; el sistema presenta inmediatamente los documentos idóneos para el trimestre actual del alumno.
@@ -26,7 +26,7 @@ Toda la experiencia de usuario y diseño visual reproduce fielmente el prototipo
 
 ---
 
-## 🏗️ 3. Arquitectura del Sistema
+## 3. Arquitectura del Sistema
 
 ```mermaid
 flowchart TD
@@ -67,7 +67,7 @@ flowchart TD
 
 ---
 
-## 🧠 4. Formulación Matemática del Algoritmo de Recomendación
+## 4. Formulación Matemática del Algoritmo de Recomendación
 
 El motor de recomendación implementado en `app/recommender.py` genera un **Score de Afinidad Compuesto** normalizado de $0\%$ a $100\%$ mediante una combinación lineal ponderada:
 
@@ -121,7 +121,7 @@ $$S_{\text{bayes}} = \frac{WR}{5.0}$$
 
 ---
 
-## 📱 5. Catálogo de Pantallas Replicadas de Figma
+## 5. Catálogo de Pantallas Replicadas de Figma
 
 | Pantalla Figma | Ruta | Funcionalidades Principales |
 | :--- | :--- | :--- |
@@ -134,7 +134,7 @@ $$S_{\text{bayes}} = \frac{WR}{5.0}$$
 
 ---
 
-## 👥 6. Perfiles de Prueba Pre-cargados
+## 6. Perfiles de Prueba Pre-cargados
 
 El sistema incluye perfiles representativos para validar el comportamiento del recomendador:
 
@@ -147,7 +147,7 @@ El sistema incluye perfiles representativos para validar el comportamiento del r
 
 ---
 
-## 📡 7. Especificación de Endpoints (API REST)
+## 7. Especificación de Endpoints (API REST)
 
 | Método | Endpoint | Parámetros | Descripción |
 | :--- | :--- | :--- | :--- |
@@ -164,7 +164,7 @@ El sistema incluye perfiles representativos para validar el comportamiento del r
 
 ---
 
-## 💻 8. Guía de Ejecución y Mantenimiento
+## 8. Guía de Ejecución y Mantenimiento
 
 ### 8.1. Puesta en Marcha
 ```bash
@@ -186,7 +186,7 @@ El script `./run.sh` se encarga automáticamente de:
 
 ---
 
-## 📈 9. Roadmap y Próximas Mejoras Sugeridas
+## 9. Roadmap y Próximas Mejoras Sugeridas
 
 - [ ] **Visor PDF Real:** Integración con PDF.js para lectura completa de libros en el navegador.
 - [ ] **Anotaciones y Marcadores Compartidos:** Permitir a los estudiantes subrayar capítulos y compartir apuntes de margen con sus compañeros.

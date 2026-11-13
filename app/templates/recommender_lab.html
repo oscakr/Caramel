@@ -7,12 +7,12 @@
 
   <!-- CEO Top Navigation & Access Indicator -->
   <div class="flex items-center justify-between pb-2 border-b border-caramel-500/20">
-    <a href="/" class="inline-flex items-center space-x-1.5 text-xs text-stone-400 hover:text-caramel-300 transition">
+    <a href="/" class="inline-flex items-center space-x-1.5 text-xs text-stone-400 hover:text-[#7FB3A6] transition">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
       <span>Volver al Inicio</span>
     </a>
     <div class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-semibold tracking-wide">
-      <span>👑</span>
+      <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
       <span>Simulador Restringido • Rango CEO</span>
     </div>
   </div>
@@ -29,7 +29,7 @@
   <!-- Mathematical Formula Box -->
   <div class="p-4 rounded-2xl bg-[#251d18] border border-caramel-500/25 space-y-3 shadow-lg">
     <h3 class="text-xs font-bold text-caramel-300 uppercase tracking-wider flex items-center space-x-1.5">
-      <span>📐</span>
+      <svg class="w-3.5 h-3.5 text-caramel-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
       <span>Fórmula del Modelo Híbrido Ponderado</span>
     </h3>
     
@@ -66,7 +66,7 @@
 
     <div class="space-y-3">
       {% for rec in recommendations %}
-      <div class="p-3.5 rounded-2xl bg-[#251d18] border border-caramel-500/20 hover:border-caramel-400/50 transition space-y-3 shadow-md">
+      <div class="p-3.5 rounded-2xl bg-[#251d18] border border-caramel-500/20 hover:border-[#7FB3A6] transition space-y-3 shadow-md">
         
         <!-- Header Info -->
         <div class="flex items-start justify-between">
@@ -75,7 +75,7 @@
               #{{ loop.index }}
             </span>
             <div>
-              <a href="/document/{{ rec.document.id }}" class="text-xs font-bold text-white hover:text-caramel-300 transition line-clamp-1">
+              <a href="/document/{{ rec.document.id }}" class="text-xs font-bold text-white hover:text-[#7FB3A6] transition line-clamp-1">
                 {{ rec.document.title }}
               </a>
               <p class="text-[10px] text-stone-400">{{ rec.document.authors }} • Trimestres: {{ rec.document.trimestres }}</p>
@@ -130,7 +130,7 @@
 
         <!-- Explainability Reason -->
         <div class="p-2 rounded-xl bg-[#1a130f] border border-caramel-500/15 flex items-center space-x-2 text-[10px] text-caramel-200">
-          <span class="text-amber-400 text-xs">💡</span>
+          <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           <span class="font-medium">Motivo del Recomendador: {{ rec.reason }}</span>
         </div>
 

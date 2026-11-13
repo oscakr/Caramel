@@ -8,10 +8,11 @@
   --border-subtle: rgba(217, 155, 92, 0.15);
   --border-strong: rgba(217, 155, 92, 0.35);
   --caramel-base: #c6864d;
-  --caramel-accent: #dca067;
-  --caramel-light: #f3d4b6;
-  --caramel-glow: rgba(220, 160, 103, 0.2);
+  --caramel-accent: #7FB3A6;
+  --caramel-light: #E6D4BA;
+  --caramel-glow: rgba(127, 179, 166, 0.25);
   --text-main: #fbf6f0;
+  --text-cream: #E6D4BA;
   --text-muted: #aa998d;
   --text-dim: #7a6b61;
 }
@@ -42,7 +43,7 @@ body {
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #c6864d;
+  background: #7FB3A6;
 }
 
 /* Carousel hiding scrollbars */
@@ -70,7 +71,7 @@ body {
 
 .card-caramel:hover {
   background-color: var(--bg-card-hover);
-  border-color: rgba(217, 155, 92, 0.28);
+  border-color: #7FB3A6;
   transform: translateY(-2px);
 }
 
@@ -98,14 +99,14 @@ body {
 
 .btn-caramel-secondary:hover {
   background-color: #45362c;
-  border-color: rgba(217, 155, 92, 0.4);
-  color: #ffffff;
+  border-color: #7FB3A6;
+  color: #7FB3A6;
 }
 
 /* Glowing text */
 .text-caramel-glow {
-  color: #dca067;
-  text-shadow: 0 0 16px rgba(220, 160, 103, 0.35);
+  color: #7FB3A6;
+  text-shadow: 0 0 16px rgba(127, 179, 166, 0.45);
 }
 
 /* Histogram bar animation */
@@ -123,9 +124,21 @@ body {
   box-shadow: 0 0 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(217, 155, 92, 0.15);
 }
 
+/* Mobile Status Bar (Visible strictly in mobile view) */
+.mobile-status-bar {
+  display: flex;
+}
+
+body.view-desktop .mobile-status-bar {
+  display: none !important;
+}
+
 @media (min-width: 1024px) {
   body.view-desktop .app-frame-container {
     max-width: 1080px;
     box-shadow: none;
+  }
+  body.view-desktop .mobile-status-bar {
+    display: none !important;
   }
 }

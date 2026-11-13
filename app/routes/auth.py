@@ -162,6 +162,12 @@ def register_submit(
     elif "curador" in rol_nombre.lower() or "admin" in rol_nombre.lower():
         id_rol = 3
 
+    # Validación por CEO: Los roles docentes y curadores requieren autorización del CEO (Oscar Alvarez)
+    if id_rol == 1 or clean_user == "oalvarez.7305" or clean_email == "oalvarez.7305@unimar.edu.ve":
+        validado_por_ceo = 1
+    else:
+        validado_por_ceo = 0
+
     # Asignación del tratamiento de saludo institucional
     if id_rol == 1:
         clean_titulo = "Casi Ingeniero"
@@ -185,7 +191,8 @@ def register_submit(
         id_rol=id_rol,
         rol_nombre=rol_nombre,
         titulo_honorifico=clean_titulo,
-        puntos_reputacion=50 # Puntos de bienvenida por registro
+        puntos_reputacion=50, # Puntos de bienvenida por registro
+        validado_por_ceo=validado_por_ceo
     )
     db.add(new_user)
     db.commit()

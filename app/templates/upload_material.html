@@ -5,32 +5,117 @@
 {% block content %}
 <div class="space-y-6 pt-2 pb-14" x-data="{
   step: 1, // 1: Cátedra, 2: Tipo de archivo, 3: Contenido/Upload, 4: Confirmación
-  selectedCatedra: 'Programación IV',
-  selectedTrimestre: 4,
+  userTrimestre: {{ current_user.trimestre if current_user and current_user.trimestre and current_user.trimestre > 0 else 3 }},
+  selectedCatedra: '',
+  selectedTrimestre: {{ current_user.trimestre if current_user and current_user.trimestre and current_user.trimestre > 0 else 3 }},
   materialType: 'pdf', // 'pdf', 'video', 'zip'
   
-  // Pensum oficial del Eje de Programación y Software (7 cátedras clave)
-  pensum: [
-    { nombre: 'Programación I', trimestre: 1, desc: '1º Trimestre' },
-    { nombre: 'Programación II', trimestre: 2, desc: '2º Trimestre' },
-    { nombre: 'Programación III', trimestre: 3, desc: '3º Trimestre' },
-    { nombre: 'Programación IV', trimestre: 4, desc: '4º Trimestre' },
-    { nombre: 'Estructura de Datos', trimestre: 3, desc: '3º Trimestre' },
-    { nombre: 'Bases de Datos I', trimestre: 4, desc: '4º Trimestre' },
-    { nombre: 'Bases de Datos II', trimestre: 5, desc: '5º Trimestre' }
+  // Catálogo Oficial UNIMAR - Eje Académico de Programación y Desarrollo de Sistemas
+  ejeProgramacion: [
+    { nombre: 'Técnicas de Programación', trimestre: 3, codigo: 'TEP0304341', desc: '3º Trimestre' },
+    { nombre: 'Programación I', trimestre: 4, codigo: 'PRO0405341', desc: '4º Trimestre' },
+    { nombre: 'Programación II', trimestre: 5, codigo: 'PRO0505341', desc: '5º Trimestre' },
+    { nombre: 'Estructura de Datos', trimestre: 5, codigo: 'ESD0504341', desc: '5º Trimestre' },
+    { nombre: 'Programación III', trimestre: 6, codigo: 'PRO0605341', desc: '6º Trimestre' },
+    { nombre: 'Sistemas I', trimestre: 6, codigo: 'SIS0605341', desc: '6º Trimestre' },
+    { nombre: 'Base de Datos I', trimestre: 6, codigo: 'BAD0604341', desc: '6º Trimestre' },
+    { nombre: 'Programación IV', trimestre: 7, codigo: 'PRO0705341', desc: '7º Trimestre' },
+    { nombre: 'Sistemas II', trimestre: 7, codigo: 'SIS0705341', desc: '7º Trimestre' },
+    { nombre: 'Base de Datos II', trimestre: 7, codigo: 'BAD0705341', desc: '7º Trimestre' },
+    { nombre: 'Sistemas III', trimestre: 8, codigo: 'SIS0805341', desc: '8º Trimestre' },
+    { nombre: 'Sistemas Operativos', trimestre: 9, codigo: 'SIO0904341', desc: '9º Trimestre' },
+    { nombre: 'Sistemas de Información Gerencial', trimestre: 9, codigo: 'SIG0905341', desc: '9º Trimestre' },
+    { nombre: 'Metodología de Desarrollo de Software', trimestre: 10, codigo: 'MDS1004241', desc: '10º Trimestre' }
   ],
+
+  // Distribución curricular por trimestres centrada exclusivamente en el eje de programación
+  pensumPorTrimestre: {
+    1: [
+      { nombre: 'Técnicas de Programación', trimestre: 3, desc: '3º Trimestre' },
+      { nombre: 'Programación I', trimestre: 4, desc: '4º Trimestre' },
+      { nombre: 'Estructura de Datos', trimestre: 5, desc: '5º Trimestre' },
+      { nombre: 'Programación II', trimestre: 5, desc: '5º Trimestre' }
+    ],
+    2: [
+      { nombre: 'Técnicas de Programación', trimestre: 3, desc: '3º Trimestre' },
+      { nombre: 'Programación I', trimestre: 4, desc: '4º Trimestre' },
+      { nombre: 'Estructura de Datos', trimestre: 5, desc: '5º Trimestre' },
+      { nombre: 'Programación II', trimestre: 5, desc: '5º Trimestre' }
+    ],
+    3: [
+      { nombre: 'Técnicas de Programación', trimestre: 3, desc: '3º Trimestre' },
+      { nombre: 'Programación I', trimestre: 4, desc: '4º Trimestre' },
+      { nombre: 'Estructura de Datos', trimestre: 5, desc: '5º Trimestre' },
+      { nombre: 'Programación II', trimestre: 5, desc: '5º Trimestre' }
+    ],
+    4: [
+      { nombre: 'Programación I', trimestre: 4, desc: '4º Trimestre' },
+      { nombre: 'Técnicas de Programación', trimestre: 3, desc: '3º Trimestre' },
+      { nombre: 'Programación II', trimestre: 5, desc: '5º Trimestre' },
+      { nombre: 'Estructura de Datos', trimestre: 5, desc: '5º Trimestre' }
+    ],
+    5: [
+      { nombre: 'Estructura de Datos', trimestre: 5, desc: '5º Trimestre' },
+      { nombre: 'Programación II', trimestre: 5, desc: '5º Trimestre' },
+      { nombre: 'Programación I', trimestre: 4, desc: '4º Trimestre' },
+      { nombre: 'Base de Datos I', trimestre: 6, desc: '6º Trimestre' }
+    ],
+    6: [
+      { nombre: 'Programación III', trimestre: 6, desc: '6º Trimestre' },
+      { nombre: 'Sistemas I', trimestre: 6, desc: '6º Trimestre' },
+      { nombre: 'Base de Datos I', trimestre: 6, desc: '6º Trimestre' },
+      { nombre: 'Estructura de Datos', trimestre: 5, desc: '5º Trimestre' },
+      { nombre: 'Programación II', trimestre: 5, desc: '5º Trimestre' }
+    ],
+    7: [
+      { nombre: 'Programación IV', trimestre: 7, desc: '7º Trimestre' },
+      { nombre: 'Sistemas II', trimestre: 7, desc: '7º Trimestre' },
+      { nombre: 'Base de Datos II', trimestre: 7, desc: '7º Trimestre' },
+      { nombre: 'Base de Datos I', trimestre: 6, desc: '6º Trimestre' },
+      { nombre: 'Sistemas I', trimestre: 6, desc: '6º Trimestre' }
+    ],
+    8: [
+      { nombre: 'Sistemas III', trimestre: 8, desc: '8º Trimestre' },
+      { nombre: 'Base de Datos II', trimestre: 7, desc: '7º Trimestre' },
+      { nombre: 'Sistemas II', trimestre: 7, desc: '7º Trimestre' },
+      { nombre: 'Programación IV', trimestre: 7, desc: '7º Trimestre' },
+      { nombre: 'Sistemas Operativos', trimestre: 9, desc: '9º Trimestre' }
+    ],
+    9: [
+      { nombre: 'Sistemas Operativos', trimestre: 9, desc: '9º Trimestre' },
+      { nombre: 'Sistemas de Información Gerencial', trimestre: 9, desc: '9º Trimestre' },
+      { nombre: 'Sistemas III', trimestre: 8, desc: '8º Trimestre' },
+      { nombre: 'Metodología de Desarrollo de Software', trimestre: 10, desc: '10º Trimestre' }
+    ],
+    10: [
+      { nombre: 'Metodología de Desarrollo de Software', trimestre: 10, desc: '10º Trimestre' },
+      { nombre: 'Sistemas de Información Gerencial', trimestre: 9, desc: '9º Trimestre' },
+      { nombre: 'Sistemas Operativos', trimestre: 9, desc: '9º Trimestre' },
+      { nombre: 'Sistemas III', trimestre: 8, desc: '8º Trimestre' }
+    ],
+    11: [
+      { nombre: 'Metodología de Desarrollo de Software', trimestre: 10, desc: '10º Trimestre' },
+      { nombre: 'Sistemas de Información Gerencial', trimestre: 9, desc: '9º Trimestre' },
+      { nombre: 'Sistemas Operativos', trimestre: 9, desc: '9º Trimestre' },
+      { nombre: 'Sistemas III', trimestre: 8, desc: '8º Trimestre' }
+    ],
+    12: [
+      { nombre: 'Metodología de Desarrollo de Software', trimestre: 10, desc: '10º Trimestre' },
+      { nombre: 'Sistemas de Información Gerencial', trimestre: 9, desc: '9º Trimestre' },
+      { nombre: 'Base de Datos II', trimestre: 7, desc: '7º Trimestre' },
+      { nombre: 'Sistemas III', trimestre: 8, desc: '8º Trimestre' }
+    ]
+  },
+
+  // Materias de tu trimestre activo
+  materiasDeTuTrimestre: [],
 
   // 3 Botones interactivos en pantalla (2 arriba, 1 centrado abajo)
   slots: [
-    { nombre: 'Programación III', trimestre: 3, desc: '3º Trimestre' },
-    { nombre: 'Programación IV', trimestre: 4, desc: '4º Trimestre' },
-    { nombre: 'Bases de Datos I', trimestre: 4, desc: '4º Trimestre' }
+    { nombre: '', trimestre: 3, desc: '' },
+    { nombre: '', trimestre: 3, desc: '' },
+    { nombre: '', trimestre: 3, desc: '' }
   ],
-
-  // Estado del selector / reemplazador smooth
-  showReplaceModal: false,
-  activeSlotIndex: null,
-  materiaSearch: '',
 
   // Datos del formulario
   youtubeUrl: '',
@@ -38,6 +123,7 @@
   fileName: '',
   fileSizeMB: 0,
   isDragging: false,
+  spinningSlot: null, // Índice del slot que está ejecutando la animación de cambio
   
   // Estados de proceso y validación
   isSubmitting: false,
@@ -45,23 +131,50 @@
   errorMessage: '',
   isSuccess: false,
 
-  openReplaceModal(index) {
-    this.activeSlotIndex = index;
-    this.materiaSearch = '';
-    this.showReplaceModal = true;
+  init() {
+    const tri = this.userTrimestre || 3;
+    const list = this.pensumPorTrimestre[tri] || this.pensumPorTrimestre[3];
+    this.materiasDeTuTrimestre = list;
+    this.slots = [
+      { ...list[0] },
+      { ...list[1] },
+      { ...list[2] }
+    ];
+    this.selectedCatedra = this.slots[0].nombre;
+    this.selectedTrimestre = this.slots[0].trimestre;
   },
 
-  replaceSlot(materia) {
-    if (this.activeSlotIndex !== null) {
-      this.slots[this.activeSlotIndex] = { ...materia };
+  replaceRandomSlot(index) {
+    if (this.spinningSlot !== null) return;
+    this.spinningSlot = index;
+    
+    // Nombres de las materias visibles en los OTROS 2 slots (evitamos cualquier duplicado en pantalla)
+    const otherVisibleNames = this.slots
+      .filter((s, idx) => idx !== index)
+      .map(s => s.nombre);
+    
+    // Pool completo: Barajar libremente entre TODAS las 14 materias del Eje de Programación UNIMAR,
+    // excluyendo las que ya están en los otros slots y la que está actualmente en este slot
+    let pool = this.ejeProgramacion.filter(m => 
+      !otherVisibleNames.includes(m.nombre) && m.nombre !== this.slots[index].nombre
+    );
+    
+    // Salvaguarda: si por alguna razón no hubiese, excluir solo las de los otros slots
+    if (pool.length === 0) {
+      pool = this.ejeProgramacion.filter(m => !otherVisibleNames.includes(m.nombre));
     }
-    this.showReplaceModal = false;
-  },
-
-  filteredPensum() {
-    const q = (this.materiaSearch || '').toLowerCase().trim();
-    if (!q) return this.pensum;
-    return this.pensum.filter(p => p.nombre.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q));
+    
+    if (pool.length > 0) {
+      const randomIndex = Math.floor(Math.random() * pool.length);
+      const chosen = pool[randomIndex];
+      // Pequeño retardo para sincronizar el cambio de texto con la rotación del botón
+      setTimeout(() => {
+        this.slots[index] = { ...chosen };
+      }, 160);
+    }
+    setTimeout(() => {
+      this.spinningSlot = null;
+    }, 550);
   },
 
   selectCatedra(catedra, trimestre) {
@@ -100,7 +213,7 @@
     const sizeInMB = fileObj.size / (1024 * 1024);
     
     if (sizeInMB > 30) {
-      this.errorMessage = `⚠️ El archivo supera el límite de 30 MB (peso: ${sizeInMB.toFixed(1)} MB). Por favor selecciona un archivo más ligero.`;
+      this.errorMessage = `El archivo supera el límite de 30 MB (peso: ${sizeInMB.toFixed(1)} MB). Por favor selecciona un archivo más ligero.`;
       this.file = null;
       this.fileName = '';
       this.fileSizeMB = 0;
@@ -109,7 +222,7 @@
 
     const ext = fileObj.name.split('.').pop().toLowerCase();
     if (this.materialType === 'pdf' && ext !== 'pdf') {
-      this.errorMessage = '⚠️ Formato incorrecto. Para esta opción sólo se admiten archivos .pdf';
+      this.errorMessage = 'Formato incorrecto. Para esta opción sólo se admiten archivos .pdf';
       this.file = null;
       this.fileName = '';
       this.fileSizeMB = 0;
@@ -117,7 +230,7 @@
     }
 
     if (this.materialType === 'zip' && ext !== 'zip') {
-      this.errorMessage = '⚠️ Formato incorrecto. Para esta opción debes subir un archivo comprimido .zip';
+      this.errorMessage = 'Formato incorrecto. Para esta opción debes subir un archivo comprimido .zip';
       this.file = null;
       this.fileName = '';
       this.fileSizeMB = 0;
@@ -173,7 +286,7 @@
     // El título se define automáticamente como el nombre de la materia seleccionada
     formData.append('title', this.selectedCatedra);
     // El autor se toma automáticamente del usuario autenticado
-    formData.append('authors', '{{ current_user.nombre_completo or current_user.username or current_user.email }}');
+    formData.append('authors', '{{ current_user.full_name or current_user.nombre_completo or current_user.username or current_user.email }}');
     formData.append('description', `Material académico para la cátedra ${this.selectedCatedra}. Pendiente de revisión docente para asignación temática.`);
 
     if (this.materialType === 'video') {
@@ -192,8 +305,15 @@
         body: formData
       });
 
-      const result = await response.json();
       this.isSubmitting = false;
+
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseErr) {
+        this.errorMessage = `Error en el servidor (${response.status}): Por favor intenta de nuevo.`;
+        return;
+      }
 
       if (response.ok && result.success) {
         this.isSuccess = true;
@@ -209,8 +329,7 @@
 
   resetForm() {
     this.step = 1;
-    this.selectedCatedra = 'Programación IV';
-    this.selectedTrimestre = 4;
+    this.init();
     this.materialType = 'pdf';
     this.youtubeUrl = '';
     this.file = null;
@@ -225,7 +344,7 @@
 
   <!-- Header & Back Navigation -->
   <div class="flex items-center justify-between pt-1">
-    <a href="/" class="w-9 h-9 rounded-full bg-[#271e18] border border-caramel-500/20 flex items-center justify-center text-stone-300 hover:text-white hover:border-caramel-400 transition-all duration-200">
+    <a href="/" class="w-9 h-9 rounded-full bg-[#271e18] border border-caramel-500/20 flex items-center justify-center text-stone-300 hover:text-[#7FB3A6] hover:border-[#7FB3A6] transition-all duration-200">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
       </svg>
@@ -237,7 +356,7 @@
   <!-- Outer Tagline Minimalista -->
   <div class="text-center pt-2">
     <p class="text-[11px] font-bold tracking-[0.28em] text-stone-400 uppercase">
-      ONE QUESTION AT A <span class="text-amber-400 font-black">TIME</span>
+      SIN DESESPERO CASI <span class="text-amber-400 font-black">INGENIERO</span>
     </p>
   </div>
 
@@ -247,7 +366,7 @@
     <!-- Indicador de Progreso con 3 Puntos -->
     <div class="text-center space-y-2.5 mb-6">
       <p class="text-[10px] font-extrabold tracking-[0.2em] text-stone-400 uppercase"
-         x-text="step === 1 ? 'STEP 1 OF 3' : (step === 2 ? 'STEP 2 OF 3' : (step === 3 ? 'STEP 3 OF 3' : 'FINALIZADO'))">
+         x-text="step === 1 ? 'PASO 1 DE 3' : (step === 2 ? 'PASO 2 DE 3' : (step === 3 ? 'PASO 3 DE 3' : 'FINALIZADO'))">
       </p>
       
       <!-- 3 Puntos Interactivos -->
@@ -291,13 +410,10 @@
     <!-- ========================================== -->
     <div x-show="step === 1" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-3" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6 text-center">
       
-      <div class="space-y-1">
+      <div>
         <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug">
           ¿Para qué cátedra está destinado tu contenido?
         </h2>
-        <p class="text-xs text-stone-400">
-          Haz clic en la materia deseada o pulsa <span class="text-amber-400 font-bold">⇄</span> para reemplazarla por otra del pensum.
-        </p>
       </div>
 
       <!-- Píldoras de Selección con Reemplazo Smooth (2 arriba, 1 centrada abajo) -->
@@ -309,30 +425,38 @@
           <!-- Botón Slot 0 -->
           <div class="relative group">
             <button type="button" @click="selectCatedra(slots[0].nombre, slots[0].trimestre)"
-              class="w-full py-4 px-3 sm:px-4 rounded-2xl border border-caramel-500/25 bg-[#1b1410] hover:border-amber-400 hover:bg-amber-500/10 active:scale-95 transition-all duration-200 shadow-md text-stone-200 hover:text-white flex flex-col items-center justify-center space-y-1 cursor-pointer">
-              <span class="text-sm sm:text-base font-black tracking-wide group-hover:text-amber-300 transition-colors" x-text="slots[0].nombre"></span>
-              <span class="text-[10px] text-stone-400 font-medium" x-text="slots[0].desc"></span>
+              class="w-full py-4 px-3 sm:px-4 rounded-2xl border border-caramel-500/25 bg-[#1b1410] hover:border-[#7FB3A6] hover:bg-[#7FB3A6]/10 active:scale-95 transition-all duration-300 shadow-md text-stone-200 hover:text-white flex flex-col items-center justify-center space-y-1 cursor-pointer"
+              :class="{ 'scale-[0.97] opacity-75 border-[#7FB3A6]/60 ring-2 ring-[#7FB3A6]/20': spinningSlot === 0 }">
+              <span class="text-sm sm:text-base font-black tracking-wide group-hover:text-[#7FB3A6] transition-colors" x-text="slots[0].nombre"></span>
+              <span class="text-[10px] text-[#E6D4BA]/90 font-medium tracking-wide" x-text="slots[0].desc + (slots[0].trimestre === userTrimestre ? ' • Tu Trimestre' : ' • Eje Programación')"></span>
             </button>
-            <!-- Botón Reemplazar Smooth -->
-            <button type="button" @click.stop="openReplaceModal(0)"
-              title="Reemplazar esta materia por otra del pensum"
-              class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-[#271e18] border border-amber-500/40 hover:border-amber-400 text-amber-300 hover:text-white flex items-center justify-center text-xs shadow-lg transition-transform hover:scale-110 active:scale-90 cursor-pointer">
-              ⇄
+            <!-- Botón Reemplazar Aleatorio con Animación Dinámica 360° -->
+            <button type="button" @click.stop="replaceRandomSlot(0)"
+              title="Barajar por otra materia del eje de programación"
+              class="absolute -top-2.5 -right-2.5 w-8 h-8 rounded-full bg-[#271e18] border border-amber-500/40 hover:border-[#7FB3A6] text-amber-300 hover:text-white flex items-center justify-center text-xs shadow-lg transition-all duration-500 ease-out hover:scale-115 active:scale-90 cursor-pointer group/btn"
+              :class="{ 'rotate-[360deg] scale-125 border-amber-300 bg-amber-500/30 text-white shadow-amber-500/40 ring-4 ring-amber-400/25': spinningSlot === 0 }">
+              <svg class="w-4 h-4 text-amber-300 transition-transform duration-500 group-hover/btn:rotate-90"
+                   :class="{ 'rotate-180 text-white': spinningSlot === 0 }"
+                   fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
             </button>
           </div>
 
           <!-- Botón Slot 1 -->
           <div class="relative group">
             <button type="button" @click="selectCatedra(slots[1].nombre, slots[1].trimestre)"
-              class="w-full py-4 px-3 sm:px-4 rounded-2xl border border-caramel-500/25 bg-[#1b1410] hover:border-amber-400 hover:bg-amber-500/10 active:scale-95 transition-all duration-200 shadow-md text-stone-200 hover:text-white flex flex-col items-center justify-center space-y-1 cursor-pointer">
-              <span class="text-sm sm:text-base font-black tracking-wide group-hover:text-amber-300 transition-colors" x-text="slots[1].nombre"></span>
-              <span class="text-[10px] text-stone-400 font-medium" x-text="slots[1].desc"></span>
+              class="w-full py-4 px-3 sm:px-4 rounded-2xl border border-caramel-500/25 bg-[#1b1410] hover:border-[#7FB3A6] hover:bg-[#7FB3A6]/10 active:scale-95 transition-all duration-300 shadow-md text-stone-200 hover:text-white flex flex-col items-center justify-center space-y-1 cursor-pointer"
+              :class="{ 'scale-[0.97] opacity-75 border-[#7FB3A6]/60 ring-2 ring-[#7FB3A6]/20': spinningSlot === 1 }">
+              <span class="text-sm sm:text-base font-black tracking-wide group-hover:text-[#7FB3A6] transition-colors" x-text="slots[1].nombre"></span>
+              <span class="text-[10px] text-[#E6D4BA]/90 font-medium tracking-wide" x-text="slots[1].desc + (slots[1].trimestre === userTrimestre ? ' • Tu Trimestre' : ' • Eje Programación')"></span>
             </button>
-            <!-- Botón Reemplazar Smooth -->
-            <button type="button" @click.stop="openReplaceModal(1)"
-              title="Reemplazar esta materia por otra del pensum"
-              class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-[#271e18] border border-amber-500/40 hover:border-amber-400 text-amber-300 hover:text-white flex items-center justify-center text-xs shadow-lg transition-transform hover:scale-110 active:scale-90 cursor-pointer">
-              ⇄
+            <!-- Botón Reemplazar Aleatorio con Animación Dinámica 360° -->
+            <button type="button" @click.stop="replaceRandomSlot(1)"
+              title="Barajar por otra materia del eje de programación"
+              class="absolute -top-2.5 -right-2.5 w-8 h-8 rounded-full bg-[#271e18] border border-amber-500/40 hover:border-[#7FB3A6] text-amber-300 hover:text-white flex items-center justify-center text-xs shadow-lg transition-all duration-500 ease-out hover:scale-115 active:scale-90 cursor-pointer group/btn"
+              :class="{ 'rotate-[360deg] scale-125 border-amber-300 bg-amber-500/30 text-white shadow-amber-500/40 ring-4 ring-amber-400/25': spinningSlot === 1 }">
+              <svg class="w-4 h-4 text-amber-300 transition-transform duration-500 group-hover/btn:rotate-90"
+                   :class="{ 'rotate-180 text-white': spinningSlot === 1 }"
+                   fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
             </button>
           </div>
 
@@ -342,86 +466,30 @@
         <div class="flex justify-center">
           <div class="relative group w-full sm:w-3/4">
             <button type="button" @click="selectCatedra(slots[2].nombre, slots[2].trimestre)"
-              class="w-full py-4 px-5 rounded-2xl border border-caramel-500/25 bg-[#1b1410] hover:border-amber-400 hover:bg-amber-500/10 active:scale-95 transition-all duration-200 shadow-md text-stone-200 hover:text-white flex flex-col items-center justify-center space-y-1 cursor-pointer">
-              <span class="text-sm sm:text-base font-black tracking-wide group-hover:text-amber-300 transition-colors" x-text="slots[2].nombre"></span>
-              <span class="text-[10px] text-stone-400 font-medium" x-text="slots[2].desc"></span>
+              class="w-full py-4 px-5 rounded-2xl border border-caramel-500/25 bg-[#1b1410] hover:border-[#7FB3A6] hover:bg-[#7FB3A6]/10 active:scale-95 transition-all duration-300 shadow-md text-stone-200 hover:text-white flex flex-col items-center justify-center space-y-1 cursor-pointer"
+              :class="{ 'scale-[0.97] opacity-75 border-[#7FB3A6]/60 ring-2 ring-[#7FB3A6]/20': spinningSlot === 2 }">
+              <span class="text-sm sm:text-base font-black tracking-wide group-hover:text-[#7FB3A6] transition-colors" x-text="slots[2].nombre"></span>
+              <span class="text-[10px] text-[#E6D4BA]/90 font-medium tracking-wide" x-text="slots[2].desc + (slots[2].trimestre === userTrimestre ? ' • Tu Trimestre' : ' • Eje Programación')"></span>
             </button>
-            <!-- Botón Reemplazar Smooth -->
-            <button type="button" @click.stop="openReplaceModal(2)"
-              title="Reemplazar esta materia por otra del pensum"
-              class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-[#271e18] border border-amber-500/40 hover:border-amber-400 text-amber-300 hover:text-white flex items-center justify-center text-xs shadow-lg transition-transform hover:scale-110 active:scale-90 cursor-pointer">
-              ⇄
+            <!-- Botón Reemplazar Aleatorio con Animación Dinámica 360° -->
+            <button type="button" @click.stop="replaceRandomSlot(2)"
+              title="Barajar por otra materia del eje de programación"
+              class="absolute -top-2.5 -right-2.5 w-8 h-8 rounded-full bg-[#271e18] border border-amber-500/40 hover:border-[#7FB3A6] text-amber-300 hover:text-white flex items-center justify-center text-xs shadow-lg transition-all duration-500 ease-out hover:scale-115 active:scale-90 cursor-pointer group/btn"
+              :class="{ 'rotate-[360deg] scale-125 border-amber-300 bg-amber-500/30 text-white shadow-amber-500/40 ring-4 ring-amber-400/25': spinningSlot === 2 }">
+              <svg class="w-4 h-4 text-amber-300 transition-transform duration-500 group-hover/btn:rotate-90"
+                   :class="{ 'rotate-180 text-white': spinningSlot === 2 }"
+                   fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
             </button>
           </div>
         </div>
 
       </div>
 
-      <!-- Ayuda sutil sobre el pensum del eje -->
+      <!-- Materias correspondientes a tu trimestre actual -->
       <div class="pt-3 text-center">
-        <p class="text-[11px] text-stone-400">
-          Eje académico: <span class="text-amber-300 font-semibold">Programación I al IV • Estructura de Datos • Bases de Datos I y II</span>
+        <p class="text-[11px] text-[#E6D4BA]/85">
+          Cátedras sugeridas para tu <span class="text-amber-300 font-semibold" x-text="(userTrimestre || 3) + 'º Trimestre'"></span> en UNIMAR
         </p>
-      </div>
-
-    </div>
-
-    <!-- ========================================== -->
-    <!-- MODAL / DRAWER SMOOTH PARA REEMPLAZAR MATERIA -->
-    <!-- ========================================== -->
-    <div x-show="showReplaceModal" 
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0 scale-95"
-         x-transition:enter-end="opacity-100 scale-100"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100 scale-100"
-         x-transition:leave-end="opacity-0 scale-95"
-         class="absolute inset-0 bg-[#1c1511]/95 backdrop-blur-md rounded-[30px] p-6 z-30 flex flex-col justify-between">
-      
-      <div>
-        <div class="flex items-center justify-between pb-3 border-b border-caramel-500/20">
-          <div>
-            <h3 class="text-sm font-bold text-white">Reemplazar Botón</h3>
-            <p class="text-[11px] text-stone-400">Selecciona la materia que deseas colocar en este espacio:</p>
-          </div>
-          <button type="button" @click="showReplaceModal = false"
-            class="w-7 h-7 rounded-full bg-[#2a1f18] text-stone-400 hover:text-white flex items-center justify-center text-sm font-bold transition-colors">
-            ✕
-          </button>
-        </div>
-
-        <!-- Buscador en Vivo -->
-        <div class="pt-3 pb-2">
-          <div class="relative">
-            <input type="text" x-model="materiaSearch" placeholder="Escribe para buscar materia..."
-              class="w-full pl-9 pr-3 py-2 bg-[#140e0b] border border-caramel-500/30 rounded-xl text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:border-amber-400 transition-colors">
-            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-500 text-xs">
-              🔍
-            </span>
-          </div>
-        </div>
-
-        <!-- Lista Filtrable de las 7 Materias -->
-        <div class="space-y-1.5 max-h-56 overflow-y-auto pr-1 pt-1">
-          <template x-for="item in filteredPensum()" :key="item.nombre">
-            <button type="button" @click="replaceSlot(item)"
-              class="w-full p-2.5 rounded-xl border border-white/5 bg-[#251c16] hover:bg-amber-500/15 hover:border-amber-400/40 text-left flex items-center justify-between transition-all duration-150 group cursor-pointer">
-              <div>
-                <p class="text-xs font-bold text-stone-200 group-hover:text-amber-300 transition-colors" x-text="item.nombre"></p>
-                <p class="text-[10px] text-stone-400" x-text="item.desc"></p>
-              </div>
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 opacity-0 group-hover:opacity-100 transition-opacity">
-                Asignar ✓
-              </span>
-            </button>
-          </template>
-        </div>
-      </div>
-
-      <div class="pt-3 border-t border-caramel-500/20 text-center">
-        <button type="button" @click="showReplaceModal = false" class="text-xs text-stone-400 hover:text-white transition-colors">
-          Cancelar y mantener botón actual
-        </button>
       </div>
 
     </div>
@@ -443,30 +511,24 @@
         
         <!-- Opción PDF -->
         <button type="button" @click="selectMaterialType('pdf')"
-          class="p-5 rounded-2xl border border-caramel-500/25 bg-[#1b1410] hover:border-amber-400 hover:bg-amber-500/10 text-stone-300 hover:text-white font-bold transition-all duration-200 active:scale-95 shadow-md flex flex-col items-center justify-center space-y-2 group cursor-pointer">
-          <div class="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-300 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-            📄
-          </div>
+          class="p-5 rounded-2xl border border-caramel-500/25 bg-[#1b1410] hover:border-[#7FB3A6] hover:bg-[#7FB3A6]/10 text-stone-300 hover:text-white font-bold transition-all duration-200 active:scale-95 shadow-md flex flex-col items-center justify-center space-y-2 group cursor-pointer">
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-300 flex items-center justify-center group-hover:scale-110 transition-transform"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3v5h5M9 13h6m-6 4h4"/></svg></div>
           <div class="text-sm font-bold">PDF</div>
           <span class="text-[10px] text-stone-400 font-medium">Libros o Guías</span>
         </button>
 
         <!-- Opción Link de YouTube -->
         <button type="button" @click="selectMaterialType('video')"
-          class="p-5 rounded-2xl border border-caramel-500/25 bg-[#1b1410] hover:border-amber-400 hover:bg-amber-500/10 text-stone-300 hover:text-white font-bold transition-all duration-200 active:scale-95 shadow-md flex flex-col items-center justify-center space-y-2 group cursor-pointer">
-          <div class="w-12 h-12 rounded-2xl bg-red-500/15 text-red-400 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-            🎥
-          </div>
+          class="p-5 rounded-2xl border border-caramel-500/25 bg-[#1b1410] hover:border-[#7FB3A6] hover:bg-[#7FB3A6]/10 text-stone-300 hover:text-white font-bold transition-all duration-200 active:scale-95 shadow-md flex flex-col items-center justify-center space-y-2 group cursor-pointer">
+          <div class="w-12 h-12 rounded-2xl bg-red-500/15 text-red-400 flex items-center justify-center group-hover:scale-110 transition-transform"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></div>
           <div class="text-sm font-bold">Link de YouTube</div>
           <span class="text-[10px] text-stone-400 font-medium">Clase o Tutorial</span>
         </button>
 
         <!-- Opción ZIP de Proyecto -->
         <button type="button" @click="selectMaterialType('zip')"
-          class="p-5 rounded-2xl border border-caramel-500/25 bg-[#1b1410] hover:border-amber-400 hover:bg-amber-500/10 text-stone-300 hover:text-white font-bold transition-all duration-200 active:scale-95 shadow-md flex flex-col items-center justify-center space-y-2 group cursor-pointer">
-          <div class="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-300 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-            📦
-          </div>
+          class="p-5 rounded-2xl border border-caramel-500/25 bg-[#1b1410] hover:border-[#7FB3A6] hover:bg-[#7FB3A6]/10 text-stone-300 hover:text-white font-bold transition-all duration-200 active:scale-95 shadow-md flex flex-col items-center justify-center space-y-2 group cursor-pointer">
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-300 flex items-center justify-center group-hover:scale-110 transition-transform"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg></div>
           <div class="text-sm font-bold">ZIP de proyecto</div>
           <span class="text-[10px] text-stone-400 font-medium">Código Fuente</span>
         </button>
@@ -474,7 +536,7 @@
       </div>
 
       <div class="pt-2">
-        <button type="button" @click="step = 1" class="text-xs text-stone-400 hover:text-caramel-300 transition-colors cursor-pointer">
+        <button type="button" @click="step = 1" class="text-xs text-stone-400 hover:text-[#7FB3A6] transition-colors cursor-pointer">
           ← Cambiar de cátedra
         </button>
       </div>
@@ -492,14 +554,14 @@
           <span class="px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/25 text-[10px] font-bold" x-text="selectedCatedra"></span>
           <span class="text-stone-400 text-[11px]" x-text="materialType === 'video' ? '• Enlace YouTube' : (materialType === 'pdf' ? '• Archivo PDF' : '• Paquete ZIP')"></span>
         </div>
-        <button type="button" @click="step = 2" class="text-[11px] text-stone-400 hover:text-caramel-300 transition-colors cursor-pointer">
+        <button type="button" @click="step = 2" class="text-[11px] text-stone-400 hover:text-[#7FB3A6] transition-colors cursor-pointer">
           Cambiar tipo
         </button>
       </div>
 
       <!-- ALERTA DE ERROR / DUPLICADO EXACTO -->
       <div x-show="errorMessage" x-transition class="p-3.5 rounded-2xl bg-red-950/70 border border-red-500/50 text-red-200 text-xs flex items-start space-x-2.5 shadow-lg">
-        <span class="text-base shrink-0">⚠️</span>
+        <svg class="w-5 h-5 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
         <div class="flex-1 font-semibold leading-relaxed" x-text="errorMessage"></div>
       </div>
 
@@ -537,7 +599,7 @@
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
             </svg>
             <div class="space-y-0.5">
-              <p class="font-bold">⌛ Consultando base de datos docente...</p>
+              <p class="font-bold">Consultando base de datos docente...</p>
               <p class="text-[10px] text-amber-300/80">Verificando que este enlace no haya sido aportado anteriormente...</p>
             </div>
           </div>
@@ -563,14 +625,12 @@
             @dragleave.prevent="isDragging = false"
             @drop.prevent="handleFileDrop($event)"
             class="relative border-2 border-dashed rounded-3xl p-6 sm:p-8 text-center transition-all duration-200 cursor-pointer"
-            :class="isDragging ? 'border-amber-400 bg-amber-500/15' : 'border-caramel-500/30 bg-[#1b1410] hover:border-amber-400/60 hover:bg-[#201712]'">
+            :class="isDragging ? 'border-[#7FB3A6] bg-[#7FB3A6]/15' : 'border-caramel-500/30 bg-[#1b1410] hover:border-[#7FB3A6] hover:bg-[#201712]'">
             
             <input type="file" accept=".pdf" @change="handleFileSelect($event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
             
             <div class="space-y-2 pointer-events-none">
-              <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-500/15 text-amber-300 flex items-center justify-center text-2xl">
-                📄
-              </div>
+              <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-500/15 text-amber-300 flex items-center justify-center"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3v5h5M9 13h6m-6 4h4"/></svg></div>
               <p class="text-xs font-bold text-white">Arrastra y suelta tu archivo PDF aquí o <span class="text-amber-400 underline">explora tus carpetas</span></p>
               <p class="text-[10px] text-stone-400">Límite explícito de <span class="text-amber-300 font-semibold">30 MB</span> por archivo</p>
             </div>
@@ -579,7 +639,7 @@
             <template x-if="fileName">
               <div class="mt-4 p-3 rounded-2xl bg-[#271e18] border border-emerald-500/40 text-left flex items-center justify-between">
                 <div class="flex items-center space-x-2.5 truncate">
-                  <span class="text-emerald-400 text-lg">✓</span>
+                  <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                   <div class="truncate">
                     <p class="text-xs font-bold text-emerald-200 truncate" x-text="fileName"></p>
                     <p class="text-[10px] text-stone-400" x-text="fileSizeMB + ' MB'"></p>
@@ -611,14 +671,12 @@
             @dragleave.prevent="isDragging = false"
             @drop.prevent="handleFileDrop($event)"
             class="relative border-2 border-dashed rounded-3xl p-6 sm:p-8 text-center transition-all duration-200 cursor-pointer"
-            :class="isDragging ? 'border-amber-400 bg-amber-500/15' : 'border-caramel-500/30 bg-[#1b1410] hover:border-amber-400/60 hover:bg-[#201712]'">
+            :class="isDragging ? 'border-[#7FB3A6] bg-[#7FB3A6]/15' : 'border-caramel-500/30 bg-[#1b1410] hover:border-[#7FB3A6] hover:bg-[#201712]'">
             
             <input type="file" accept=".zip" @change="handleFileSelect($event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
             
             <div class="space-y-2 pointer-events-none">
-              <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-500/15 text-amber-300 flex items-center justify-center text-2xl">
-                📦
-              </div>
+              <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-500/15 text-amber-300 flex items-center justify-center"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg></div>
               <p class="text-xs font-bold text-white">Arrastra y suelta tu archivo ZIP aquí o <span class="text-amber-400 underline">explora tus archivos</span></p>
               <p class="text-[10px] text-stone-400">Indicador de peso en MB y límite estricto de <span class="text-amber-300 font-semibold">30 MB</span></p>
             </div>
@@ -627,7 +685,7 @@
             <template x-if="fileName">
               <div class="mt-4 p-3 rounded-2xl bg-[#271e18] border border-emerald-500/40 text-left flex items-center justify-between">
                 <div class="flex items-center space-x-2.5 truncate">
-                  <span class="text-emerald-400 text-lg">✓</span>
+                  <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                   <div class="truncate">
                     <p class="text-xs font-bold text-emerald-200 truncate" x-text="fileName"></p>
                     <p class="text-[10px] text-stone-400" x-text="fileSizeMB + ' MB'"></p>
@@ -669,9 +727,7 @@
     <div x-show="step === 4 || isSuccess" x-transition:enter="transition ease-out duration-400" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="py-6 text-center space-y-5">
       
       <!-- Círculo Verde Grande con Checkmark Animado -->
-      <div class="w-20 h-20 mx-auto rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 text-3xl shadow-2xl shadow-emerald-500/30 animate-pulse">
-        ✓
-      </div>
+      <div class="w-20 h-20 mx-auto rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 shadow-2xl shadow-emerald-500/30 animate-pulse"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg></div>
 
       <div class="space-y-1.5">
         <h2 class="text-2xl font-black text-white tracking-tight">¡Listo!</h2>
@@ -679,14 +735,14 @@
           Un profesor estará revisando tu contenido de <span class="text-amber-400 font-bold" x-text="selectedCatedra"></span> para determinar su asignación en el plan de evaluación.
         </p>
         <p class="text-xs text-caramel-400 font-bold pt-1">
-          ¡Muchas gracias {{ current_user.nombre_completo or current_user.username or 'Casi Ingeniero' }}!
+          ¡Muchas gracias {{ current_user.full_name or current_user.nombre_completo or current_user.username or 'Casi Ingeniero' }}!
         </p>
       </div>
 
       <!-- Botones de Acción -->
       <div class="pt-5 flex flex-col sm:flex-row items-center justify-center gap-3">
         <button type="button" @click="resetForm()"
-          class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#1b1410] border border-caramel-500/25 hover:border-amber-400 text-xs font-bold text-stone-200 hover:text-white transition-all shadow-md cursor-pointer">
+          class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#1b1410] border border-caramel-500/25 hover:border-[#7FB3A6] text-xs font-bold text-stone-200 hover:text-white transition-all shadow-md cursor-pointer">
           Subir otro material
         </button>
         <a href="/"

@@ -213,7 +213,7 @@ async def upload_material_submit(
     # El título del material es automáticamente el nombre de la cátedra
     title_clean = materias_clean
     # El aportador se toma directamente de la sesión del usuario autenticado
-    authors_clean = current_user.nombre_completo or current_user.username or current_user.email or "Estudiante UNIMAR"
+    authors_clean = getattr(current_user, 'full_name', None) or getattr(current_user, 'nombre_completo', None) or current_user.username or current_user.email or "Estudiante UNIMAR"
     desc_clean = (description or "").strip() or f"Material académico propuesto para la cátedra {materias_clean}. Pendiente de revisión docente para asignación temática en el plan de evaluación."
 
     cover = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400"
@@ -298,7 +298,7 @@ async def upload_material_submit(
                 title_clean = f"Aporte Académico: {materias_clean}"
             cover = "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400"
 
-    is_teacher = bool(current_user.id_rol and current_user.id_rol >= 2)
+    is_teacher = bool(current_user.can_validate)
     initial_status = "aprobado" if is_teacher else "pendiente"
 
     new_doc = Document(
@@ -350,12 +350,25 @@ def validation_panel_page(request: Request, db: Session = Depends(get_db)):
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
+    if not current_user.can_validate:
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+
     pending_docs = db.query(Document).filter(Document.status == "pendiente").order_by(Document.id.desc()).all()
+
+    # Docentes y curadores pendientes de comprobación institucional por el CEO
+    pending_docentes = []
+    if current_user.is_ceo:
+        pending_docentes = db.query(User).filter(User.id_rol >= 2, User.validado_por_ceo == 0).order_by(User.id.desc()).all()
 
     return templates.TemplateResponse(
         request=request,
         name="validation_panel.html",
-        context={"current_user": current_user, "active_nav": "explore", "pending_documents": pending_docs}
+        context={
+            "current_user": current_user,
+            "active_nav": "explore",
+            "pending_documents": pending_docs,
+            "pending_docentes": pending_docentes
+        }
     )
 
 @router.post("/document/{doc_id}/validate")
@@ -366,7 +379,7 @@ def validate_document(
     db: Session = Depends(get_db)
 ):
     current_user = get_current_user(request, db)
-    if not current_user:
+    if not current_user or not current_user.can_validate:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
     doc = db.query(Document).filter(Document.id == doc_id).first()
@@ -376,6 +389,35 @@ def validate_document(
             doc.verified_by_id = current_user.id
         elif action == "rechazar":
             doc.status = "rechazado"
+        db.commit()
+
+    return RedirectResponse(url="/validation-panel", status_code=status.HTTP_303_SEE_OTHER)
+
+@router.post("/admin/user/{target_id}/approve-docente")
+def approve_docente(target_id: int, request: Request, db: Session = Depends(get_db)):
+    current_user = get_current_user(request, db)
+    if not current_user or not current_user.is_ceo:
+        raise HTTPException(status_code=403, detail="Exclusivo para autorización por el CEO")
+
+    target = db.query(User).filter(User.id == target_id).first()
+    if target:
+        target.validado_por_ceo = 1
+        db.commit()
+
+    return RedirectResponse(url="/validation-panel", status_code=status.HTTP_303_SEE_OTHER)
+
+@router.post("/admin/user/{target_id}/reject-docente")
+def reject_docente(target_id: int, request: Request, db: Session = Depends(get_db)):
+    current_user = get_current_user(request, db)
+    if not current_user or not current_user.is_ceo:
+        raise HTTPException(status_code=403, detail="Exclusivo para autorización por el CEO")
+
+    target = db.query(User).filter(User.id == target_id).first()
+    if target:
+        target.id_rol = 1
+        target.rol_nombre = "Estudiante"
+        target.titulo_honorifico = "Casi Ingeniero"
+        target.validado_por_ceo = 1
         db.commit()
 
     return RedirectResponse(url="/validation-panel", status_code=status.HTTP_303_SEE_OTHER)

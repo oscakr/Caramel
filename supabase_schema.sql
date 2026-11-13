@@ -42,6 +42,7 @@ CREATE TABLE usuarios (
     trimestre INTEGER NOT NULL DEFAULT 3,
     avatar_url VARCHAR(255) DEFAULT 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
     puntos_reputacion INTEGER NOT NULL DEFAULT 0,
+    validado_por_ceo SMALLINT NOT NULL DEFAULT 1, -- 1 = Validado por CEO, 0 = Pendiente de validación
     fecha_registro TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     CONSTRAINT chk_correo_unimar CHECK (correo_institucional LIKE '%@unimar.edu.ve')
 );
@@ -156,7 +157,7 @@ INSERT INTO catedras (id_catedra, codigo_materia, nombre_catedra, trimestre) VAL
 
 -- Usuarios institucionales con contraseñas seguras cifradas en bcrypt (password: 'password123')
 INSERT INTO usuarios (id_usuario, nombre_completo, correo_institucional, password_hash, id_rol, titulo_honorifico, carrera, trimestre, avatar_url, puntos_reputacion) VALUES
-('11111111-1111-1111-1111-111111111111', 'Oscar Álvarez', 'oalvarez.7305@unimar.edu.ve', '$2b$12$7j7L/yXQV7sR1MGz8cPgWewTtqtcLAYpOilPYK4DvZLMnIqFJ3JgK', 4, 'Casi Ingeniero', 'Ingeniería de Sistemas', 3, 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150', 120),
+('11111111-1111-1111-1111-111111111111', 'Oscar Alvarez', 'oalvarez.7305@unimar.edu.ve', '$2b$12$7j7L/yXQV7sR1MGz8cPgWewTtqtcLAYpOilPYK4DvZLMnIqFJ3JgK', 4, 'Casi Ingeniero', 'Ingeniería de Sistemas', 3, 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150', 120),
 ('77777777-7777-7777-7777-777777777777', 'Ing. Flavio Rosales', 'flavio.rosales@unimar.edu.ve', '$2b$12$7j7L/yXQV7sR1MGz8cPgWewTtqtcLAYpOilPYK4DvZLMnIqFJ3JgK', 2, 'Ingeniero', 'Ingeniería de Sistemas', 0, 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150', 500),
 ('88888888-8888-8888-8888-888888888888', 'Dra. Elena Mendoza', 'elena.mendoza@unimar.edu.ve', '$2b$12$7j7L/yXQV7sR1MGz8cPgWewTtqtcLAYpOilPYK4DvZLMnIqFJ3JgK', 3, 'Doctora', 'Decanato de Ingeniería', 0, 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150', 1000);
 

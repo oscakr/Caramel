@@ -20,6 +20,68 @@
     Revisa los recursos propuestos por la comunidad estudiantil y valida su calidad pedagógica antes de publicarlos en el catálogo.
   </p>
 
+  <!-- Sección Exclusiva del CEO: Autorización de Docentes y Curadores -->
+  {% if current_user.is_ceo %}
+  <div class="p-4 rounded-3xl bg-[#201813] border border-amber-500/35 space-y-3.5 shadow-xl">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0">
+          <svg class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        </div>
+        <div>
+          <h2 class="text-xs font-bold text-white uppercase tracking-wider">Control CEO: Solicitudes Docentes</h2>
+          <p class="text-[10px] text-stone-400">Verifica la identidad académica antes de otorgar el badge de VALIDAR.</p>
+        </div>
+      </div>
+      <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+        {{ pending_docentes | length }} pendiente{{ 's' if (pending_docentes | length) != 1 else '' }}
+      </span>
+    </div>
+
+    {% if pending_docentes %}
+      <div class="space-y-2.5">
+        {% for doc_user in pending_docentes %}
+        <div class="p-3 rounded-2xl bg-[#1b1410] border border-white/10 space-y-2.5">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center space-x-2 mb-0.5">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  {{ doc_user.rol_nombre }}
+                </span>
+                <span class="text-[10px] text-stone-400 font-medium">{{ doc_user.carrera }}</span>
+              </div>
+              <h3 class="text-xs font-bold text-white">{{ doc_user.full_name }}</h3>
+              <p class="text-[10px] text-stone-400 font-mono">{{ doc_user.email }} • @{{ doc_user.username }}</p>
+            </div>
+            <span class="text-[9px] text-stone-500 shrink-0 font-mono">{{ doc_user.created_at.strftime('%d/%m/%Y') if doc_user.created_at else 'Reciente' }}</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-1 border-t border-white/5">
+            <form action="/admin/user/{{ doc_user.id }}/reject-docente" method="POST">
+              <button type="submit" 
+                class="w-full py-2 rounded-xl bg-[#2e1d17] hover:bg-red-950/60 active:scale-[0.98] border border-red-500/30 text-red-300 text-[11px] font-semibold transition cursor-pointer">
+                Reasignar a Alumno
+              </button>
+            </form>
+
+            <form action="/admin/user/{{ doc_user.id }}/approve-docente" method="POST">
+              <button type="submit" 
+                class="w-full py-2 rounded-xl bg-amber-500 hover:bg-[#7FB3A6] active:scale-[0.98] text-stone-950 text-[11px] font-bold transition shadow-md cursor-pointer">
+                Aprobar Docente ✓
+              </button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="p-3 rounded-2xl bg-[#1b1410] border border-white/5 text-center">
+        <p class="text-[11px] text-stone-400">No hay docentes ni curadores pendientes de validación por el CEO.</p>
+      </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <!-- Pending Items List -->
   <div class="space-y-3.5">
     {% if pending_documents %}
@@ -29,13 +91,37 @@
         <div class="flex items-start justify-between gap-2">
           <div>
             <div class="flex items-center space-x-2 mb-1">
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/25">
-                {% if doc.material_type == 'video' %}🎥 Video / Clase{% elif doc.material_type == 'guia' %}📝 Guía Práctica{% else %}📖 Libro{% endif %}
+              {% if doc.material_type == 'zip' %}
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center space-x-1">
+                <svg class="w-3 h-3 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                <span>ZIP de Proyecto</span>
               </span>
+              {% elif doc.material_type == 'video' %}
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 flex items-center space-x-1">
+                <svg class="w-3 h-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                <span>Video / Clase</span>
+              </span>
+              {% elif doc.material_type == 'pdf' or doc.read_url.endswith('.pdf') %}
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center space-x-1">
+                <svg class="w-3 h-3 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                <span>Documento PDF</span>
+              </span>
+              {% else %}
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/25">
+                Material de Estudio
+              </span>
+              {% endif %}
               <span class="text-[10px] text-stone-400 font-medium">Trimestre {{ doc.trimestres }}</span>
+              <span class="text-stone-600">•</span>
+              <span class="text-[10px] text-amber-400 font-semibold">{{ doc.materias }}</span>
             </div>
             <h3 class="text-sm font-bold text-white leading-snug">{{ doc.title }}</h3>
-            <p class="text-xs text-caramel-300 font-medium mt-0.5">Autor/Profesor: {{ doc.authors }}</p>
+            <p class="text-xs text-caramel-300 font-medium mt-0.5">
+              Aportado por: <span class="text-white">{{ doc.uploaded_by.full_name if doc.uploaded_by else doc.authors }}</span>
+              {% if doc.uploaded_by and doc.uploaded_by.trimestre %}
+              <span class="text-stone-400 text-[10px]">({{ doc.uploaded_by.carrera }}, {{ doc.uploaded_by.trimestre }}º Trimestre)</span>
+              {% endif %}
+            </p>
           </div>
         </div>
 
@@ -43,17 +129,87 @@
           {{ doc.description }}
         </p>
 
-        <!-- Resource Link Preview -->
-        {% if doc.external_url %}
-        <div class="flex items-center justify-between text-xs pt-1">
-          <a href="{{ doc.external_url }}" target="_blank" rel="noopener noreferrer" 
-             class="inline-flex items-center space-x-1.5 text-xs text-sky-400 hover:text-sky-300 underline font-mono truncate max-w-[260px]">
-            <span>🔗</span>
-            <span class="truncate">{{ doc.external_url }}</span>
-          </a>
-          <span class="text-[10px] text-stone-500">Materia: {{ doc.materias }}</span>
+        <!-- Bloque de Inspección y Descarga de Contenido -->
+        <div class="p-3.5 rounded-2xl bg-[#1b1410] border border-caramel-500/20 space-y-2.5">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-[10px] font-black uppercase tracking-wider text-stone-400">Contenido Adjunto para Revisión</span>
+            <span class="text-[10px] text-stone-500 font-mono">{{ doc.material_type | upper }}</span>
+          </div>
+
+          {% if doc.material_type == 'zip' %}
+          <!-- Inspección para Paquetes ZIP de Proyecto -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-[#231a14] border border-amber-500/30">
+            <div class="flex items-center space-x-3 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs font-bold text-white truncate">{{ doc.title }}.zip</p>
+                <p class="text-[10px] text-stone-400 truncate">Código fuente empaquetado para inspección local</p>
+              </div>
+            </div>
+
+            <a href="{{ doc.read_url or doc.external_url }}" download class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-[#7FB3A6] text-stone-950 font-bold text-xs flex items-center justify-center space-x-2 shadow-md transition-all active:scale-95 shrink-0 cursor-pointer">
+              <svg class="w-4 h-4 text-stone-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Descargar Archivo ZIP</span>
+            </a>
+          </div>
+
+          {% elif doc.material_type == 'pdf' or (doc.read_url and doc.read_url.endswith('.pdf')) or (doc.external_url and doc.external_url.endswith('.pdf')) %}
+          <!-- Inspección para Archivos PDF -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-[#231a14] border border-emerald-500/30">
+            <div class="flex items-center space-x-3 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs font-bold text-white truncate">{{ doc.title }}.pdf</p>
+                <p class="text-[10px] text-stone-400 truncate">Documento académico o guía práctica</p>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-2 shrink-0">
+              <a href="{{ doc.read_url or doc.external_url }}" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-xl bg-[#2c2018] hover:bg-[#382b22] text-[#7FB3A6] border border-[#7FB3A6]/40 text-xs font-bold flex items-center space-x-1.5 transition cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                <span>Leer PDF</span>
+              </a>
+              <a href="{{ doc.read_url or doc.external_url }}" download class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-[#7FB3A6] text-stone-950 font-bold text-xs flex items-center space-x-1 shadow transition active:scale-95 cursor-pointer">
+                <svg class="w-4 h-4 text-stone-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                <span>Descargar</span>
+              </a>
+            </div>
+          </div>
+
+          {% elif doc.material_type == 'video' %}
+          <!-- Inspección para Videos de YouTube -->
+          <div class="p-3 rounded-xl bg-[#231a14] border border-red-500/30 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-white flex items-center space-x-2">
+                <svg class="w-4 h-4 text-red-400" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                <span>Reproductor de Clase / Video</span>
+              </span>
+              <a href="{{ doc.external_url }}" target="_blank" rel="noopener noreferrer" class="text-xs text-sky-400 hover:text-sky-300 underline font-medium">
+                Abrir en YouTube ↗
+              </a>
+            </div>
+            {% if doc.external_url and ('youtube' in doc.external_url or 'youtu.be' in doc.external_url) %}
+            <div class="aspect-video w-full rounded-xl overflow-hidden bg-black/60 shadow border border-white/5">
+              {% set clean_yt = doc.external_url | replace('https://www.youtube.com/watch?v=', '') | replace('https://youtu.be/', '') | replace('https://www.youtube.com/embed/', '') %}
+              <iframe class="w-full h-full" src="https://www.youtube-nocookie.com/embed/{{ clean_yt.split('&')[0].split('?')[0] }}" frameborder="0" allowfullscreen></iframe>
+            </div>
+            {% endif %}
+          </div>
+
+          {% else %}
+          <!-- Inspección Genérica -->
+          <div class="flex items-center justify-between p-3 rounded-xl bg-[#231a14] border border-white/10 text-xs">
+            <span class="text-stone-300 truncate max-w-[240px] font-mono">{{ doc.read_url or doc.external_url }}</span>
+            <a href="{{ doc.read_url or doc.external_url }}" target="_blank" download class="px-4 py-2 rounded-xl bg-amber-500 text-stone-950 font-bold hover:bg-[#7FB3A6] transition shadow cursor-pointer">
+              Descargar Recurso
+            </a>
+          </div>
+          {% endif %}
         </div>
-        {% endif %}
 
         <!-- Smooth Action Buttons -->
         <div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
@@ -61,7 +217,7 @@
             <input type="hidden" name="action" value="rechazar">
             <button type="submit" 
               class="w-full py-2.5 rounded-2xl bg-[#32231c] hover:bg-red-950/60 active:scale-[0.98] border border-red-500/30 text-red-300 text-xs font-semibold transition-all duration-200 cursor-pointer">
-              ✕ Descartar
+              Descartar
             </button>
           </form>
 
@@ -69,7 +225,7 @@
             <input type="hidden" name="action" value="aprobar">
             <button type="submit" 
               class="w-full py-2.5 rounded-2xl btn-caramel active:scale-[0.98] text-xs font-bold transition-all duration-200 shadow-md hover:shadow-caramel-500/30 hover:brightness-105 cursor-pointer">
-              ✓ Validar y Publicar
+              Validar y Publicar
             </button>
           </form>
         </div>
@@ -78,7 +234,7 @@
       {% endfor %}
     {% else %}
       <div class="p-8 rounded-3xl bg-[#241c17] border border-caramel-500/15 text-center space-y-2">
-        <div class="text-2xl">✨</div>
+        <svg class="w-8 h-8 mx-auto text-amber-400/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         <h3 class="text-sm font-bold text-white">No hay materiales pendientes</h3>
         <p class="text-xs text-stone-400">Todos los recursos aportados han sido revisados y validados.</p>
       </div>

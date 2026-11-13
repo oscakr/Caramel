@@ -1,11 +1,11 @@
-# 🍮 Caramel - Plataforma de Recomendación de Documentos Académicos
+# Caramel - Plataforma de Recomendación de Documentos Académicos
 
 Plataforma web con motor de recomendación híbrido para estudiantes universitarios, desarrollada en Python (FastAPI + Jinja2 + Tailwind CSS + Alpine.js + Scikit-Learn), replicando fielmente el diseño y flujo del prototipo de Figma:
 [Caramel Figma Prototype](https://www.figma.com/proto/HENzhk9zdmNOt8vP13dkxQ/Caramel-Prototype?node-id=36-21)
 
 ---
 
-## 🚀 Inicio Rápido
+## Inicio Rápido
 
 Para iniciar la plataforma ejecuta el script automatizado:
 
@@ -26,7 +26,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 
 ---
 
-## 🎨 Pantallas y Componentes de Figma Replicados
+## Pantallas y Componentes de Figma Replicados
 
 1. **Pantalla 1: Registro & Onboarding (`/register` y `/login`)**:
    - Cabecera con collage de ambiente universitario.
@@ -46,8 +46,8 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 3. **Pantalla 3: Detalle de Documento (`/document/{id}`)**:
    - Banner superior temático y portada del libro (ej. *Cálculo* de Larson & Edwards).
    - Botones de acción: *Leer en línea*, *Guardar en lista*, *Calificar*.
-   - Puntuación global destacada (ej. `4.6 ★`).
-   - **Histograma de 5 estrellas escalonado**: Representación visual de barras por nivel (5★ a 1★) idéntica al prototipo.
+   - Puntuación global destacada (ej. `4.6 `).
+   - **Histograma de 5 estrellas escalonado**: Representación visual de barras por nivel (5a 1) idéntica al prototipo.
    - Avatares solapados de *"Varios de tus amigos lo han leído"*.
    - Feed de reseñas comunitarias y modal interactivo para publicar nuevas calificaciones que actualizan el recomendador en tiempo real.
 
@@ -56,7 +56,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 
 ---
 
-## 🧠 Arquitectura del Algoritmo de Recomendación
+## Arquitectura del Algoritmo de Recomendación
 
 El motor de recomendación implementado en `app/recommender.py` utiliza un modelo híbrido multidimensional:
 
@@ -77,11 +77,11 @@ $$WR = \frac{v}{v + m} R + \frac{m}{v + m} C$$
 (donde $v$ es el total de votos, $m=3$ es el umbral mínimo, $R$ el promedio del libro y $C$ la media de la facultad).
 
 ### 5. Explicabilidad en Lenguaje Natural (Explainable AI)
-Cada recomendación muestra un motivo transparente generado automáticamente (ej. *"Clave para tu 3º Trimestre de Ingeniería de Sistemas"*, *"Recomendado por 3 de tus amigos con 5★"*, *"94% de afinidad con tus temas de estudio"*).
+Cada recomendación muestra un motivo transparente generado automáticamente (ej. *"Clave para tu 3º Trimestre de Ingeniería de Sistemas"*, *"Recomendado por 3 de tus amigos con 5"*, *"94% de afinidad con tus temas de estudio"*).
 
 ---
 
-## 👥 Perfiles de Demostración Disponibles
+## Perfiles de Demostración Disponibles
 
 Puedes alternar entre estos perfiles desde el menú superior o en `/demo-switch/{id}` para ver cómo el feed se adapta automáticamente:
 * **Oscar Rodríguez** (ID: 1): Ing. de Sistemas • 3er Trimestre (Usuario por defecto)
@@ -93,7 +93,7 @@ Puedes alternar entre estos perfiles desde el menú superior o en `/demo-switch/
 
 ---
 
-## 📁 Estructura del Código
+## Estructura del Código
 
 ```
 Caramel/

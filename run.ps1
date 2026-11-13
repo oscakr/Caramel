@@ -23,9 +23,9 @@ if (Test-Path "$dir\venv\Scripts\python.exe") {
     $pythonExe = "$dir\venv\Scripts\python.exe"
 }
 
-Write-Host "[✓] Entorno: Windows PowerShell" -ForegroundColor Cyan
-Write-Host "[✓] Base de Datos: caramel.db (SQLite) / PostgreSQL Cloud" -ForegroundColor Green
-Write-Host "[✓] Acceso Local:  http://localhost:$Port" -ForegroundColor Green
+Write-Host "[OK] Entorno: Windows PowerShell" -ForegroundColor Cyan
+Write-Host "[OK] Base de Datos: caramel.db (SQLite) / PostgreSQL Cloud" -ForegroundColor Green
+Write-Host "[OK] Acceso Local:  http://localhost:$Port" -ForegroundColor Green
 Write-Host "[*] Presiona Ctrl+C en cualquier momento para detener." -ForegroundColor White
 Write-Host "================================================================="
 

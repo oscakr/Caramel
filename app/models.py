@@ -34,6 +34,8 @@ class Usuario(Base):
     puntos_reputacion = Column(Integer, default=0)
     fecha_registro = Column(DateTime, default=datetime.utcnow)
     titulo_honorifico = Column(String(50), default="Casi Ingeniero")
+    showcase_ids = Column(String(255), default="")
+    validado_por_ceo = Column(SmallInteger, default=1)
 
     rol = relationship("Role", foreign_keys=[id_rol], lazy="joined")
     proyectos = relationship("Proyecto", back_populates="autor", foreign_keys="Proyecto.id_autor")
@@ -78,6 +80,10 @@ class Usuario(Base):
                 return "Doctora"
             return "Profesor"
         return "Casi Ingeniero"
+
+    @property
+    def nombre_completo(self):
+        return self.full_name
 
     @property
     def is_ceo(self) -> bool:
@@ -193,11 +199,31 @@ class User(Base):
     rol_nombre = Column(String(50), default="Estudiante")
     puntos_reputacion = Column(Integer, default=0)
     titulo_honorifico = Column(String(50), default="Casi Ingeniero")
+    showcase_ids = Column(String(255), default="")
+    validado_por_ceo = Column(SmallInteger, default=1) # 1 = Validado por CEO, 0 = Pendiente de validación
 
     rol = relationship("Role", foreign_keys=[id_rol], lazy="joined")
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
     interactions = relationship("UserInteraction", back_populates="user", cascade="all, delete-orphan")
     bookmarks = relationship("Bookmark", back_populates="user", cascade="all, delete-orphan")
+
+    @property
+    def can_validate(self) -> bool:
+        """Determina si el usuario tiene privilegios activos para validar recursos (CEO o docente aprobado)."""
+        if self.is_ceo:
+            return True
+        if self.id_rol and self.id_rol >= 2:
+            return bool(self.validado_por_ceo)
+        return False
+
+    @property
+    def is_docente_pending_validation(self) -> bool:
+        """Indica si el usuario se registró como docente o curador pero aún espera la validación del CEO."""
+        if self.is_ceo:
+            return False
+        if self.id_rol and self.id_rol >= 2:
+            return not bool(self.validado_por_ceo)
+        return False
 
     @property
     def saludo_titulo(self):
@@ -212,6 +238,10 @@ class User(Base):
                 return "Doctora"
             return "Profesor"
         return "Casi Ingeniero"
+
+    @property
+    def nombre_completo(self):
+        return self.full_name
 
     @property
     def is_ceo(self) -> bool:
@@ -256,11 +286,23 @@ class Document(Base):
     uploaded_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     verified_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
-    uploaded_by = relationship("User", foreign_keys=[uploaded_by_id])
-    verified_by = relationship("User", foreign_keys=[verified_by_id])
+    uploaded_by = relationship("User", foreign_keys=[uploaded_by_id], lazy="joined")
+    verified_by = relationship("User", foreign_keys=[verified_by_id], lazy="joined")
     reviews = relationship("Review", back_populates="document", cascade="all, delete-orphan", order_by="desc(Review.created_at)")
     curated_lists = relationship("CuratedList", secondary=curated_list_documents, back_populates="documents")
     interactions = relationship("UserInteraction", back_populates="document", cascade="all, delete-orphan")
+
+    @property
+    def verifier_name(self) -> str:
+        if self.verified_by:
+            return self.verified_by.full_name
+        return "Ing. Flavio Rosales"
+
+    @property
+    def verifier_role(self) -> str:
+        if self.verified_by:
+            return self.verified_by.rol_nombre or "Docente de Cátedra"
+        return "Docente de Cátedra"
 
     def update_rating_stats(self):
         """Recalculate average rating and histogram from actual reviews."""
