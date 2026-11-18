@@ -1,55 +1,151 @@
 {% extends "base.html" %}
 
-{% block title %}Caramel - Avisos y Notificaciones{% endblock %}
+{% block title %}Caramel - Centro de Avisos Académicos{% endblock %}
 
 {% block content %}
-<div class="space-y-4 pt-2 pb-8">
-  <div class="flex items-center justify-between">
-    <div>
-      <h1 class="text-xl font-bold text-white">Avisos Académicos</h1>
-      <p class="text-xs text-stone-400 mt-0.5">Actualizaciones de tu trimestre y actividad de la comunidad</p>
-    </div>
-    <span class="text-[10px] px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/25 text-amber-300 font-semibold">
-      {{ notifications|length }} avisos
-    </span>
-  </div>
+<div class="w-full max-w-7xl mx-auto py-2 pb-10" x-data="{
+  filter: 'todos',
+  init() {
+    if (typeof clearAvisosBadge === 'function') {
+      clearAvisosBadge();
+    }
+  }
+}">
 
-  <div class="space-y-2.5">
-    {% for notif in notifications %}
-    <a href="{{ notif.link }}" class="block p-3.5 rounded-2xl bg-[#241c16] hover:bg-[#2c221b] border {{ notif.border_class }} transition-all duration-200 group shadow-md hover:scale-[1.01]">
-      <div class="flex space-x-3 items-start">
-        <div class="w-8 h-8 rounded-xl {{ notif.badge_class }} flex items-center justify-center shrink-0 shadow-xs">
-          {% if notif.type == 'playlist' %}
-          <svg class="w-4 h-4 fill-none stroke-current" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-          {% elif notif.type == 'docente' %}
-          <svg class="w-4 h-4 fill-none stroke-current" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          {% elif notif.type == 'trend' %}
-          <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-          {% else %}
-          <svg class="w-4 h-4 fill-none stroke-current" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+  <!-- Main Defined Container Card -->
+  <div class="bg-white border border-stone-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+
+    <!-- Header Panel with Title and Action Buttons -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-stone-100">
+      <div>
+        <h1 class="text-xl font-black text-stone-900 tracking-wide">Avisos Académicos</h1>
+        <p class="text-xs text-stone-500 mt-0.5">Novedades institucionales, estado de validaciones y actividad de cátedras UNIMAR</p>
+      </div>
+
+      <!-- Action Button: Marcar todos como revisados -->
+      {% if notifications %}
+      <div class="flex items-center space-x-2 self-start sm:self-auto">
+        <button type="button" 
+                @click="clearAvisosBadge()"
+                class="px-3.5 py-1.5 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer shadow-2xs">
+          <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <span>Revisado</span>
+        </button>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Notifications List -->
+    {% if notifications %}
+    <div class="space-y-3">
+      {% for notif in notifications %}
+      <div class="p-4 sm:p-5 rounded-2xl bg-stone-50/70 hover:bg-amber-50/30 border border-stone-200 hover:border-amber-400 transition-all duration-200 group shadow-2xs hover:shadow-xs">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex items-start space-x-3.5 min-w-0 flex-1">
+            <div class="w-10 h-10 rounded-xl {{ notif.badge_class }} flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
+              {% if notif.type == 'playlist' %}
+              <svg class="w-5 h-5 fill-none stroke-current" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+              {% elif notif.type == 'docente' %}
+                {% if notif.badge_class and 'rose' in notif.badge_class %}
+                <svg class="w-5 h-5 fill-none stroke-current" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                {% else %}
+                <svg class="w-5 h-5 fill-none stroke-current" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                {% endif %}
+              {% elif notif.type == 'trend' %}
+              <svg class="w-5 h-5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+              {% else %}
+              <svg class="w-5 h-5 fill-none stroke-current" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+              {% endif %}
+            </div>
+
+            <div class="space-y-1.5 flex-1 min-w-0">
+              <div class="flex items-center space-x-2">
+                <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-stone-200/80 text-stone-700 tracking-wider">
+                  {{ notif.time }}
+                </span>
+                {% if notif.subtype == 'rechazo' %}
+                <span class="text-sm font-bold text-stone-900 leading-tight">
+                  {{ notif.title }}
+                </span>
+                {% else %}
+                <a href="{{ notif.link }}" class="text-sm font-bold text-stone-900 group-hover:text-caramel-700 transition-colors leading-tight">
+                  {{ notif.title }}
+                </a>
+                {% endif %}
+              </div>
+              <p class="text-xs text-stone-600 leading-relaxed font-normal">
+                {{ notif.description }}
+              </p>
+
+              {% if notif.subtype == 'rechazo' or notif.can_repost or notif.has_txt %}
+              <div class="pt-2 flex flex-wrap items-center gap-2">
+                {% if notif.has_txt and notif.txt_url %}
+                <a href="{{ notif.txt_url }}" target="_blank" download class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-800 text-[11px] font-bold shadow-2xs transition active:scale-95 cursor-pointer">
+                  <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  <span>Descargar informe de motivos (.txt)</span>
+                </a>
+                <a href="{{ notif.txt_url }}" target="_blank" class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-[11px] font-semibold transition cursor-pointer">
+                  <span>Ver online</span>
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                </a>
+                {% endif %}
+
+                <!-- Botón Directo para Volver a Postular el Material Corregido -->
+                <a href="{{ notif.repost_url or '/upload-material' }}" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-stone-950 text-[11px] font-bold shadow-2xs transition cursor-pointer">
+                  <svg class="w-3.5 h-3.5 text-stone-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                  </svg>
+                  <span>Volver a postular material</span>
+                </a>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Action Button Indicator (Solo para contenidos admitidos / no rechazados) -->
+          {% if notif.subtype != 'rechazo' %}
+          <div class="shrink-0 self-center hidden sm:flex items-center space-x-1 text-xs font-bold text-caramel-600 group-hover:text-caramel-700 transition">
+            <a href="{{ notif.link }}" class="flex items-center space-x-1 hover:underline">
+              <span>Acceder</span>
+              <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+            </a>
+          </div>
           {% endif %}
         </div>
-
-        <div class="space-y-1 flex-1 min-w-0">
-          <div class="flex items-center justify-between gap-2">
-            <h4 class="text-xs font-bold text-stone-200 group-hover:text-amber-300 transition-colors leading-tight">
-              {{ notif.title }}
-            </h4>
-            <span class="text-[9px] text-stone-500 font-mono shrink-0">{{ notif.time }}</span>
-          </div>
-          <p class="text-[11px] text-stone-300/90 leading-relaxed font-normal">
-            {{ notif.description }}
-          </p>
-        </div>
       </div>
-    </a>
-    {% else %}
-    <div class="p-8 rounded-3xl bg-[#241c16] border border-caramel-500/15 text-center space-y-2">
-      <svg class="w-8 h-8 mx-auto text-amber-400/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-      <h3 class="text-sm font-bold text-white">Sin avisos pendientes</h3>
-      <p class="text-xs text-stone-400">Estás al día con las actividades de tu trimestre y cátedras.</p>
+      {% endfor %}
     </div>
-    {% endfor %}
+    {% else %}
+    <!-- Defined Clean Empty State filling the container -->
+    <div class="py-14 px-6 text-center space-y-4 rounded-2xl bg-stone-50 border border-dashed border-stone-200">
+      <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 border border-amber-300 flex items-center justify-center mx-auto shadow-xs">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+        </svg>
+      </div>
+      <div class="space-y-1">
+        <h3 class="text-base font-bold text-stone-900">Bandeja de avisos al día</h3>
+        <p class="text-xs text-stone-500 max-w-sm mx-auto leading-relaxed">
+          No tienes avisos pendientes ni validaciones por verificar en este momento. Estás al día con la plataforma.
+        </p>
+      </div>
+      <div class="pt-2 flex items-center justify-center gap-3">
+        <a href="/explore" class="px-4 py-2 rounded-xl bg-amber-500 text-stone-950 font-bold text-xs hover:bg-amber-400 transition shadow-xs">
+          Explorar Catálogo
+        </a>
+        <a href="/profile" class="px-4 py-2 rounded-xl bg-white border border-stone-200 text-stone-700 font-bold text-xs hover:bg-stone-50 transition shadow-2xs">
+          Mi Perfil
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
   </div>
 </div>
 {% endblock %}

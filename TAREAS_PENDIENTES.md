@@ -4,7 +4,15 @@
 **Institución:** Universidad de Margarita (UNIMAR) - Decanato de Ingeniería  
 **Estudiante / CEO:** Oscar Alvarez (`oalvarez.7305@unimar.edu.ve`)  
 **Base de Datos:** Supabase PostgreSQL Cloud (AWS `us-west-2` activo 24/7)  
-**Última actualización:** 11 de Noviembre de 2026  
+**Última actualización:** 13 de Noviembre de 2026  
+
+---
+
+## 📌 Próxima Prioridad Operativa (Pendiente)
+- [ ] **Depuración de Contenido Simulado y Nutrición con Material Real:**
+  * **Purga de Datos Falsos:** Limpiar los 10 libros simulados, valoraciones artificiales y usuarios ficticios generados inicialmente por `seed_data.py`.
+  * **Conservación de Usuarios Clave:** Mantener intactas las credenciales y perfiles del CEO (**Oscar Alvarez**), directivos y usuarios institucionales validados.
+  * **Ingesta de Contenido Real:** Cargar guías de estudio, exámenes resueltos, libros oficiales y material de cátedra de UNIMAR enfocado en las carreras activas (*Ingeniería de Sistemas* e *Ingeniería Industrial (Beta)*), ya sea vía formulario `/upload-material` o mediante script de carga masiva.
 
 ---
 
@@ -91,6 +99,14 @@ Garantizar el cumplimiento del ciclo de curaduría pedagógica exigido por la no
   * Despliegue de ventana emergente (pop-up modal) en el menú principal con el mensaje de espera requerido y saludo personalizado por nombre y apellido.
   * Ocultación del badge «VALIDAR» y protección estricta de rutas contra acceso no autorizado.
   * Panel de control exclusivo para el CEO (**Oscar Alvarez**) en `/validation-panel` para aprobar o reasignar docentes con 1 clic.
+- [x] **Flujo de Dictamen Docente y Rechazo Estructurado con Informe .txt (16 de Noviembre de 2026):**
+  * Modal interactivo compacto de 2 pasos en `/validation-panel`:
+    * Paso 1: Opciones inmediatas en 1 solo clic (*"El contenido que indicaste no tiene mucha relación con la cátedra"* o *"Ya existe un contenido muy similar"*).
+    * Paso 2 (*"Otro motivo"*): Casillita de redacción técnica que compila automáticamente un informe formal `.txt` en el servidor (`uploads/motivos_rechazo/`).
+  * Integración en `/notifications` del alumno con el texto exacto, botones para ver/descargar el `.txt` y botón directo `Volver a postular material` (`/upload-material`).
+  * Banner de advertencia y botón de resubmisión en `/document/{id}`.
+  * Toast de notificación flotante al docente tras dictaminar.
+  * Sincronización metodológica completa en el tomo de tesis (`Proyecto Oscar correccioines.docx`: Cuadro 20 RF-09/RF-10, Cuadro 24 Heurísticas 8 y 9 de Nielsen, Objetivo 4 y Figura Nº 7).
 - [ ] **Pruebas con Docentes:**
   * Acceso de prueba para el **Prof. Flavio Rosales** (`flavio.rosales@unimar.edu.ve`, Docente de Cátedra).
   * Acceso para la **Dra. Elena Mendoza** (`elena.mendoza@unimar.edu.ve`, Curador/Administrador).
@@ -157,6 +173,12 @@ Para sustentar la tesis con rigor científico y metodológico ante el jurado eva
   * Solucionado el fallo interno al acceder al nombre del autor en la sesión activa (`full_name` vs `nombre_completo`).
   * Validación integral de paquetes `.zip` (extensión, tamaño máximo 30 MB y almacenamiento seguro en `/uploads/`).
   * Verificado con respuesta `HTTP 200` y registro inmediato en la base de datos `caramel.db`.
+
+- [x] **Ajuste de Carreras y Confirmación de Contraseña en Registro (13 de Noviembre de 2026):**
+  * Eliminadas las carreras de Ingeniería Civil y Computación del selector de registro.
+  * Carrera de Ingeniería Industrial actualizada a `Ingeniería Industrial (Beta)`.
+  * Incorporado campo de confirmación de contraseña con indicadores en vivo (verde/rojo) en Alpine.js y validación en backend FastAPI (`auth.py`).
+  * Normalización del catálogo de exploración (`feed.py`) para compatibilidad con `Ingeniería Industrial (Beta)`.
 
 ---
 

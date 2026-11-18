@@ -14,7 +14,47 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sqlalchemy.orm import Session
 
-from .models import User, Document, Review, Friendship, Bookmark, UserInteraction
+from .models import User, Document, Review, ReviewLike, Friendship, Bookmark, UserInteraction
+
+# Mapeo oficial del Pensum Vigente UNIMAR (Eje de Programación y Desarrollo de Sistemas)
+CATEDRA_TRIMESTRE_MAP = {
+    "técnicas de programación": 3,
+    "tecnicas de programacion": 3,
+    "programación i": 4,
+    "programacion i": 4,
+    "programación ii": 5,
+    "programacion ii": 5,
+    "estructura de datos": 5,
+    "programación iii": 6,
+    "programacion iii": 6,
+    "sistemas i": 6,
+    "base de datos i": 6,
+    "programación iv": 7,
+    "programacion iv": 7,
+    "sistemas ii": 7,
+    "base de datos ii": 7,
+    "sistemas iii": 8,
+    "sistemas operativos": 9,
+    "sistemas de información gerencial": 9,
+    "sistemas de informacion gerencial": 9,
+    "metodología de desarrollo de software": 10,
+    "metodologia de desarrollo de software": 10,
+}
+
+PENSUM_CATEDRAS_POR_TRIMESTRE = {
+    1: ["Técnicas de Programación", "Programación I", "Estructura de Datos", "Programación II"],
+    2: ["Técnicas de Programación", "Programación I", "Estructura de Datos", "Programación II"],
+    3: ["Técnicas de Programación", "Programación I", "Estructura de Datos", "Programación II"],
+    4: ["Programación I", "Técnicas de Programación", "Programación II", "Estructura de Datos"],
+    5: ["Estructura de Datos", "Programación II", "Programación I", "Base de Datos I"],
+    6: ["Programación III", "Sistemas I", "Base de Datos I", "Estructura de Datos", "Programación II"],
+    7: ["Programación IV", "Sistemas II", "Base de Datos II", "Base de Datos I", "Sistemas I"],
+    8: ["Sistemas III", "Base de Datos II", "Sistemas II", "Programación IV", "Sistemas Operativos"],
+    9: ["Sistemas Operativos", "Sistemas de Información Gerencial", "Sistemas III", "Metodología de Desarrollo de Software"],
+    10: ["Metodología de Desarrollo de Software", "Sistemas de Información Gerencial", "Sistemas Operativos", "Sistemas III"],
+    11: ["Metodología de Desarrollo de Software", "Sistemas de Información Gerencial", "Sistemas Operativos", "Sistemas III"],
+    12: ["Metodología de Desarrollo de Software", "Sistemas de Información Gerencial", "Base de Datos II", "Sistemas III"],
+}
 
 SPANISH_STOP_WORDS = [
     "de", "la", "que", "el", "en", "y", "a", "los", "del", "se", "las", "por", "un", "para",
@@ -46,6 +86,22 @@ class AcademicRecommender:
     def _get_user_interest_text(self, user: User, documents_by_id: Dict[int, Document]) -> str:
         """Constructs a composite profile text reflecting user's academic level and interactions."""
         profile_tokens = [user.carrera.lower(), f"trimestre {user.trimestre}"]
+
+        # Materias sugeridas según el trimestre real del pensum UNIMAR
+        sugeridas = PENSUM_CATEDRAS_POR_TRIMESTRE.get(user.trimestre or 3, [])
+        for mat in sugeridas:
+            profile_tokens.append(mat.lower())
+
+        if getattr(user, "catedra_asignada", None):
+            profile_tokens.append(user.catedra_asignada.lower())
+
+        # Showcase documents (4 Materiales Favoritos del usuario)
+        if getattr(user, "showcase_ids", None):
+            raw_ids = [int(x.strip()) for x in user.showcase_ids.split(",") if x.strip().isdigit()]
+            for sid in raw_ids:
+                if sid in documents_by_id:
+                    doc = documents_by_id[sid]
+                    profile_tokens.extend([doc.title, doc.materias, doc.tags])
 
         # Positively rated documents (4 or 5 stars)
         for rev in user.reviews:
@@ -93,7 +149,7 @@ class AcademicRecommender:
         if not user:
             return []
 
-        all_documents = self.db.query(Document).all()
+        all_documents = self.db.query(Document).filter(Document.status == "aprobado").all()
         if not all_documents:
             return []
 
@@ -133,12 +189,23 @@ class AcademicRecommender:
             if any(user_carrera in c or c in user_carrera for c in doc_carreras):
                 acad_score += 0.55  # Carrera afín
 
-            # Trimestre proximity score
+            # Trimestre & Pensum UNIMAR proximity score
             doc_trimestres = [int(t.strip()) for t in doc.trimestres.split(",") if t.strip().isdigit()]
-            if user.trimestre in doc_trimestres:
-                acad_score += 0.45  # Coincide con su trimestre actual
-            elif any(abs(user.trimestre - t) == 1 for t in doc_trimestres):
-                acad_score += 0.25  # Trimestre contiguo (+/- 1)
+            doc_materia_clean = (doc.materias or "").strip().lower()
+            if doc_materia_clean in CATEDRA_TRIMESTRE_MAP:
+                official_tri = CATEDRA_TRIMESTRE_MAP[doc_materia_clean]
+                if official_tri not in doc_trimestres:
+                    doc_trimestres.append(official_tri)
+
+            user_sugeridas = [m.lower() for m in PENSUM_CATEDRAS_POR_TRIMESTRE.get(user.trimestre or 3, [])]
+            user_cat_asignada = (getattr(user, "catedra_asignada", "") or "").strip().lower()
+
+            if user.trimestre in doc_trimestres or (user_cat_asignada and user_cat_asignada in doc_materia_clean):
+                acad_score += 0.45  # Coincide con su trimestre actual o cátedra asignada
+            elif user_sugeridas and doc_materia_clean == user_sugeridas[0]:
+                acad_score += 0.45  # Materia prioritaria de su trimestre en el pensum UNIMAR
+            elif any(abs(user.trimestre - t) == 1 for t in doc_trimestres) or doc_materia_clean in user_sugeridas:
+                acad_score += 0.30  # Trimestre contiguo (+/- 1) o materia del bloque sugerido
             acad_score = min(1.0, acad_score)
 
             # B. Social / Peer Score (0.0 to 1.0)
@@ -209,15 +276,29 @@ class AcademicRecommender:
         return scored_items[:limit]
 
     def get_popular_in_trimester(self, user: User, limit: int = 6) -> List[Document]:
-        """Returns documents trending in the user's current academic trimester."""
-        docs = self.db.query(Document).all()
-        target = str(user.trimestre)
+        """Returns documents trending in the user's current academic trimester and UNIMAR pensum block."""
+        docs = self.db.query(Document).filter(Document.status == "aprobado").all()
+        target = str(user.trimestre or 3)
+        sugeridas = [m.lower() for m in PENSUM_CATEDRAS_POR_TRIMESTRE.get(user.trimestre or 3, [])]
         matched = []
         for d in docs:
             t_list = [t.strip() for t in d.trimestres.split(",")]
-            if target in t_list:
+            d_mat = (d.materias or "").strip().lower()
+            if d_mat in CATEDRA_TRIMESTRE_MAP:
+                t_list.append(str(CATEDRA_TRIMESTRE_MAP[d_mat]))
+            if target in t_list or d_mat in sugeridas:
                 matched.append(d)
 
-        # Sort by ratings_count and rating_avg
-        matched.sort(key=lambda d: (d.ratings_count * d.rating_avg), reverse=True)
+        # Fallback to all approved documents if none match the exact trimester yet
+        if not matched:
+            matched = list(docs)
+
+        # Sort by exact trimester match first, then ratings_count and rating_avg
+        matched.sort(
+            key=lambda d: (
+                1 if target in [t.strip() for t in d.trimestres.split(",")] else 0,
+                d.ratings_count * d.rating_avg
+            ),
+            reverse=True
+        )
         return matched[:limit]

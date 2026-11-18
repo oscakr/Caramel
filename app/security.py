@@ -38,5 +38,5 @@ def validate_institutional_email(email: str) -> tuple[bool, str]:
     if len(local_part) < 2:
         return False, "El identificador del correo institucional es demasiado corto."
     if domain != "unimar.edu.ve":
-        return False, "Registro exclusivo para la comunidad UNIMAR. Debes usar tu correo institucional (@unimar.edu.ve)."
+        return False, "Debes usar tu correo institucional (@unimar.edu.ve)."
     return True, ""

@@ -3,75 +3,105 @@
 {% block title %}Caramel - Iniciar Sesión{% endblock %}
 
 {% block content %}
-<div class="flex flex-col items-center justify-center min-h-[85vh] py-4 px-4">
+<!-- Header Invisible Estético para forzar scroll inferior al registro docente -->
+<div class="w-full h-12 invisible pointer-events-none select-none" aria-hidden="true"></div>
+
+<div class="flex flex-col items-center justify-start min-h-[90vh] py-2 pb-16 px-4 bg-white">
 
   <!-- Header Collage & Visual Banner -->
-  <div class="relative w-full max-w-[380px] h-44 rounded-3xl overflow-hidden mb-4 border border-caramel-500/20 shadow-xl">
-    <img src="/static/img/login_banner.jpg" class="w-full h-full object-cover brightness-85 contrast-105" alt="Caramel Banner">
-    <div class="absolute inset-0 bg-gradient-to-t from-[#1b1410] via-[#1b1410]/40 to-transparent"></div>
+  <div class="relative w-full max-w-[380px] h-44 rounded-3xl overflow-hidden mb-4 border border-stone-200 shadow-md">
+    <img src="/static/img/login_banner.jpg" class="w-full h-full object-cover brightness-95 contrast-100" alt="Caramel Banner">
     
     <!-- Floating Caramel Brand Monogram -->
     <div class="absolute inset-0 flex flex-col items-center justify-center">
-      <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-400 to-amber-200 p-0.5 shadow-2xl">
-        <div class="w-full h-full bg-[#201813] rounded-2xl flex items-center justify-center p-2.5">
-          <img src="/static/img/caramel_logo.png" class="w-full h-full object-contain drop-shadow-md" alt="Logo Caramel">
+      <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-400 to-amber-200 p-0.5 shadow-xl">
+        <div class="w-full h-full bg-white rounded-2xl flex items-center justify-center p-2.5 shadow-sm">
+          <img src="/static/img/caramel_logo.png" class="w-full h-full object-contain drop-shadow-sm" alt="Logo Caramel">
         </div>
       </div>
-      <h1 class="text-2xl font-bold tracking-wide text-[#fdf7f1] mt-2 font-serif">Caramel</h1>
+      <h1 class="text-2xl font-bold tracking-wide text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)] mt-2 font-serif">Caramel</h1>
     </div>
   </div>
 
   <!-- Form Card -->
-  <div class="w-full max-w-[380px] bg-[#241c17] p-6 rounded-3xl border border-caramel-500/20 shadow-2xl">
+  <div class="w-full max-w-[380px] bg-white p-6 rounded-3xl border border-stone-200 shadow-xl">
     <div class="text-center mb-5">
-      <h2 class="text-xl font-bold text-[#fcf8f3]">Iniciar Sesión</h2>
-      <p class="text-xs text-stone-400 mt-1">Ingresa tus credenciales para continuar</p>
+      <h2 class="text-xl font-bold text-stone-900">Iniciar Sesión</h2>
+      <p class="text-xs text-stone-500 mt-1">Ingresa tus credenciales para continuar</p>
     </div>
 
     {% if error %}
-    <div class="mb-4 p-3 rounded-2xl bg-red-950/60 border border-red-500/30 text-red-300 text-xs text-center">
+    <div class="mb-4 p-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs text-center font-medium">
       {{ error }}
     </div>
     {% endif %}
 
     <form method="POST" action="/login" class="space-y-4">
       <div>
-        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">
+        <label class="block text-[11px] font-medium text-stone-700 mb-1 ml-1">
           Correo institucional o usuario
         </label>
         <div class="relative">
           <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></span>
           <input type="text" name="username" required placeholder="tu.nombre@unimar.edu.ve o usuario"
-            class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition">
+            value="{{ username_val if username_val else '' }}"
+            class="w-full pl-9 pr-4 py-2.5 bg-stone-50 border border-stone-300 rounded-2xl text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:bg-white focus:border-caramel-500 transition shadow-xs">
         </div>
       </div>
 
       <div>
-        <label class="block text-[11px] font-medium text-stone-400 mb-1 ml-1">
+        <label class="block text-[11px] font-medium text-stone-700 mb-1 ml-1">
           Contraseña
         </label>
         <div class="relative">
           <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span>
           <input type="password" name="password" required placeholder="••••••••"
-            class="w-full pl-9 pr-4 py-2.5 bg-[#1b1410] border border-caramel-500/25 rounded-2xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-caramel-400 transition">
+            class="w-full pl-9 pr-4 py-2.5 bg-stone-50 border border-stone-300 rounded-2xl text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:bg-white focus:border-caramel-500 transition shadow-xs">
         </div>
       </div>
 
       <div class="pt-2">
         <button type="submit" 
           class="group relative overflow-hidden w-full py-3.5 px-6 rounded-full text-xs sm:text-sm font-bold tracking-wide shadow-xl flex items-center justify-center space-x-2 text-[#18110c] bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] hover:brightness-105 active:scale-[0.985] transition-all duration-300 ease-out cursor-pointer hover:shadow-2xl hover:shadow-caramel-500/30">
-          <!-- Shimmer effect -->
-          <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none"></span>
+          <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none"></span>
           <span>Iniciar Sesión</span>
         </button>
       </div>
+
+      {% if failed_attempts and failed_attempts >= 4 %}
+      <div class="pt-1 text-center">
+        <p class="text-[11.5px] text-stone-500 leading-tight">
+          ¿Olvidaste tu contraseña? <span class="font-medium text-stone-700">Contacta al soporte.</span>
+        </p>
+      </div>
+      {% endif %}
     </form>
 
     <div class="mt-5 text-center">
-      <p class="text-xs text-stone-400">
+      <p class="text-xs text-stone-600">
         ¿No tienes cuenta? 
-        <a href="/register" class="text-caramel-400 hover:text-[#7FB3A6] font-semibold underline ml-1">Regístrate aquí</a>
+        <a href="/register" class="text-caramel-600 hover:text-caramel-700 font-bold underline ml-1">Regístrate como estudiante</a>
       </p>
+    </div>
+
+    <!-- Callout Institucional para Acreditación Docente -->
+    <div class="mt-4 pt-4 border-t border-stone-100 text-center">
+      <div class="p-3 rounded-2xl bg-amber-50 border border-amber-200/80 space-y-1 text-left">
+        <div class="flex items-center space-x-2">
+          <div class="w-5 h-5 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+            <svg class="w-3 h-3 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+          </div>
+          <span class="text-[11px] font-bold text-amber-950">Acceso del Personal Docente</span>
+        </div>
+        <p class="text-[10px] text-amber-800/90 leading-relaxed pl-7">
+          ¿Es profesor de la UNIMAR y desea validar contenidos en el Eje de Programación?
+        </p>
+        <div class="pl-7 pt-1">
+          <a href="/docente/registro" class="inline-flex items-center space-x-1 text-[11px] font-bold text-amber-800 hover:text-amber-950 hover:underline">
+            <span>Solicitar Acreditación Docente →</span>
+          </a>
+        </div>
+      </div>
     </div>
 
   </div>

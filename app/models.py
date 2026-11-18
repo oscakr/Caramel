@@ -1,10 +1,21 @@
 from datetime import datetime
+import random
 import uuid
 from sqlalchemy import (
     Column, Integer, String, Float, Text, DateTime, ForeignKey, Table, BigInteger, SmallInteger
 )
 from sqlalchemy.orm import relationship
 from .database import Base
+
+DEFAULT_AVATARS = [
+    "/static/img/avatares/Flavio.jpg",
+    "/static/img/avatares/Daniela.jpg",
+    "/static/img/avatares/Franklin.jpg",
+    "/static/img/avatares/Jhonny.jpg",
+    "/static/img/avatares/Oswuald.jpg",
+    "/static/img/avatares/Yemnel.jpg",
+]
+DEFAULT_BANNER = "/static/img/bannerdefault.jpg"
 
 # ==============================================================================
 # MODELO ENTIDAD-RELACIÓN OFICIAL DE LA TESIS (CUADRO Nº 23 - DICCIONARIO DE DATOS)
@@ -30,12 +41,16 @@ class Usuario(Base):
     id_rol = Column(Integer, ForeignKey("roles.id_rol"), nullable=False)
     carrera = Column(String(100), nullable=False, default="Ingeniería de Sistemas")
     trimestre = Column(Integer, nullable=False, default=3)
-    avatar_url = Column(String(255), default="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150")
+    avatar_url = Column(String(255), default=lambda: random.choice(DEFAULT_AVATARS))
     puntos_reputacion = Column(Integer, default=0)
     fecha_registro = Column(DateTime, default=datetime.utcnow)
     titulo_honorifico = Column(String(50), default="Casi Ingeniero")
     showcase_ids = Column(String(255), default="")
     validado_por_ceo = Column(SmallInteger, default=1)
+    banner_url = Column(String(300), default=DEFAULT_BANNER)
+    banner_position = Column(String(50), default="50% 50%")
+    catedra_asignada = Column(String(100), default="Todas las Cátedras del Eje")
+    last_trimestre_change = Column(DateTime, nullable=True)
 
     rol = relationship("Role", foreign_keys=[id_rol], lazy="joined")
     proyectos = relationship("Proyecto", back_populates="autor", foreign_keys="Proyecto.id_autor")
@@ -49,6 +64,8 @@ class Usuario(Base):
 
     @property
     def username(self):
+        if self.is_ceo:
+            return "P3"
         return self.correo_institucional.split("@")[0]
 
     @property
@@ -93,6 +110,40 @@ class Usuario(Base):
             or self.rol_nombre == "CEO"
         )
 
+    @property
+    def cargo_abreviado(self) -> str:
+        """Abreviación oficial del cargo para el badge del header institucional."""
+        if self.is_ceo:
+            return "CEO"
+        is_docente = (self.id_rol == 2) or ("docente" in (self.rol_nombre or "").lower()) or ("profesor" in (self.rol_nombre or "").lower())
+        if is_docente:
+            th = (self.titulo_honorifico or "").strip().lower()
+            if "ing" in th:
+                return "Ing."
+            elif "dra" in th:
+                return "Dra."
+            elif "dr" in th:
+                return "Dr."
+            elif "mag" in th or "msc" in th or "master" in th:
+                return "MSc."
+            elif "lic" in th:
+                return "Lic."
+            elif "prof" in th:
+                return "Prof."
+            fn = (self.full_name or "").lower()
+            if "ing" in fn:
+                return "Ing."
+            elif "dra" in fn:
+                return "Dra."
+            elif "dr" in fn:
+                return "Dr."
+            elif "msc" in fn:
+                return "MSc."
+            elif "lic" in fn:
+                return "Lic."
+            return "Prof."
+        return "Est."
+
 class Catedra(Base):
     """Tabla CATEDRAS: Unidades curriculares del plan de estudio de UNIMAR."""
     __tablename__ = "catedras"
@@ -118,6 +169,8 @@ class Proyecto(Base):
     enlace_externo = Column(String(350), nullable=True)
     cover_url = Column(String(300), default="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400")
     estado_curaduria = Column(String(30), default="Pendiente") # 'Pendiente', 'Aprobado', 'Destacado', 'Rechazado'
+    motivo_rechazo = Column(Text, nullable=True)
+    archivo_dictamen_url = Column(String(300), nullable=True)
     id_validador = Column(String(36), ForeignKey("usuarios.id_usuario"), nullable=True)
     fecha_publicacion = Column(DateTime, default=datetime.utcnow)
 
@@ -192,7 +245,7 @@ class User(Base):
     full_name = Column(String(150), nullable=False)
     carrera = Column(String(100), nullable=False, default="Ingeniería de Sistemas")
     trimestre = Column(Integer, nullable=False, default=3)
-    avatar_url = Column(String(255), default="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150")
+    avatar_url = Column(String(255), default=lambda: random.choice(DEFAULT_AVATARS))
     created_at = Column(DateTime, default=datetime.utcnow)
 
     id_rol = Column(Integer, ForeignKey("roles.id_rol"), nullable=True)
@@ -200,7 +253,11 @@ class User(Base):
     puntos_reputacion = Column(Integer, default=0)
     titulo_honorifico = Column(String(50), default="Casi Ingeniero")
     showcase_ids = Column(String(255), default="")
-    validado_por_ceo = Column(SmallInteger, default=1) # 1 = Validado por CEO, 0 = Pendiente de validación
+    validado_por_ceo = Column(SmallInteger, default=1)
+    banner_url = Column(String(300), default=DEFAULT_BANNER)
+    banner_position = Column(String(50), default="50% 50%")
+    catedra_asignada = Column(String(100), default="Todas las Cátedras del Eje")
+    last_trimestre_change = Column(DateTime, nullable=True) # 1 = Validado por CEO, 0 = Pendiente de validación
 
     rol = relationship("Role", foreign_keys=[id_rol], lazy="joined")
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
@@ -247,10 +304,44 @@ class User(Base):
     def is_ceo(self) -> bool:
         return (
             self.email == "oalvarez.7305@unimar.edu.ve"
-            or self.username == "oalvarez.7305"
+            or (self.username or "").lower() in ("oalvarez.7305", "p3")
             or self.rol_nombre == "CEO"
             or (self.rol and self.rol.nombre_rol == "CEO")
         )
+
+    @property
+    def cargo_abreviado(self) -> str:
+        """Abreviación oficial del cargo para el badge del header institucional."""
+        if self.is_ceo:
+            return "CEO"
+        is_docente = (self.id_rol == 2) or ("docente" in (self.rol_nombre or "").lower()) or ("profesor" in (self.rol_nombre or "").lower())
+        if is_docente:
+            th = (self.titulo_honorifico or "").strip().lower()
+            if "ing" in th:
+                return "Ing."
+            elif "dra" in th:
+                return "Dra."
+            elif "dr" in th:
+                return "Dr."
+            elif "mag" in th or "msc" in th or "master" in th:
+                return "MSc."
+            elif "lic" in th:
+                return "Lic."
+            elif "prof" in th:
+                return "Prof."
+            fn = (self.full_name or "").lower()
+            if "ing" in fn:
+                return "Ing."
+            elif "dra" in fn:
+                return "Dra."
+            elif "dr" in fn:
+                return "Dr."
+            elif "msc" in fn:
+                return "MSc."
+            elif "lic" in fn:
+                return "Lic."
+            return "Prof."
+        return "Est."
 
 class Document(Base):
     __tablename__ = "documents"
@@ -272,16 +363,18 @@ class Document(Base):
     year = Column(Integer, default=2021)
     read_url = Column(String(300), default="#")
     
-    rating_avg = Column(Float, default=4.5)
-    ratings_count = Column(Integer, default=1)
-    star_5_count = Column(Integer, default=10)
-    star_4_count = Column(Integer, default=6)
-    star_3_count = Column(Integer, default=2)
-    star_2_count = Column(Integer, default=1)
+    rating_avg = Column(Float, default=0.0)
+    ratings_count = Column(Integer, default=0)
+    star_5_count = Column(Integer, default=0)
+    star_4_count = Column(Integer, default=0)
+    star_3_count = Column(Integer, default=0)
+    star_2_count = Column(Integer, default=0)
     star_1_count = Column(Integer, default=0)
 
-    status = Column(String(30), default="aprobado")
-    material_type = Column(String(50), default="libro")
+    status = Column(String(30), default="pendiente")
+    rejection_reason = Column(Text, nullable=True)
+    rejection_file_url = Column(String(350), nullable=True)
+    material_type = Column(String(50), default="pdf")
     external_url = Column(String(350), nullable=True)
     uploaded_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     verified_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
@@ -296,7 +389,7 @@ class Document(Base):
     def verifier_name(self) -> str:
         if self.verified_by:
             return self.verified_by.full_name
-        return "Ing. Flavio Rosales"
+        return "Docente Validador"
 
     @property
     def verifier_role(self) -> str:
@@ -304,9 +397,23 @@ class Document(Base):
             return self.verified_by.rol_nombre or "Docente de Cátedra"
         return "Docente de Cátedra"
 
+    @property
+    def effective_banner_url(self) -> str | None:
+        if self.header_banner_url and "photo-1509228468518-180dd4864904" not in self.header_banner_url:
+            return self.header_banner_url
+        from .catedras_config import get_catedra_banner
+        return get_catedra_banner(self.materias or self.title)
+
     def update_rating_stats(self):
         """Recalculate average rating and histogram from actual reviews."""
         if not self.reviews:
+            self.star_1_count = 0
+            self.star_2_count = 0
+            self.star_3_count = 0
+            self.star_4_count = 0
+            self.star_5_count = 0
+            self.ratings_count = 0
+            self.rating_avg = 0.0
             return
         c1 = sum(1 for r in self.reviews if r.rating == 1)
         c2 = sum(1 for r in self.reviews if r.rating == 2)
@@ -337,6 +444,19 @@ class Review(Base):
 
     user = relationship("User", back_populates="reviews")
     document = relationship("Document", back_populates="reviews")
+    likes = relationship("ReviewLike", back_populates="review", cascade="all, delete-orphan")
+
+class ReviewLike(Base):
+    """Tabla REVIEW_LIKES: Registro de 'Me Sirve' / votos de utilidad en reseñas (1 por usuario)."""
+    __tablename__ = "review_likes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    review_id = Column(Integer, ForeignKey("reviews.id"), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+    review = relationship("Review", back_populates="likes")
 
 class CuratedList(Base):
     __tablename__ = "curated_lists"

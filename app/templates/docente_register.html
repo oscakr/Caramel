@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block title %}Caramel - Acreditación Docente UNIMAR{% endblock %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center min-h-[90vh] py-6 px-4 bg-white"
+  x-data="{ 
+    email: '{{ form_data.email if form_data and form_data.email else '' }}',
+    password: '',
+    confirm_password: '',
+    showPassword: false,
+    showConfirmPassword: false,
+    isSubmitting: false,
+    get isUnimarEmail() { 
+      return this.email.trim().toLowerCase().endsWith('@unimar.edu.ve') && this.email.split('@')[0].length >= 2;
+    },
+    get hasAtSign() { 
+      return this.email.includes('@'); 
+    },
+    get passwordsMatch() {
+      return this.confirm_password.length > 0 && this.password === this.confirm_password;
+    },
+    get passwordsMismatch() {
+      return this.confirm_password.length > 0 && this.password !== this.confirm_password;
+    }
+  }">
+
+  <!-- Header Collage & Visual Banner -->
+  <div class="relative w-full max-w-[420px] h-44 rounded-3xl overflow-hidden mb-4 border border-stone-200 shadow-md">
+    <img src="/static/img/login_banner.jpg" class="w-full h-full object-cover brightness-95 contrast-100" alt="Caramel Banner">
+    
+    <!-- Floating Caramel Brand Monogram -->
+    <div class="absolute inset-0 flex flex-col items-center justify-center">
+      <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-400 to-amber-200 p-0.5 shadow-xl">
+        <div class="w-full h-full bg-white rounded-2xl flex items-center justify-center p-2.5 shadow-sm">
+          <img src="/static/img/caramel_logo.png" class="w-full h-full object-contain drop-shadow-sm" alt="Logo Caramel">
+        </div>
+      </div>
+      <h1 class="text-xl font-bold tracking-wide text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)] mt-2 font-serif">Caramel</h1>
+    </div>
+  </div>
+
+  <!-- Form Card -->
+  <div class="w-full max-w-[420px] bg-white p-6 rounded-3xl border border-stone-200 shadow-xl space-y-4">
+    <div class="text-center">
+      <h2 class="text-xl font-bold text-stone-900">Acreditación Docente</h2>
+    </div>
+
+    <!-- Banner Informativo de Cuarentena Decanal -->
+    <div class="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200 text-stone-800 text-[11px] space-y-1">
+      <div class="flex items-center space-x-1.5 font-bold text-amber-950">
+        <svg class="w-4 h-4 text-amber-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>Proceso de Verificación Institucional</span>
+      </div>
+      <p class="text-[10.5px] text-stone-600 leading-relaxed">
+        Su cuenta se activará con acceso estándar de consulta. Las facultades de <strong>validación pedagógica</strong> se habilitarán una vez homologadas sus credenciales por la Dirección de Carrera o Decanato.
+      </p>
+    </div>
+
+    {% if error %}
+    <div class="p-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs text-center font-medium space-y-1">
+      <p class="font-semibold">{{ error }}</p>
+    </div>
+    {% endif %}
+
+    <form method="POST" action="/docente/registro" @submit="if (password !== confirm_password) { $event.preventDefault(); return false; } isSubmitting = true" class="space-y-3.5">
+      
+      <!-- Tratamiento Honorífico y Nombre Completo en Grid -->
+      <div class="grid grid-cols-3 gap-2">
+        <div class="col-span-1">
+          <label class="block text-[11px] font-medium text-stone-700 mb-1 ml-1">Tratamiento</label>
+          <select name="titulo_honorifico" required
+            class="w-full px-2 py-2.5 bg-stone-50 border border-stone-300 rounded-2xl text-xs text-stone-900 focus:outline-none focus:bg-white focus:border-caramel-500 transition shadow-xs">
+            <option value="Ingeniero">Ing.</option>
+            <option value="Profesor">Prof.</option>
+            <option value="Doctor">Dr.</option>
+            <option value="Doctora">Dra.</option>
+            <option value="Magíster">MSc.</option>
+            <option value="Licenciado">Lic.</option>
+          </select>
+        </div>
+
+        <div class="col-span-2">
+          <label class="block text-[11px] font-medium text-stone-700 mb-1 ml-1">Nombre y apellido</label>
+          <input type="text" name="full_name" required placeholder="Ej: Flavio Rosales"
+            value="{{ form_data.full_name if form_data and form_data.full_name else '' }}"
+            class="w-full px-3 py-2.5 bg-stone-50 border border-stone-300 rounded-2xl text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:bg-white focus:border-caramel-500 transition shadow-xs">
+        </div>
+      </div>
+
+      <!-- Cédula de Identidad -->
+      <div>
+        <label class="block text-[11px] font-medium text-stone-700 mb-1 ml-1">Cédula de Identidad</label>
+        <input type="text" name="cedula" required placeholder="V-12345678"
+          value="{{ form_data.cedula if form_data and form_data.cedula else '' }}"
+          class="w-full px-3 py-2.5 bg-stone-50 border border-stone-300 rounded-2xl text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:bg-white focus:border-caramel-500 transition shadow-xs font-mono">
+        <input type="hidden" name="codigo_credencial" value="DOC-UNIMAR-2026">
+      </div>
+
+      <!-- Correo Institucional Obligatorio -->
+      <div>
+        <label class="block text-[11px] font-medium text-stone-700 mb-1 ml-1">Correo institucional docente (@unimar.edu.ve)</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></span>
+          <input type="email" name="email" required placeholder="nombre.apellido@unimar.edu.ve"
+            x-model="email"
+            class="w-full pl-9 pr-4 py-2.5 bg-stone-50 border rounded-2xl text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:bg-white transition font-mono shadow-xs"
+            :class="isUnimarEmail ? 'border-emerald-500 focus:border-emerald-500' : (hasAtSign ? 'border-amber-400 focus:border-amber-500' : 'border-stone-300 focus:border-caramel-500')">
+        </div>
+        
+        <div class="text-[10px] mt-1 ml-1">
+          <template x-if="!email">
+            <span class="text-stone-500">Exclusivo para personal docente activo de la UNIMAR</span>
+          </template>
+          <template x-if="email && isUnimarEmail">
+            <span class="text-emerald-700 font-medium flex items-center space-x-1">
+              <svg class="w-3.5 h-3.5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <span>Dominio institucional docente verificado</span>
+            </span>
+          </template>
+          <template x-if="email && hasAtSign && !isUnimarEmail">
+            <span class="text-amber-700 font-medium flex items-center space-x-1">
+              <svg class="w-3.5 h-3.5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+              <span>Debe terminar en @unimar.edu.ve</span>
+            </span>
+          </template>
+        </div>
+      </div>
+
+      <!-- Cátedras Asignadas del Eje de Programación -->
+      <div>
+        <label class="block text-[11px] font-medium text-stone-700 mb-1 ml-1">Cátedra principal del Eje de Programación</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg></span>
+          <select name="catedra_asignada" required
+            class="w-full pl-9 pr-4 py-2.5 bg-stone-50 border border-stone-300 rounded-2xl text-xs text-stone-900 focus:outline-none focus:bg-white focus:border-caramel-500 transition shadow-xs">
+            <option value="Técnicas de Programación" {% if form_data and form_data.catedra_asignada == 'Técnicas de Programación' %}selected{% endif %}>Técnicas de Programación (3º Trimestre)</option>
+            <option value="Programación I" {% if form_data and form_data.catedra_asignada == 'Programación I' %}selected{% endif %}>Programación I (4º Trimestre)</option>
+            <option value="Programación II" {% if form_data and form_data.catedra_asignada == 'Programación II' %}selected{% endif %}>Programación II (5º Trimestre)</option>
+            <option value="Estructura de Datos" {% if form_data and form_data.catedra_asignada == 'Estructura de Datos' %}selected{% endif %}>Estructura de Datos (5º Trimestre)</option>
+            <option value="Programación III" {% if form_data and form_data.catedra_asignada == 'Programación III' %}selected{% endif %}>Programación III (6º Trimestre)</option>
+            <option value="Sistemas I" {% if form_data and form_data.catedra_asignada == 'Sistemas I' %}selected{% endif %}>Sistemas I (6º Trimestre)</option>
+            <option value="Base de Datos I" {% if form_data and form_data.catedra_asignada == 'Base de Datos I' %}selected{% endif %}>Base de Datos I (6º Trimestre)</option>
+            <option value="Programación IV" {% if form_data and form_data.catedra_asignada == 'Programación IV' %}selected{% endif %}>Programación IV (7º Trimestre)</option>
+            <option value="Sistemas II" {% if form_data and form_data.catedra_asignada == 'Sistemas II' %}selected{% endif %}>Sistemas II (7º Trimestre)</option>
+            <option value="Base de Datos II" {% if form_data and form_data.catedra_asignada == 'Base de Datos II' %}selected{% endif %}>Base de Datos II (7º Trimestre)</option>
+            <option value="Sistemas III" {% if form_data and form_data.catedra_asignada == 'Sistemas III' %}selected{% endif %}>Sistemas III (8º Trimestre)</option>
+            <option value="Sistemas Operativos" {% if form_data and form_data.catedra_asignada == 'Sistemas Operativos' %}selected{% endif %}>Sistemas Operativos (9º Trimestre)</option>
+            <option value="Sistemas de Información Gerencial" {% if form_data and form_data.catedra_asignada == 'Sistemas de Información Gerencial' %}selected{% endif %}>Sistemas de Información Gerencial (9º Trimestre)</option>
+            <option value="Metodología de Desarrollo de Software" {% if form_data and form_data.catedra_asignada == 'Metodología de Desarrollo de Software' %}selected{% endif %}>Metodología de Desarrollo de Software (10º Trimestre)</option>
+            <option value="Todas las Cátedras del Eje" {% if form_data and form_data.catedra_asignada == 'Todas las Cátedras del Eje' %}selected{% endif %}>Todas las Cátedras del Eje (Jefatura / Decanato)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Nombre de Usuario -->
+      <div>
+        <label class="block text-[11px] font-medium text-stone-700 mb-1 ml-1">Nombre de usuario</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></span>
+          <input type="text" name="username" required placeholder="prof_usuario"
+            value="{{ form_data.username if form_data and form_data.username else '' }}"
+            class="w-full pl-9 pr-4 py-2.5 bg-stone-50 border border-stone-300 rounded-2xl text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:bg-white focus:border-caramel-500 transition shadow-xs">
+        </div>
+      </div>
+
+      <!-- Contraseña -->
+      <div>
+        <label class="block text-[11px] font-medium text-stone-700 mb-1 ml-1">Contraseña</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span>
+          <input :type="showPassword ? 'text' : 'password'" name="password" required placeholder="Al menos 6 caracteres"
+            x-model="password"
+            class="w-full pl-9 pr-10 py-2.5 bg-stone-50 border border-stone-300 rounded-2xl text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:bg-white focus:border-caramel-500 transition shadow-xs">
+          <button type="button" @click="showPassword = !showPassword" 
+            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-stone-400 hover:text-stone-600 transition cursor-pointer">
+            <template x-if="!showPassword">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            </template>
+            <template x-if="showPassword">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+            </template>
+          </button>
+        </div>
+      </div>
+
+      <!-- Confirmar Contraseña -->
+      <div>
+        <label class="block text-[11px] font-medium text-stone-700 mb-1 ml-1">Confirmar contraseña</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></span>
+          <input :type="showConfirmPassword ? 'text' : 'password'" name="confirm_password" required placeholder="Repite tu contraseña"
+            x-model="confirm_password"
+            class="w-full pl-9 pr-10 py-2.5 bg-stone-50 border rounded-2xl text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:bg-white transition shadow-xs"
+            :class="passwordsMatch ? 'border-emerald-500 focus:border-emerald-500' : (passwordsMismatch ? 'border-red-400 focus:border-red-500' : 'border-stone-300 focus:border-caramel-500')">
+          <button type="button" @click="showConfirmPassword = !showConfirmPassword" 
+            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-stone-400 hover:text-stone-600 transition cursor-pointer">
+            <template x-if="!showConfirmPassword">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            </template>
+            <template x-if="showConfirmPassword">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+            </template>
+          </button>
+        </div>
+        
+        <div class="text-[10px] mt-1 ml-1">
+          <template x-if="passwordsMatch">
+            <span class="text-emerald-700 font-medium flex items-center space-x-1">
+              <svg class="w-3.5 h-3.5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <span>Las contraseñas coinciden</span>
+            </span>
+          </template>
+          <template x-if="passwordsMismatch">
+            <span class="text-red-700 font-medium flex items-center space-x-1">
+              <svg class="w-3.5 h-3.5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              <span>Las contraseñas no coinciden</span>
+            </span>
+          </template>
+        </div>
+      </div>
+
+      <!-- Super Smooth Button Component -->
+      <div class="pt-2">
+        <button type="submit" 
+          :disabled="isSubmitting || passwordsMismatch"
+          class="group relative overflow-hidden w-full py-3.5 px-6 rounded-full text-xs sm:text-sm font-bold tracking-wide shadow-xl flex items-center justify-center space-x-2 text-[#18110c] bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] hover:brightness-105 active:scale-[0.985] transition-all duration-300 ease-out cursor-pointer hover:shadow-2xl hover:shadow-caramel-500/30 disabled:opacity-60 disabled:cursor-not-allowed">
+          
+          <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none"></span>
+
+          <template x-if="isSubmitting">
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-[#18110c]" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+          </template>
+
+          <span x-text="isSubmitting ? 'Enviando acreditación...' : 'Solicitar Acreditación Docente'"></span>
+        </button>
+      </div>
+    </form>
+
+    <div class="mt-4 pt-3 border-t border-stone-100 text-center space-y-1">
+      <p class="text-xs text-stone-600">
+        ¿Es estudiante regular de la UNIMAR? 
+        <a href="/register" class="text-caramel-600 hover:text-caramel-700 font-bold underline ml-1">Portal Estudiantil</a>
+      </p>
+      <p class="text-[11px] text-stone-500">
+        ¿Ya posee acreditación aprobada? 
+        <a href="/login" class="text-stone-700 hover:text-stone-900 font-semibold underline ml-1">Iniciar Sesión</a>
+      </p>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

@@ -1,20 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  --bg-main: #181310;
-  --bg-surface: #241c17;
-  --bg-card: #2c221c;
-  --bg-card-hover: #382c24;
-  --border-subtle: rgba(217, 155, 92, 0.15);
-  --border-strong: rgba(217, 155, 92, 0.35);
+  --bg-main: #ffffff;
+  --bg-surface: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #faf7f2;
+  --border-subtle: #e5e7eb;
+  --border-strong: rgba(198, 134, 77, 0.4);
   --caramel-base: #c6864d;
-  --caramel-accent: #7FB3A6;
-  --caramel-light: #E6D4BA;
-  --caramel-glow: rgba(127, 179, 166, 0.25);
-  --text-main: #fbf6f0;
-  --text-cream: #E6D4BA;
-  --text-muted: #aa998d;
-  --text-dim: #7a6b61;
+  --caramel-accent: #2c6e63;
+  --caramel-light: #7a4822;
+  --caramel-glow: rgba(44, 110, 99, 0.15);
+  --text-main: #181310;
+  --text-cream: #634327;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
 }
 
 * {
@@ -23,8 +23,8 @@
 
 body {
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  background-color: var(--bg-main);
-  color: var(--text-main);
+  background-color: #ffffff;
+  color: #181310;
   margin: 0;
   padding: 0;
   -webkit-tap-highlight-color: transparent;
@@ -36,14 +36,14 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #181310;
+  background: #f8fafc;
 }
 ::-webkit-scrollbar-thumb {
-  background: #3c2f27;
+  background: #cbd5e1;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #7FB3A6;
+  background: #94a3b8;
 }
 
 /* Carousel hiding scrollbars */
@@ -57,31 +57,34 @@ body {
 
 /* Smooth glass effect */
 .glass-panel {
-  background: rgba(38, 29, 24, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(198, 134, 77, 0.25);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
 }
 
 .card-caramel {
-  background-color: var(--bg-card);
-  border: 1px solid rgba(217, 155, 92, 0.12);
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: all 0.22s ease-out;
 }
 
 .card-caramel:hover {
-  background-color: var(--bg-card-hover);
-  border-color: #7FB3A6;
+  background-color: #faf7f2;
+  border-color: #c6864d;
   transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(198, 134, 77, 0.12);
 }
 
 /* Caramel Pill Button */
 .btn-caramel {
   background: linear-gradient(135deg, #dca067 0%, #c6864d 100%);
-  color: #17110e;
-  font-weight: 600;
+  color: #18110c;
+  font-weight: 700;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(198, 134, 77, 0.25);
+  box-shadow: 0 4px 14px rgba(198, 134, 77, 0.28);
 }
 
 .btn-caramel:hover {
@@ -91,22 +94,23 @@ body {
 }
 
 .btn-caramel-secondary {
-  background-color: #382c23;
-  color: #f3d4b6;
-  border: 1px solid rgba(217, 155, 92, 0.2);
+  background-color: #fcf8f4;
+  color: #7b462d;
+  border: 1px solid rgba(198, 134, 77, 0.35);
+  font-weight: 600;
   transition: all 0.2s ease;
 }
 
 .btn-caramel-secondary:hover {
-  background-color: #45362c;
-  border-color: #7FB3A6;
-  color: #7FB3A6;
+  background-color: #f7ede2;
+  border-color: #c6864d;
+  color: #5a2e19;
 }
 
 /* Glowing text */
 .text-caramel-glow {
-  color: #7FB3A6;
-  text-shadow: 0 0 16px rgba(127, 179, 166, 0.45);
+  color: #2c6e63;
+  text-shadow: 0 0 16px rgba(44, 110, 99, 0.25);
 }
 
 /* Histogram bar animation */
@@ -114,31 +118,44 @@ body {
   transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Mobile Frame Wrapper for Desktop Mockup view */
+/* Responsive Application Frame */
 .app-frame-container {
-  max-width: 440px;
+  width: 100%;
   margin: 0 auto;
   min-height: 100vh;
   position: relative;
-  background-color: #1a1411;
-  box-shadow: 0 0 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(217, 155, 92, 0.15);
+  background-color: #ffffff;
 }
 
-/* Mobile Status Bar (Visible strictly in mobile view) */
-.mobile-status-bar {
-  display: flex;
+@media (max-width: 767px) {
+  .app-frame-container {
+    max-width: 100%;
+    box-shadow: none;
+    border: none;
+  }
 }
 
-body.view-desktop .mobile-status-bar {
-  display: none !important;
+@media (min-width: 768px) {
+  .app-frame-container {
+    max-width: 100%;
+    box-shadow: none;
+  }
+}
+
+/* Container de Vista Ampliada de antes exclusivo para la pestaña de Perfil */
+.app-frame-container--profile {
+  width: 100%;
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+  background-color: #ffffff;
 }
 
 @media (min-width: 1024px) {
-  body.view-desktop .app-frame-container {
-    max-width: 1080px;
-    box-shadow: none;
-  }
-  body.view-desktop .mobile-status-bar {
-    display: none !important;
+  .app-frame-container--profile {
+    max-width: 1080px !important;
+    box-shadow: none !important;
+    border-left: 1px solid #f1f5f9;
+    border-right: 1px solid #f1f5f9;
   }
 }

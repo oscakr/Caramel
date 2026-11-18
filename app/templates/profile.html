@@ -1,31 +1,52 @@
 {% extends "base.html" %}
 
-{% block title %}Caramel - Mi Perfil Académico{% endblock %}
+{% block title %}Caramel - {% if is_own_profile %}Mi Perfil Académico{% else %}Perfil de {{ profile_user.full_name }}{% endif %}{% endblock %}
 
 {% block content %}
 <script>
 function profileApp() {
   return {
-    showAvatarModal: false,
+    isOwnProfile: {{ 'true' if is_own_profile else 'false' }},
+    showEditProfileModal: false,
+    editTab: 'avatar', // 'avatar', 'banner', 'trimestre'
     showShowcaseModal: false,
-    currentAvatar: {{ current_user.avatar_url|tojson }},
-    avatarTab: 'url', // 'url', 'upload', 'presets'
-    customUrl: '',
-    isUploading: false,
-    avatarSuccessMsg: '',
-    avatarErrorMsg: '',
+    currentAvatar: {{ (profile_user.avatar_url or '/static/img/avatares/Flavio.jpg')|tojson }},
+    currentBanner: {{ ('/static/img/bannerdefault.jpg' if not profile_user.banner_url or profile_user.banner_url == '/static/img/login_banner.jpg' else profile_user.banner_url)|tojson }},
+    currentBannerPosition: {{ (profile_user.banner_position or '50% 50%')|tojson }},
+    bannerY: 50,
+    isRepositioningBanner: false,
+    isDraggingBanner: false,
+    dragStartY: 0,
+    initialBannerY: 50,
+    isSavingPosition: false,
+    currentTrimestre: {{ profile_user.trimestre }},
+    selectedTrimestre: {{ profile_user.trimestre }},
+    showTrimestreConfirm: false,
 
-    // Galería de avatares temáticos para Ingeniería UNIMAR
+    avatarTab: 'presets',
+    customAvatarUrl: '',
+    bannerTab: 'upload',
+    customBannerUrl: '',
+    isUploading: false,
+    editSuccessMsg: '',
+    editErrorMsg: '',
+
     presetAvatars: [
-      { name: 'Ingeniero de Sistemas', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=250' },
-      { name: 'Desarrollador Full Stack', url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=250' },
-      { name: 'Científica de Datos', url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=250' },
-      { name: 'Especialista en Redes', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=250' },
-      { name: 'Investigador IA', url: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=250' },
-      { name: 'Arquitecta de Software', url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=250' }
+      { name: 'Flavio', url: '/static/img/avatares/Flavio.jpg' },
+      { name: 'Daniela', url: '/static/img/avatares/Daniela.jpg' },
+      { name: 'Franklin', url: '/static/img/avatares/Franklin.jpg' },
+      { name: 'Jhonny', url: '/static/img/avatares/Jhonny.jpg' },
+      { name: 'Oswuald', url: '/static/img/avatares/Oswuald.jpg' },
+      { name: 'Yemnel', url: '/static/img/avatares/Yemnel.jpg' }
     ],
 
-    // Estado de los 4 materiales favoritos de Mi Showcase
+    presetBanners: [
+      { name: 'Predeterminado', url: '/static/img/bannerdefault.jpg' },
+      { name: 'Trasnochado', url: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200' },
+      { name: 'Divs, Docs, Dic...', url: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200' },
+      { name: 'Manguangua', url: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200' }
+    ],
+
     showcaseSlots: [
       {% for doc in showcase_docs %}
       {
@@ -38,6 +59,14 @@ function profileApp() {
       }{% if not loop.last %},{% endif %}
       {% endfor %}
     ],
+
+    get displaySlots() {
+      const slots = [];
+      for (let i = 0; i < 4; i++) {
+        slots.push(this.showcaseSlots[i] || null);
+      }
+      return slots;
+    },
 
     allEngineeringDocs: [
       {% for doc in all_engineering_docs %}
@@ -58,16 +87,71 @@ function profileApp() {
     showcaseSuccessMsg: '',
     showcaseErrorMsg: '',
 
-    // Métodos para cambiar avatar
+    init() {
+      this.initBannerPosition();
+    },
+
+    initBannerPosition() {
+      if (this.currentBannerPosition && this.currentBannerPosition.includes(' ')) {
+        const parts = this.currentBannerPosition.split(' ');
+        const yVal = parseFloat(parts[1].replace('%', ''));
+        if (!isNaN(yVal)) {
+          this.bannerY = Math.round(yVal);
+          return;
+        }
+      }
+      this.bannerY = 50;
+    },
+
+    isCustomBanner() {
+      if (!this.currentBanner) return false;
+      const isPreset = this.presetBanners.some(p => p.url === this.currentBanner) || this.currentBanner === '/static/img/login_banner.jpg' || this.currentBanner === '/static/img/bannerdefault.jpg';
+      return !isPreset;
+    },
+
+    async resetToDefaultBanner() {
+      this.currentBannerPosition = '50% 50%';
+      this.bannerY = 50;
+      await this.saveBannerUrl('/static/img/bannerdefault.jpg');
+      this.bannerTab = 'upload';
+      this.editSuccessMsg = '¡Banner restaurado al predeterminado!';
+      fetch('/api/profile/set-banner-position', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ banner_position: '50% 50%' })
+      }).catch(() => {});
+    },
+
+    async selectPresetBanner(url) {
+      this.currentBannerPosition = '50% 50%';
+      this.bannerY = 50;
+      await this.saveBannerUrl(url);
+      this.bannerTab = 'presets';
+      fetch('/api/profile/set-banner-position', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ banner_position: '50% 50%' })
+      }).catch(() => {});
+    },
+
+    openEditProfile(tab = 'avatar') {
+      this.editTab = tab;
+      this.showTrimestreConfirm = false;
+      this.editSuccessMsg = '';
+      this.editErrorMsg = '';
+      this.selectedTrimestre = this.currentTrimestre;
+      this.showEditProfileModal = true;
+    },
+
     async saveAvatarUrl(urlToSave) {
-      const finalUrl = (urlToSave || this.customUrl || '').trim();
+      const finalUrl = (urlToSave || this.customAvatarUrl || '').trim();
       if (!finalUrl) {
-        this.avatarErrorMsg = 'Ingresa una URL de imagen válida.';
+        this.editErrorMsg = 'Ingresa una URL de imagen válida.';
         return;
       }
       this.isUploading = true;
-      this.avatarErrorMsg = '';
-      this.avatarSuccessMsg = '';
+      this.editErrorMsg = '';
+      this.editSuccessMsg = '';
       try {
         const resp = await fetch('/api/profile/set-avatar', {
           method: 'POST',
@@ -78,18 +162,14 @@ function profileApp() {
         this.isUploading = false;
         if (resp.ok && data.success) {
           this.currentAvatar = data.avatar_url;
-          this.avatarSuccessMsg = '¡Foto de perfil personalizada con éxito!';
-          setTimeout(() => { 
-            this.showAvatarModal = false; 
-            this.avatarSuccessMsg = ''; 
-            this.customUrl = '';
-          }, 1100);
+          this.editSuccessMsg = '¡Foto de perfil actualizada con éxito!';
+          setTimeout(() => { this.editSuccessMsg = ''; }, 2200);
         } else {
-          this.avatarErrorMsg = data.error || 'No se pudo actualizar la foto de perfil.';
+          this.editErrorMsg = data.error || 'No se pudo actualizar la foto de perfil.';
         }
       } catch (err) {
         this.isUploading = false;
-        this.avatarErrorMsg = 'Error al comunicarse con el servidor.';
+        this.editErrorMsg = 'Error al comunicarse con el servidor.';
       }
     },
 
@@ -97,11 +177,11 @@ function profileApp() {
       const file = event.target.files[0];
       if (!file) return;
       this.isUploading = true;
-      this.avatarErrorMsg = '';
-      this.avatarSuccessMsg = '';
-      const formData = new FormData();
-      formData.append('file', file);
+      this.editErrorMsg = '';
+      this.editSuccessMsg = '';
       try {
+        const formData = new FormData();
+        formData.append('file', file);
         const resp = await fetch('/api/profile/upload-avatar', {
           method: 'POST',
           body: formData
@@ -110,62 +190,212 @@ function profileApp() {
         this.isUploading = false;
         if (resp.ok && data.success) {
           this.currentAvatar = data.avatar_url;
-          this.avatarSuccessMsg = '¡Foto subida y actualizada con éxito!';
-          setTimeout(() => { 
-            this.showAvatarModal = false; 
-            this.avatarSuccessMsg = ''; 
-          }, 1100);
+          this.editSuccessMsg = '¡Foto de perfil subida y actualizada!';
+          setTimeout(() => { this.editSuccessMsg = ''; }, 2200);
         } else {
-          this.avatarErrorMsg = data.error || 'Error al subir la imagen.';
+          this.editErrorMsg = data.error || 'No se pudo subir la foto.';
         }
       } catch (err) {
         this.isUploading = false;
-        this.avatarErrorMsg = 'Error al conectar con el servidor.';
+        this.editErrorMsg = 'Error de conexión al subir la imagen.';
       }
     },
 
-    // Métodos para Mi Showcase
+    async saveBannerUrl(urlToSave) {
+      const finalUrl = (urlToSave || this.customBannerUrl || '').trim();
+      if (!finalUrl) {
+        this.editErrorMsg = 'Ingresa una URL de banner válida.';
+        return;
+      }
+      this.isUploading = true;
+      this.editErrorMsg = '';
+      this.editSuccessMsg = '';
+      try {
+        const resp = await fetch('/api/profile/set-banner', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ banner_url: finalUrl })
+        });
+        const data = await resp.json();
+        this.isUploading = false;
+        if (resp.ok && data.success) {
+          this.currentBanner = data.banner_url;
+          this.editSuccessMsg = '¡Banner de perfil actualizado con éxito!';
+          setTimeout(() => { this.editSuccessMsg = ''; }, 3000);
+        } else {
+          this.editErrorMsg = data.error || 'No se pudo actualizar el banner.';
+        }
+      } catch (err) {
+        this.isUploading = false;
+        this.editErrorMsg = 'Error al comunicarse con el servidor.';
+      }
+    },
+
+    async uploadBannerFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      this.isUploading = true;
+      this.editErrorMsg = '';
+      this.editSuccessMsg = '';
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const resp = await fetch('/api/profile/upload-banner', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await resp.json();
+        this.isUploading = false;
+        if (resp.ok && data.success) {
+          this.currentBanner = data.banner_url;
+          this.bannerTab = 'upload';
+          this.currentBannerPosition = '50% 50%';
+          this.bannerY = 50;
+          this.editSuccessMsg = '¡Banner subido con éxito! Ajusta su posición abajo con el deslizador.';
+          setTimeout(() => { this.editSuccessMsg = ''; }, 3500);
+        } else {
+          this.editErrorMsg = data.error || 'No se pudo subir la imagen del banner.';
+        }
+      } catch (err) {
+        this.isUploading = false;
+        this.editErrorMsg = 'Error al subir la imagen del banner.';
+      }
+    },
+
+    async saveBannerPosition() {
+      this.isSavingPosition = true;
+      this.editErrorMsg = '';
+      this.editSuccessMsg = '';
+      const positionStr = `50% ${this.bannerY}%`;
+      try {
+        const resp = await fetch('/api/profile/set-banner-position', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ banner_position: positionStr })
+        });
+        const data = await resp.json();
+        this.isSavingPosition = false;
+        if (resp.ok && data.success) {
+          this.currentBannerPosition = data.banner_position;
+          this.isRepositioningBanner = false;
+          this.editSuccessMsg = '¡Encuadre del banner guardado con éxito!';
+          setTimeout(() => { this.editSuccessMsg = ''; }, 2500);
+        } else {
+          this.editErrorMsg = data.error || 'No se pudo guardar la posición del banner.';
+        }
+      } catch (err) {
+        this.isSavingPosition = false;
+        this.editErrorMsg = 'Error al comunicarse con el servidor.';
+      }
+    },
+
+    cancelBannerReposition() {
+      this.isRepositioningBanner = false;
+      this.isDraggingBanner = false;
+      this.initBannerPosition();
+    },
+
+    startDragBanner(e) {
+      if (!this.isRepositioningBanner) return;
+      this.isDraggingBanner = true;
+      this.dragStartY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+      this.initialBannerY = parseFloat(this.bannerY) || 50;
+    },
+
+    onDragBanner(e) {
+      if (!this.isDraggingBanner) return;
+      const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+      const deltaY = clientY - this.dragStartY;
+      let newY = this.initialBannerY - (deltaY * 0.35);
+      if (newY < 0) newY = 0;
+      if (newY > 100) newY = 100;
+      this.bannerY = Math.round(newY);
+      this.currentBannerPosition = `50% ${this.bannerY}%`;
+    },
+
+    endDragBanner() {
+      this.isDraggingBanner = false;
+    },
+
+    requestTrimestreChange() {
+      if (parseInt(this.selectedTrimestre) === parseInt(this.currentTrimestre)) {
+        this.editErrorMsg = 'Ya te encuentras en este trimestre.';
+        return;
+      }
+      this.editErrorMsg = '';
+      this.showTrimestreConfirm = true;
+    },
+
+    async executeTrimestreChange() {
+      this.showTrimestreConfirm = false;
+      this.isUploading = true;
+      this.editErrorMsg = '';
+      this.editSuccessMsg = '';
+      try {
+        const resp = await fetch('/api/profile/update-trimestre', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ trimestre: parseInt(this.selectedTrimestre) })
+        });
+        const data = await resp.json();
+        this.isUploading = false;
+        if (resp.ok && data.success) {
+          this.currentTrimestre = data.trimestre;
+          this.editSuccessMsg = data.message;
+          setTimeout(() => { 
+            this.showEditProfileModal = false;
+            this.editSuccessMsg = '';
+          }, 1500);
+        } else {
+          this.editErrorMsg = data.error || 'No se pudo actualizar el trimestre.';
+        }
+      } catch (err) {
+        this.isUploading = false;
+        this.editErrorMsg = 'Error de conexión con el servidor.';
+      }
+    },
+
     openSlotPicker(slotIndex) {
       this.editingSlotIndex = slotIndex;
       this.showcaseSearch = '';
+      this.showcaseSuccessMsg = '';
+      this.showcaseErrorMsg = '';
       this.showShowcaseModal = true;
-    },
-
-    selectDocForActiveSlot(doc) {
-      this.showcaseSlots[this.editingSlotIndex] = { ...doc };
-      this.saveShowcase();
     },
 
     filteredDocsForShowcase() {
       const q = (this.showcaseSearch || '').toLowerCase().trim();
       if (!q) return this.allEngineeringDocs;
       return this.allEngineeringDocs.filter(d => 
-        d.title.toLowerCase().includes(q) || 
-        d.authors.toLowerCase().includes(q)
+        (d.title && d.title.toLowerCase().includes(q)) ||
+        (d.authors && d.authors.toLowerCase().includes(q)) ||
+        (d.trimestres && d.trimestres.toLowerCase().includes(q))
       );
     },
 
-    async saveShowcase() {
+    async selectDocForActiveSlot(doc) {
+      this.showcaseSlots[this.editingSlotIndex] = { ...doc };
       this.isSavingShowcase = true;
       this.showcaseErrorMsg = '';
       this.showcaseSuccessMsg = '';
-      const ids = this.showcaseSlots.map(s => s.id);
+      
+      const documentIds = this.showcaseSlots.filter(s => s && s.id).map(s => s.id);
       try {
-        const resp = await fetch('/api/profile/update-showcase', {
+        const resp = await fetch('/api/profile/showcase', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ document_ids: ids })
+          body: JSON.stringify({ document_ids: documentIds })
         });
         const data = await resp.json();
         this.isSavingShowcase = false;
         if (resp.ok && data.success) {
-          this.showcaseSuccessMsg = '¡Mi Showcase guardado con éxito!';
-          setTimeout(() => { 
-            this.showShowcaseModal = false; 
-            this.showcaseSuccessMsg = ''; 
-          }, 1000);
+          this.showcaseSuccessMsg = `¡Material asignado con éxito a la posición TOP #${this.editingSlotIndex + 1}!`;
+          setTimeout(() => {
+            this.showShowcaseModal = false;
+            this.showcaseSuccessMsg = '';
+          }, 900);
         } else {
-          this.showcaseErrorMsg = data.error || 'No se pudo guardar Mi Showcase.';
+          this.showcaseErrorMsg = data.error || 'No se pudo actualizar Mi Showcase.';
         }
       } catch (err) {
         this.isSavingShowcase = false;
@@ -176,137 +406,182 @@ function profileApp() {
 }
 </script>
 
-<div class="space-y-6 pt-2 pb-10" x-data="profileApp()">
+<div class="space-y-6 pt-2 pb-10 bg-white" x-data="profileApp()">
 
-  <!-- Profile Header Card -->
-  <div class="p-6 rounded-3xl bg-[#251d17] border border-caramel-500/25 text-center space-y-3.5 shadow-2xl relative overflow-hidden">
-    <div class="absolute top-0 inset-x-0 h-20 bg-gradient-to-b from-amber-600/20 via-amber-500/5 to-transparent"></div>
+  <!-- Profile Header Card with Visual Banner -->
+  <div class="rounded-3xl bg-white border border-stone-200 shadow-md overflow-hidden text-center relative">
     
-    <div class="relative z-10">
-      <!-- Avatar con Botón de Edición Arbitraria -->
-      <div class="relative inline-block group">
-        <img :src="currentAvatar" 
-             class="w-24 h-24 mx-auto rounded-full object-cover border-4 border-amber-400 shadow-2xl transition duration-200 group-hover:brightness-90" 
-             alt="{{ current_user.full_name }}">
+    <!-- Banner de Fondo del Perfil -->
+    <div class="relative w-full h-36 sm:h-44 overflow-hidden bg-stone-100">
+      <img src="{{ '/static/img/bannerdefault.jpg' if not profile_user.banner_url or profile_user.banner_url == '/static/img/login_banner.jpg' else profile_user.banner_url }}" 
+           :src="currentBanner" 
+           class="w-full h-full object-cover brightness-95 contrast-100 transition duration-300 pointer-events-none" 
+           style="object-position: {{ profile_user.banner_position or '50% 50%' }};"
+           :style="'object-position: ' + (currentBannerPosition || '50% 50%')" 
+           alt="Banner de Perfil">
+      <div class="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent pointer-events-none"></div>
+    </div>
+    
+    <div class="px-6 pb-6 pt-0 relative z-10">
+      <!-- Avatar con Botón de Edición -->
+      <div class="relative inline-block group -mt-12 sm:-mt-14 mb-2">
+        <img src="{{ profile_user.avatar_url or '/static/img/avatares/Flavio.jpg' }}"
+             :src="currentAvatar" 
+             class="w-24 h-24 mx-auto rounded-full object-cover border-4 border-white shadow-xl bg-white transition duration-200 group-hover:brightness-95" 
+             alt="{{ profile_user.full_name }}">
         
-        <!-- Botón flotante para cambiar foto arbitrariamente -->
+        {% if is_own_profile %}
+        <!-- Botón flotante para editar foto de perfil -->
         <button type="button" 
-                @click="showAvatarModal = true"
-                class="absolute bottom-0 right-0 p-2 rounded-full bg-gradient-to-tr from-amber-500 to-amber-400 text-stone-950 font-bold hover:scale-115 active:scale-95 transition-all shadow-xl border-2 border-[#251d17] cursor-pointer"
-                title="Personalizar foto de perfil de forma arbitraria">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                @click="openEditProfile('avatar')"
+                class="absolute bottom-0 right-0 p-2 rounded-full bg-gradient-to-tr from-[#dca067] via-[#c6864d] to-[#b7713d] text-white font-bold hover:scale-110 active:scale-95 transition-all shadow-md border-2 border-white cursor-pointer"
+                title="Editar foto de perfil">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
           </svg>
         </button>
+        {% endif %}
       </div>
 
       <!-- Datos del Usuario -->
-      <div class="flex items-center justify-center space-x-2 mt-2.5">
-        <h1 class="text-xl font-black text-white tracking-wide">{{ current_user.full_name }}</h1>
-        <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/35 font-bold tracking-wide">{{ current_user.rol_nombre }}</span>
+      <div class="flex items-center justify-center space-x-2">
+        <h1 class="text-xl font-black text-stone-900 tracking-wide">{{ profile_user.full_name }}</h1>
+        <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 font-bold tracking-wide">{{ profile_user.rol_nombre }}</span>
       </div>
-      <p class="text-xs text-caramel-300 mt-0.5">@{{ current_user.username }} • {{ current_user.email }}</p>
+      <p class="text-xs text-caramel-700 font-semibold mt-0.5">@{{ profile_user.username }} • <span class="text-stone-500 font-normal">{{ profile_user.email }}</span></p>
       
       <!-- Insignia Universitaria UNIMAR -->
-      <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 mt-2.5 rounded-full bg-[#1b1410] border border-caramel-500/30 text-xs">
-        <span class="text-amber-400 font-semibold">{{ current_user.carrera }}</span>
-        <span class="text-stone-500">|</span>
-        <span class="text-stone-300 font-bold">{{ current_user.trimestre }}º Trimestre</span>
+      {% if is_own_profile %}
+      <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 mt-2.5 rounded-full bg-stone-50 border border-stone-200 text-xs shadow-xs cursor-pointer hover:bg-stone-100 transition"
+           @click="openEditProfile('trimestre')"
+           title="Clic para editar trimestre">
+        <span class="text-caramel-700 font-bold">{{ profile_user.carrera }}</span>
+        <span class="text-stone-300">|</span>
+        <span class="text-stone-700 font-bold" x-text="currentTrimestre + 'º Trimestre'"></span>
+        <svg class="w-3 h-3 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
       </div>
+      {% else %}
+      <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 mt-2.5 rounded-full bg-stone-50 border border-stone-200 text-xs shadow-xs">
+        <span class="text-caramel-700 font-bold">{{ profile_user.carrera }}</span>
+        <span class="text-stone-300">|</span>
+        <span class="text-stone-700 font-bold">{{ profile_user.trimestre }}º Trimestre</span>
+      </div>
+      {% endif %}
 
-      <!-- Enlace directo para personalizar foto -->
-      <div class="pt-1">
-        <button type="button" @click="showAvatarModal = true" class="text-[11px] text-[#7FB3A6] hover:text-[#7FB3A6] font-medium inline-flex items-center space-x-1 transition hover:underline">
-          <span>Cambiar foto de perfil</span>
-          <svg class="w-3.5 h-3.5 shrink-0 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+      <!-- Botón de Acción Principal -->
+      <div class="pt-2">
+        {% if is_own_profile %}
+        <button type="button" @click="openEditProfile('avatar')" class="px-5 py-2 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 text-xs font-bold inline-flex items-center space-x-1.5 transition shadow-xs hover:shadow cursor-pointer">
+          <svg class="w-3.5 h-3.5 text-caramel-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+          <span>Editar perfil</span>
         </button>
+        {% else %}
+        <a href="javascript:history.back()" class="px-5 py-2 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 text-xs font-bold inline-flex items-center space-x-1.5 transition shadow-xs hover:shadow cursor-pointer">
+          <span>← Volver</span>
+        </a>
+        {% endif %}
       </div>
-    </div>
 
-    <!-- Quick Stats -->
-    <div class="grid grid-cols-3 gap-2.5 pt-3.5 border-t border-caramel-500/20 text-center">
-      <div class="p-2.5 rounded-2xl bg-[#1c1410] border border-caramel-500/10">
-        <div class="text-lg font-black text-amber-400">{{ current_user.bookmarks|length }}</div>
-        <div class="text-[10px] text-stone-400 font-medium">Guardados</div>
-      </div>
-      <div class="p-2.5 rounded-2xl bg-[#1c1410] border border-caramel-500/10">
-        <div class="text-lg font-black text-sky-400">{{ current_user.reviews|length }}</div>
-        <div class="text-[10px] text-stone-400 font-medium">Reviews</div>
-      </div>
-      <div class="p-2.5 rounded-2xl bg-[#1c1410] border border-caramel-500/10">
-        <div class="text-lg font-black text-emerald-400">{{ current_user.interactions|length }}</div>
-        <div class="text-[10px] text-stone-400 font-medium">Lecturas</div>
+      <!-- Quick Stats -->
+      <div class="grid grid-cols-3 gap-2.5 mt-4 pt-3.5 border-t border-stone-100 text-center">
+        <div class="p-2.5 rounded-2xl bg-stone-50 border border-stone-200">
+          <div class="text-lg font-black text-amber-600">{{ profile_user.bookmarks|length }}</div>
+          <div class="text-[10px] text-stone-500 font-medium">Guardados</div>
+        </div>
+        <div class="p-2.5 rounded-2xl bg-stone-50 border border-stone-200">
+          <div class="text-lg font-black text-sky-600">{{ profile_user.reviews|length }}</div>
+          <div class="text-[10px] text-stone-500 font-medium">Reviews</div>
+        </div>
+        <div class="p-2.5 rounded-2xl bg-stone-50 border border-stone-200">
+          <div class="text-lg font-black text-emerald-600">{{ profile_user.interactions|length }}</div>
+          <div class="text-[10px] text-stone-500 font-medium">Lecturas</div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- SECCIÓN: MI SHOWCASE (4 Materiales Favoritos de Ingeniería) -->
-  <!-- ========================================== -->
+  <!-- SECCIÓN: SHOWCASE (4 Materiales Favoritos de Ingeniería) -->
   <div class="space-y-3.5">
     
-    <!-- Encabezado de Mi Showcase -->
+    <!-- Encabezado de Showcase -->
     <div class="flex items-center justify-between">
-      <div class="flex items-center space-x-2.5">
-        <div class="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/35 flex items-center justify-center text-amber-400 font-black text-base shadow-sm"><svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg></div>
-        <div>
-          <div class="flex items-center space-x-2">
-            <h2 class="text-base font-black text-white tracking-wide">Mi Showcase</h2>
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-              4 Favoritos
-            </span>
-          </div>
-          <p class="text-[11px] text-stone-400">Tus 4 materiales favoritos para la carrera de Ingeniería</p>
-        </div>
+      <div>
+        <h2 class="text-base font-black text-stone-900 tracking-wide">{% if is_own_profile %}Mi Showcase{% else %}Showcase de {{ profile_user.full_name.split()[0] }}{% endif %}</h2>
+        <p class="text-[11px] text-stone-500">Materiales destacados para la carrera de Ingeniería</p>
       </div>
 
+      {% if is_own_profile %}
       <!-- Botón de Personalización -->
       <button type="button" @click="openSlotPicker(0)"
-        class="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/35 text-amber-300 hover:bg-[#7FB3A6]/20 hover:border-[#7FB3A6] text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer shadow-sm">
-        <svg class="w-3.5 h-3.5 shrink-0 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+        class="px-3 py-1.5 rounded-xl bg-stone-50 border border-stone-300 text-stone-800 hover:bg-stone-100 text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer shadow-xs">
+        <svg class="w-3.5 h-3.5 shrink-0 inline-block text-caramel-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
         <span>Personalizar</span>
       </button>
+      {% endif %}
     </div>
 
-    <!-- Grid de los 4 Slots de Mi Showcase -->
+    <!-- Grid de los 4 Slots de Showcase -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <template x-for="(slot, idx) in showcaseSlots" :key="slot.id || idx">
-        <div class="relative group rounded-2xl bg-[#231b15] border border-caramel-500/25 hover:border-[#7FB3A6] p-2.5 transition-all duration-200 shadow-lg flex flex-col justify-between overflow-hidden">
-          
-          <!-- Insignia de Posición TOP # -->
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-[9px] font-black px-2 py-0.5 rounded-md bg-amber-500/25 text-amber-300 border border-amber-500/30 tracking-wider"
-                  x-text="'TOP #' + (idx + 1)"></span>
-            <!-- Botón Cambiar Slot individual -->
-            <button type="button" @click.stop="openSlotPicker(idx)"
-              class="w-6 h-6 rounded-full bg-[#1b1410] border border-caramel-500/30 hover:border-[#7FB3A6] text-stone-400 hover:text-[#7FB3A6] flex items-center justify-center text-[10px] transition cursor-pointer"
-              title="Cambiar este material de Mi Showcase">
-              <svg class="w-3.5 h-3.5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-            </button>
-          </div>
+      <template x-for="(slot, idx) in displaySlots" :key="slot ? slot.id : ('empty-' + idx)">
+        <div class="h-full">
+          <!-- Slot con material asignado -->
+          <template x-if="slot">
+            <div class="relative group rounded-2xl bg-white border border-stone-200 hover:border-caramel-400 p-2.5 transition-all duration-200 shadow-xs flex flex-col justify-between h-full overflow-hidden">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[9px] font-black px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 tracking-wider"
+                      x-text="'TOP #' + (idx + 1)"></span>
+                <template x-if="isOwnProfile">
+                  <button type="button" @click.stop="openSlotPicker(idx)"
+                    class="w-6 h-6 rounded-full bg-stone-100 border border-stone-300 hover:border-caramel-500 text-stone-700 hover:text-caramel-600 flex items-center justify-center text-[10px] transition cursor-pointer"
+                    title="Cambiar este material de Mi Showcase">
+                    <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                  </button>
+                </template>
+              </div>
 
-          <!-- Portada y Enlace al Detalle -->
-          <a :href="'/document/' + slot.id" class="block space-y-2 group">
-            <div class="w-full h-32 rounded-xl overflow-hidden bg-[#18110d] relative shadow-md">
-              <img :src="slot.cover_url" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" :alt="slot.title">
-              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                <span class="text-[10px] font-bold text-[#7FB3A6]">Ver Material →</span>
+              <a :href="'/document/' + slot.id" class="block space-y-2 group">
+                <div class="w-full h-32 rounded-xl overflow-hidden bg-stone-100 relative shadow-xs">
+                  <img :src="slot.cover_url" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" :alt="slot.title">
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                    <span class="text-[10px] font-bold text-white">Ver Material →</span>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 class="text-xs font-bold text-stone-900 line-clamp-2 leading-snug group-hover:text-caramel-600 transition-colors" x-text="slot.title"></h3>
+                  <p class="text-[10px] text-stone-500 line-clamp-1 mt-0.5" x-text="slot.authors"></p>
+                </div>
+              </a>
+
+              <div class="mt-2 pt-2 border-t border-stone-100 flex items-center justify-between text-[10px]">
+                <span class="text-amber-700 font-bold" x-text="(slot.rating_avg && slot.rating_avg > 0 ? slot.rating_avg.toFixed(1) + ' pts' : 'Sin calificar')"></span>
+                <span class="text-stone-500 font-medium" x-text="'Tri ' + slot.trimestres"></span>
               </div>
             </div>
+          </template>
 
-            <div>
-              <h3 class="text-xs font-bold text-white line-clamp-2 leading-snug group-hover:text-[#7FB3A6] transition-colors" x-text="slot.title"></h3>
-              <p class="text-[10px] text-stone-400 line-clamp-1 mt-0.5" x-text="slot.authors"></p>
+          <!-- Slot vacío disponible -->
+          <template x-if="!slot">
+            <div class="h-full">
+              <template x-if="isOwnProfile">
+                <div @click="openSlotPicker(idx)"
+                     class="h-full min-h-[220px] rounded-2xl border-2 border-dashed border-stone-200 hover:border-amber-400 hover:bg-amber-50/20 p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 group bg-stone-50/50">
+                  <div class="w-9 h-9 rounded-full bg-white border border-stone-200 group-hover:border-amber-300 group-hover:bg-amber-100 text-stone-400 group-hover:text-amber-700 flex items-center justify-center mb-2 shadow-2xs transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  </div>
+                  <span class="text-xs font-bold text-stone-700 group-hover:text-amber-800" x-text="'TOP #' + (idx + 1)"></span>
+                  <span class="text-[10px] text-stone-400 mt-0.5">Espacio disponible</span>
+                  <span class="mt-2.5 text-[10px] px-2.5 py-0.5 rounded-full bg-white border border-stone-200 text-stone-600 font-medium group-hover:border-amber-300 group-hover:bg-amber-100 group-hover:text-amber-900 transition shadow-2xs">+ Elegir</span>
+                </div>
+              </template>
+              <template x-if="!isOwnProfile">
+                <div class="h-full min-h-[220px] rounded-2xl border-2 border-dashed border-stone-200 p-4 flex flex-col items-center justify-center text-center bg-stone-50/40">
+                  <span class="text-xs font-bold text-stone-400" x-text="'TOP #' + (idx + 1)"></span>
+                  <span class="text-[10px] text-stone-400 mt-0.5">Espacio sin asignar</span>
+                </div>
+              </template>
             </div>
-          </a>
-
-          <!-- Metadatos Inferiores -->
-          <div class="mt-2 pt-2 border-t border-caramel-500/15 flex items-center justify-between text-[10px]">
-            <span class="text-amber-400 font-bold" x-text="(slot.rating_avg ? slot.rating_avg.toFixed(1) : '5.0') + ' pts'"></span>
-            <span class="text-stone-400 font-medium" x-text="'Tri ' + slot.trimestres"></span>
-          </div>
-
+          </template>
         </div>
       </template>
     </div>
@@ -316,165 +591,348 @@ function profileApp() {
   <!-- Bookmarks Section -->
   <div class="space-y-3 pt-2">
     <div class="flex items-center justify-between">
-      <h2 class="text-sm font-bold text-stone-200">Mis Libros Guardados</h2>
-      <span class="text-xs text-stone-400">{{ current_user.bookmarks|length }}</span>
+      <h2 class="text-sm font-bold text-stone-900">{% if is_own_profile %}Mis Libros Guardados{% else %}Libros Guardados{% endif %}</h2>
+      <span class="text-xs text-stone-500">{{ profile_user.bookmarks|length }}</span>
     </div>
 
-    {% if current_user.bookmarks %}
+    {% if profile_user.bookmarks %}
     <div class="space-y-2.5">
-      {% for bm in current_user.bookmarks %}
-      <a href="/document/{{ bm.document.id }}" class="flex items-center space-x-3 p-3 rounded-2xl bg-[#261e18] border border-caramel-500/20 hover:border-[#7FB3A6] transition">
-        <img src="{{ bm.document.cover_url }}" class="w-12 h-16 rounded-lg object-cover" alt="{{ bm.document.title }}">
+      {% for bm in profile_user.bookmarks %}
+      <a href="/document/{{ bm.document.id }}" class="flex items-center space-x-3 p-3 rounded-2xl bg-white border border-stone-200 hover:border-caramel-400 transition shadow-xs">
+        <img src="{{ bm.document.cover_url }}" class="w-12 h-16 rounded-lg object-cover border border-stone-200" alt="{{ bm.document.title }}">
         <div class="flex-1">
-          <h3 class="text-xs font-bold text-white line-clamp-1">{{ bm.document.title }}</h3>
-          <p class="text-[10px] text-stone-400">{{ bm.document.authors }}</p>
-          <div class="flex items-center space-x-2 mt-1 text-[10px] text-amber-400">
-            <span class='flex items-center space-x-1'><svg class="w-3 h-3 text-amber-400 fill-current inline-block" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg><span>{{ bm.document.rating_avg }}</span></span>
-            <span class="text-stone-500">•</span>
-            <span class="text-stone-400">Trimestres {{ bm.document.trimestres }}</span>
+          <h3 class="text-xs font-bold text-stone-900 line-clamp-1">{{ bm.document.title }}</h3>
+          <p class="text-[10px] text-stone-500">{{ bm.document.authors }}</p>
+          <div class="flex items-center space-x-2 mt-1 text-[10px]">
+            <span class="font-bold text-amber-700">{{ bm.document.rating_avg }} pts</span>
+            <span class="text-stone-300">•</span>
+            <span class="text-stone-500">Trimestres {{ bm.document.trimestres }}</span>
           </div>
         </div>
       </a>
       {% endfor %}
     </div>
     {% else %}
-    <div class="p-6 rounded-2xl bg-[#221a15] text-center text-xs text-stone-400 border border-dashed border-caramel-500/20">
+    <div class="p-6 rounded-2xl bg-stone-50 text-center text-xs text-stone-500 border border-dashed border-stone-300">
+      {% if is_own_profile %}
       Aún no has guardado ningún documento. Explora el catálogo para añadir tus lecturas.
+      {% else %}
+      Este usuario aún no tiene libros guardados en su perfil público.
+      {% endif %}
     </div>
     {% endif %}
   </div>
 
-  <!-- Logout Button -->
+  <!-- Bottom Action Button -->
   <div class="pt-2">
-    <a href="/logout" class="block w-full py-3 rounded-2xl bg-red-950/40 border border-red-500/30 text-red-300 text-xs text-center font-bold hover:bg-red-900/40 transition">
+    {% if is_own_profile %}
+    <a href="/logout" class="block w-full py-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs text-center font-bold hover:bg-red-100 transition">
       Cerrar Sesión
     </a>
+    {% else %}
+    <a href="/" class="block w-full py-3 rounded-2xl bg-stone-100 border border-stone-200 text-stone-700 text-xs text-center font-bold hover:bg-stone-200 transition">
+      ← Volver al Inicio
+    </a>
+    {% endif %}
   </div>
 
-  <!-- ========================================== -->
-  <!-- MODAL: PERSONALIZAR FOTO DE PERFIL ARBITRARIA -->
-  <!-- ========================================== -->
-  <div x-show="showAvatarModal" 
+  {% if is_own_profile %}
+  <!-- MODAL: EDITAR PERFIL (AVATAR, BANNER, TRIMESTRE) -->
+  <div x-show="showEditProfileModal" 
        x-transition:enter="transition ease-out duration-200"
        x-transition:enter-start="opacity-0 scale-95"
        x-transition:enter-end="opacity-100 scale-100"
        x-transition:leave="transition ease-in duration-150"
        x-transition:leave-start="opacity-100 scale-100"
        x-transition:leave-end="opacity-0 scale-95"
-       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+       class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
        style="display: none;">
     
-    <div class="w-full max-w-md bg-[#221a14] border border-caramel-500/35 rounded-3xl p-6 shadow-2xl space-y-4 relative overflow-hidden"
-         @click.away="showAvatarModal = false">
+    <div class="w-full max-w-lg bg-white border border-stone-200 rounded-3xl p-6 shadow-2xl space-y-4 relative max-h-[88vh] overflow-y-auto"
+         @click.away="if (!showTrimestreConfirm) showEditProfileModal = false">
       
       <!-- Header Modal -->
-      <div class="flex items-center justify-between pb-3 border-b border-caramel-500/20">
+      <div class="flex items-center justify-between pb-3 border-b border-stone-200">
         <div>
-          <h3 class="text-base font-black text-white">Cambiar Foto de Perfil</h3>
-          <p class="text-[11px] text-stone-400">Personaliza tu foto de forma arbitraria</p>
+          <h3 class="text-base font-black text-stone-900">Editar Perfil</h3>
+          <p class="text-[11px] text-stone-500">Personaliza tu foto, imagen de banner y trimestre académico</p>
         </div>
-        <button type="button" @click="showAvatarModal = false" class="w-7 h-7 rounded-full bg-[#2c2018] text-stone-400 hover:text-white flex items-center justify-center transition p-1" aria-label="Cerrar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        <button type="button" @click="showEditProfileModal = false" class="w-7 h-7 rounded-full bg-stone-100 text-stone-500 hover:text-stone-900 flex items-center justify-center transition p-1 cursor-pointer" aria-label="Cerrar">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
       </div>
 
       <!-- Notificaciones de éxito / error -->
-      <template x-if="avatarSuccessMsg">
-        <div class="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs text-center font-bold" x-text="avatarSuccessMsg"></div>
+      <template x-if="editSuccessMsg">
+        <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs text-center font-bold" x-text="editSuccessMsg"></div>
       </template>
-      <template x-if="avatarErrorMsg">
-        <div class="p-2.5 rounded-xl bg-red-500/20 border border-red-500/30 text-red-300 text-xs text-center font-bold" x-text="avatarErrorMsg"></div>
+      <template x-if="editErrorMsg">
+        <div class="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs text-center font-bold" x-text="editErrorMsg"></div>
       </template>
 
-      <!-- Selector de Pestañas -->
-      <div class="grid grid-cols-3 gap-1.5 p-1 bg-[#17100c] rounded-2xl border border-caramel-500/20 text-center text-xs">
-        <button type="button" @click="avatarTab = 'url'"
-          class="py-2 rounded-xl font-bold transition"
-          :class="avatarTab === 'url' ? 'bg-amber-500 text-stone-950 shadow-md' : 'text-stone-400 hover:text-white'">
-          Pegar URL
+      <!-- Selector de Pestañas Principales -->
+      <div class="grid grid-cols-3 gap-1.5 p-1 bg-stone-100 rounded-2xl border border-stone-200 text-center text-xs">
+        <button type="button" @click="editTab = 'avatar'; showTrimestreConfirm = false; editErrorMsg = ''; editSuccessMsg = '';"
+          class="py-2 rounded-xl font-bold transition cursor-pointer"
+          :class="editTab === 'avatar' ? 'bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] text-white shadow-sm' : 'text-stone-600 hover:text-stone-900'">
+          Foto Perfil
         </button>
-        <button type="button" @click="avatarTab = 'upload'"
-          class="py-2 rounded-xl font-bold transition"
-          :class="avatarTab === 'upload' ? 'bg-amber-500 text-stone-950 shadow-md' : 'text-stone-400 hover:text-white'">
-          Subir Foto
+        <button type="button" @click="editTab = 'banner'; showTrimestreConfirm = false; editErrorMsg = ''; editSuccessMsg = '';"
+          class="py-2 rounded-xl font-bold transition cursor-pointer"
+          :class="editTab === 'banner' ? 'bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] text-white shadow-sm' : 'text-stone-600 hover:text-stone-900'">
+          Foto Banner
         </button>
-        <button type="button" @click="avatarTab = 'presets'"
-          class="py-2 rounded-xl font-bold transition"
-          :class="avatarTab === 'presets' ? 'bg-amber-500 text-stone-950 shadow-md' : 'text-stone-400 hover:text-white'">
-          Avatares UNIMAR
+        <button type="button" @click="editTab = 'trimestre'; showTrimestreConfirm = false; editErrorMsg = ''; editSuccessMsg = '';"
+          class="py-2 rounded-xl font-bold transition cursor-pointer"
+          :class="editTab === 'trimestre' ? 'bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] text-white shadow-sm' : 'text-stone-600 hover:text-stone-900'">
+          Trimestre
         </button>
       </div>
 
-      <!-- Pestaña 1: Pegar URL Arbitraria -->
-      <div x-show="avatarTab === 'url'" class="space-y-3.5 pt-1">
-        <p class="text-xs text-stone-300 leading-relaxed">
-          Pega el enlace directo de <strong>cualquier imagen</strong> que desees (Unsplash, Discord, GitHub, etc.):
-        </p>
-        <div>
-          <input type="url" x-model="customUrl" placeholder="https://ejemplo.com/tu-foto.jpg"
-            class="w-full px-4 py-2.5 bg-[#17100c] border border-caramel-500/30 rounded-xl text-xs text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 transition">
+      <!-- ============================================== -->
+      <!-- PESTAÑA: FOTO DE PERFIL -->
+      <!-- ============================================== -->
+      <div x-show="editTab === 'avatar'" class="space-y-3">
+        <!-- Sub-pestañas Avatar -->
+        <div class="grid grid-cols-3 gap-1 p-1 bg-stone-50 rounded-xl border border-stone-200 text-center text-[11px]">
+          <button type="button" @click="avatarTab = 'presets'" class="py-1.5 rounded-lg font-bold transition cursor-pointer"
+            :class="avatarTab === 'presets' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-900'">
+            Avatares
+          </button>
+          <button type="button" @click="avatarTab = 'upload'" class="py-1.5 rounded-lg font-bold transition cursor-pointer"
+            :class="avatarTab === 'upload' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-900'">
+            Subir Foto
+          </button>
+          <button type="button" @click="avatarTab = 'url'" class="py-1.5 rounded-lg font-bold transition cursor-pointer"
+            :class="avatarTab === 'url' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-900'">
+            Pegar URL
+          </button>
         </div>
 
-        <!-- Previsualización si escribió URL -->
-        <template x-if="customUrl.trim()">
-          <div class="text-center space-y-1">
-            <p class="text-[10px] text-stone-400">Previsualización:</p>
-            <img :src="customUrl" class="w-16 h-16 mx-auto rounded-full object-cover border-2 border-amber-400 shadow-md"
-                 @error="avatarErrorMsg = 'No se pudo cargar la imagen desde este enlace.'">
+        <!-- Avatar URL -->
+        <div x-show="avatarTab === 'url'" class="space-y-3 pt-1">
+          <p class="text-xs text-stone-600">Pega el enlace directo de cualquier imagen para tu perfil:</p>
+          <input type="url" x-model="customAvatarUrl" placeholder="https://ejemplo.com/tu-foto.jpg"
+            class="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-xl text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:bg-white focus:border-caramel-500 transition shadow-2xs">
+          
+          <template x-if="customAvatarUrl.trim()">
+            <div class="text-center space-y-1">
+              <p class="text-[10px] text-stone-500">Previsualización:</p>
+              <img :src="customAvatarUrl" class="w-16 h-16 mx-auto rounded-full object-cover border-2 border-caramel-500 shadow-md"
+                   @error="editErrorMsg = 'No se pudo cargar la imagen desde este enlace.'">
+            </div>
+          </template>
+
+          <button type="button" @click="saveAvatarUrl()" :disabled="isUploading"
+            class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] hover:brightness-105 text-white text-xs font-bold shadow-sm transition active:scale-95 disabled:opacity-50 cursor-pointer">
+            <span x-text="isUploading ? 'Guardando...' : 'Aplicar URL como Foto de Perfil'"></span>
+          </button>
+        </div>
+
+        <!-- Avatar Subir Archivo -->
+        <div x-show="avatarTab === 'upload'" class="space-y-3 pt-1">
+          <label class="block p-4 rounded-2xl border-2 border-dashed border-stone-300 hover:border-caramel-500 bg-stone-50 text-center cursor-pointer transition group">
+            <input type="file" accept="image/*" class="hidden" @change="uploadAvatarFile($event)">
+            <div class="w-10 h-10 mx-auto rounded-full bg-caramel-100 text-caramel-800 flex items-center justify-center group-hover:scale-110 transition shadow-xs">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+            <p class="text-xs font-bold text-stone-800 mt-2 group-hover:text-caramel-700 transition">Haz click para subir tu propia foto</p>
+            <p class="text-[10px] text-stone-500 mt-0.5">JPG, PNG o WebP (Máx. 10 MB)</p>
+          </label>
+          <div x-show="isUploading" class="text-center py-1 text-xs font-bold text-caramel-700 animate-pulse">
+            Subiendo foto y actualizando perfil...
           </div>
-        </template>
+        </div>
 
-        <button type="button" @click="saveAvatarUrl()" :disabled="isUploading"
-          class="w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-black shadow-lg transition active:scale-95 disabled:opacity-50 cursor-pointer">
-          <span x-text="isUploading ? 'Guardando...' : 'Aplicar URL como Foto de Perfil'"></span>
-        </button>
-      </div>
-
-      <!-- Pestaña 2: Subir archivo desde dispositivo -->
-      <div x-show="avatarTab === 'upload'" class="space-y-3.5 pt-1">
-        <p class="text-xs text-stone-300 leading-relaxed">
-          Selecciona una imagen desde tu teléfono o computadora (JPG, PNG o WebP):
-        </p>
-        
-        <label class="block p-5 rounded-2xl border-2 border-dashed border-caramel-500/40 hover:border-[#7FB3A6] bg-[#17100c] text-center cursor-pointer transition group">
-          <input type="file" accept="image/*" class="hidden" @change="uploadAvatarFile($event)">
-          <div class="w-10 h-10 mx-auto rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center group-hover:scale-110 transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
-          <p class="text-xs font-bold text-white mt-2 group-hover:text-[#7FB3A6] transition">Haz clic para elegir foto</p>
-          <p class="text-[10px] text-stone-500 mt-0.5">Tamaño máximo recomendado: 10 MB</p>
-        </label>
-        
-        <div x-show="isUploading" class="text-center py-2 text-xs font-bold text-amber-400 animate-pulse">
-          Subiendo imagen y actualizando perfil...
+        <!-- Avatar Presets -->
+        <div x-show="avatarTab === 'presets'" class="space-y-2 pt-1">
+          <p class="text-xs text-stone-600">O elige uno de nuestros avatares oficiales:</p>
+          <div class="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1">
+            <template x-for="item in presetAvatars" :key="item.url">
+              <button type="button" @click="saveAvatarUrl(item.url)"
+                class="p-2 rounded-xl bg-stone-50 border border-stone-200 hover:border-caramel-500 hover:bg-caramel-50 text-center space-y-1 transition group cursor-pointer shadow-2xs">
+                <img :src="item.url" class="w-12 h-12 mx-auto rounded-full object-cover border border-stone-200 group-hover:border-caramel-400 transition" :alt="item.name">
+                <p class="text-[9px] font-bold text-stone-800 line-clamp-1 group-hover:text-caramel-800" x-text="item.name"></p>
+              </button>
+            </template>
+          </div>
         </div>
       </div>
 
-      <!-- Pestaña 3: Galería de Avatares Predefinidos UNIMAR -->
-      <div x-show="avatarTab === 'presets'" class="space-y-3 pt-1">
-        <p class="text-xs text-stone-300">
-          O elige uno de nuestros avatares oficiales para el perfil de ingeniería:
-        </p>
+      <!-- ============================================== -->
+      <!-- PESTAÑA: FOTO DEL BANNER -->
+      <!-- ============================================== -->
+      <div x-show="editTab === 'banner'" class="space-y-3">
+        <!-- Sub-pestañas Banner: Solo Subir y Elegir Banner -->
+        <div class="grid grid-cols-2 gap-1.5 p-1 bg-stone-50 rounded-xl border border-stone-200 text-center text-xs">
+          <button type="button" @click="bannerTab = 'upload'" class="py-2 rounded-lg font-bold transition cursor-pointer"
+            :class="bannerTab === 'upload' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-900'">
+            Subir Banner
+          </button>
+          <button type="button" @click="bannerTab = 'presets'" class="py-2 rounded-lg font-bold transition cursor-pointer"
+            :class="bannerTab === 'presets' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-900'">
+            Elegir Banner
+          </button>
+        </div>
 
-        <div class="grid grid-cols-3 gap-2.5 max-h-56 overflow-y-auto pr-1">
-          <template x-for="item in presetAvatars" :key="item.url">
-            <button type="button" @click="saveAvatarUrl(item.url)"
-              class="p-2 rounded-2xl bg-[#17100c] border border-caramel-500/25 hover:border-[#7FB3A6] hover:bg-[#7FB3A6]/10 text-center space-y-1.5 transition group cursor-pointer">
-              <img :src="item.url" class="w-12 h-12 mx-auto rounded-full object-cover border border-caramel-500/40 group-hover:border-[#7FB3A6] transition" :alt="item.name">
-              <p class="text-[9px] font-bold text-stone-300 line-clamp-1 group-hover:text-[#7FB3A6]" x-text="item.name"></p>
-            </button>
+        <!-- Subir Archivo de Banner -->
+        <div x-show="bannerTab === 'upload'" class="space-y-3 pt-1">
+          <label class="block p-4 rounded-2xl border-2 border-dashed border-stone-300 hover:border-caramel-500 bg-stone-50 text-center cursor-pointer transition group">
+            <input type="file" accept="image/*" class="hidden" @change="uploadBannerFile($event)">
+            <div class="w-10 h-10 mx-auto rounded-full bg-caramel-100 text-caramel-800 flex items-center justify-center group-hover:scale-110 transition shadow-xs">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            </div>
+            <p class="text-xs font-bold text-stone-800 mt-2 group-hover:text-caramel-700 transition">Haz click para subir tu propio banner</p>
+            <p class="text-[10px] text-stone-500 mt-0.5">Recomendado horizontal (1200x400) • Máx. 10 MB</p>
+          </label>
+          
+          <div x-show="isUploading" class="text-center py-1 text-xs font-bold text-caramel-700 animate-pulse">
+            Subiendo banner y actualizando perfil...
+          </div>
+
+          <!-- Mover / Ajustar Posición: SOLO aparece si hay una imagen personalizada insertada -->
+          <template x-if="isCustomBanner()">
+            <div class="space-y-2.5 pt-3 border-t border-stone-200">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs font-bold text-stone-800">Ajustar Posición del Banner</span>
+                  <button type="button" @click="resetToDefaultBanner()" :disabled="isUploading"
+                    class="px-1.5 py-0.5 rounded-md bg-stone-100 hover:bg-stone-200 text-stone-600 hover:text-stone-900 border border-stone-300 text-[9px] font-bold transition inline-flex items-center space-x-1 cursor-pointer shadow-2xs"
+                    title="Restaurar al banner predeterminado">
+                    <svg class="w-2.5 h-2.5 text-caramel-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    <span>Banner default</span>
+                  </button>
+                </div>
+                <span class="text-[11px] font-mono text-caramel-700 font-bold" x-text="bannerY + '%'"></span>
+              </div>
+
+              <!-- Previsualización del Encuadre en Vivo -->
+              <div class="relative w-full h-24 rounded-2xl overflow-hidden border-2 border-caramel-400 bg-stone-100 shadow-inner select-none">
+                <img :src="currentBanner" 
+                     class="w-full h-full object-cover brightness-95 contrast-100 pointer-events-none" 
+                     :style="'object-position: 50% ' + bannerY + '%'"
+                     alt="Previsualización de encuadre">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none"></div>
+              </div>
+
+              <!-- Deslizador Único (Sin botones Arriba/Centro/Abajo) -->
+              <div class="space-y-1 p-3 rounded-2xl bg-stone-50 border border-stone-200">
+                <div class="flex items-center justify-between text-[10px] font-bold text-stone-500 uppercase">
+                  <span>Arriba</span>
+                  <span>Abajo</span>
+                </div>
+                <input type="range" min="0" max="100" step="1" x-model="bannerY" 
+                       @input="currentBannerPosition = '50% ' + bannerY + '%'"
+                       class="w-full accent-amber-600 cursor-pointer h-2 bg-stone-200 rounded-lg">
+              </div>
+
+              <button type="button" @click="saveBannerPosition()" :disabled="isSavingPosition"
+                class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] hover:brightness-105 text-white text-xs font-bold shadow-sm transition active:scale-95 disabled:opacity-50 cursor-pointer">
+                <span x-text="isSavingPosition ? 'Guardando posición...' : 'Guardar Posición del Banner'"></span>
+              </button>
+            </div>
           </template>
         </div>
+
+        <!-- Elegir Banner (Estáticos - Sin deslizador) -->
+        <div x-show="bannerTab === 'presets'" class="space-y-2 pt-1">
+          <p class="text-xs text-stone-600">Selecciona uno de los banners disponibles:</p>
+          <div class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+            <template x-for="item in presetBanners" :key="item.url">
+              <button type="button" @click="selectPresetBanner(item.url)"
+                class="p-1.5 rounded-xl bg-stone-50 border border-stone-200 hover:border-caramel-500 hover:bg-caramel-50 text-left transition group cursor-pointer shadow-2xs"
+                :class="currentBanner === item.url ? 'ring-2 ring-caramel-500 bg-caramel-50/50' : ''">
+                <img :src="item.url" class="w-full h-14 rounded-lg object-cover border border-stone-200 group-hover:border-caramel-400 transition" :alt="item.name">
+                <p class="text-[10px] font-bold text-stone-800 mt-1 line-clamp-1 group-hover:text-caramel-800" x-text="item.name"></p>
+              </button>
+            </template>
+          </div>
+        </div>
       </div>
 
-      <div class="pt-2 border-t border-caramel-500/20 text-center">
-        <button type="button" @click="showAvatarModal = false" class="text-xs text-stone-400 hover:text-white transition">
-          Cancelar
+      <!-- ============================================== -->
+      <!-- PESTAÑA: TRIMESTRE ACADÉMICO -->
+      <!-- ============================================== -->
+      <div x-show="editTab === 'trimestre'" class="space-y-4 pt-1">
+        
+        <!-- Estado 1: Selector de Trimestre -->
+        <div x-show="!showTrimestreConfirm" class="space-y-4">
+          <div class="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl flex items-start space-x-2.5">
+            <svg class="w-5 h-5 text-amber-700 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <div class="text-xs text-stone-800 leading-relaxed">
+              <span class="font-bold">Trimestre actual: </span><span class="font-extrabold text-caramel-700" x-text="currentTrimestre + 'º Trimestre'"></span>
+              <p class="text-[11px] text-stone-500 mt-0.5">El trimestre personaliza las recomendaciones de materias y materiales en tu feed.</p>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-stone-700 mb-2">Selecciona tu nuevo trimestre (1º al 12º):</label>
+            <div class="grid grid-cols-4 sm:grid-cols-6 gap-2">
+              <template x-for="t in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]" :key="t">
+                <button type="button" 
+                        @click="selectedTrimestre = t"
+                        class="py-2.5 rounded-xl border text-xs font-bold transition cursor-pointer"
+                        :class="selectedTrimestre === t ? 'bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] text-white border-transparent shadow-sm' : 'bg-stone-50 hover:bg-stone-100 text-stone-700 border-stone-200'">
+                  <span x-text="t + 'º'"></span>
+                </button>
+              </template>
+            </div>
+          </div>
+
+          <button type="button" 
+                  @click="requestTrimestreChange()" 
+                  :disabled="isUploading || selectedTrimestre === currentTrimestre"
+                  class="w-full py-3 rounded-2xl bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] hover:brightness-105 text-white text-xs font-bold shadow-md transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+            <span x-text="isUploading ? 'Procesando...' : 'Guardar Nuevo Trimestre'"></span>
+          </button>
+        </div>
+
+        <!-- Estado 2: Cuadro de Confirmación Exacto Requerido -->
+        <div x-show="showTrimestreConfirm" class="space-y-4" x-transition>
+          <div class="p-4 rounded-2xl bg-amber-50/80 border border-amber-300 text-center space-y-3">
+            <div class="w-12 h-12 mx-auto rounded-full bg-amber-100 text-amber-800 flex items-center justify-center shadow-xs">
+              <svg class="w-6 h-6 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            
+            <h4 class="text-sm font-black text-stone-900">¿Estás seguro de tu decisión?</h4>
+            
+            <p class="text-xs text-stone-700 leading-relaxed font-medium">
+              Tu trimestre cambiará automáticamente al acabar el periodo académico, solo puedes cambiar tu trimestre una vez cada 15 días, al cambiar perderás parte del progreso de tu motor de recomendaciones, ¿deseas continuar?
+            </p>
+
+            <div class="p-2.5 rounded-xl bg-white border border-stone-200 text-xs text-stone-700">
+              Cambio: <span class="font-bold text-stone-500" x-text="currentTrimestre + 'º Trimestre'"></span> → <span class="font-black text-caramel-600" x-text="selectedTrimestre + 'º Trimestre'"></span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 pt-1">
+            <button type="button" 
+                    @click="showTrimestreConfirm = false" 
+                    class="w-full py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition cursor-pointer">
+              Cancelar
+            </button>
+            <button type="button" 
+                    @click="executeTrimestreChange()" 
+                    :disabled="isUploading"
+                    class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] hover:brightness-105 text-white text-xs font-black shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer">
+              <span x-text="isUploading ? 'Actualizando...' : 'Sí, deseo continuar'"></span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer Modal -->
+      <div class="pt-2 border-t border-stone-200 text-center">
+        <button type="button" @click="showEditProfileModal = false" class="text-xs text-stone-500 hover:text-stone-900 transition cursor-pointer">
+          Cerrar
         </button>
       </div>
 
     </div>
   </div>
 
-  <!-- ========================================== -->
   <!-- MODAL: PERSONALIZAR MI SHOWCASE (4 MATERIALES) -->
-  <!-- ========================================== -->
   <div x-show="showShowcaseModal" 
        x-transition:enter="transition ease-out duration-200"
        x-transition:enter-start="opacity-0 scale-95"
@@ -482,35 +940,35 @@ function profileApp() {
        x-transition:leave="transition ease-in duration-150"
        x-transition:leave-start="opacity-100 scale-100"
        x-transition:leave-end="opacity-0 scale-95"
-       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
        style="display: none;">
     
-    <div class="w-full max-w-lg bg-[#221a14] border border-caramel-500/35 rounded-3xl p-6 shadow-2xl space-y-4 relative overflow-hidden"
+    <div class="w-full max-w-lg bg-white border border-stone-200 rounded-3xl p-6 shadow-2xl space-y-4 relative overflow-hidden"
          @click.away="showShowcaseModal = false">
       
       <!-- Header Modal -->
-      <div class="flex items-center justify-between pb-3 border-b border-caramel-500/20">
+      <div class="flex items-center justify-between pb-3 border-b border-stone-200">
         <div>
-          <h3 class="text-base font-black text-white">Personalizar Mi Showcase</h3>
-          <p class="text-[11px] text-stone-400" x-text="'Elige el material para la posición TOP #' + (editingSlotIndex + 1)"></p>
+          <h3 class="text-base font-black text-stone-900">Personalizar Mi Showcase</h3>
+          <p class="text-[11px] text-stone-500" x-text="'Elige el material para la posición TOP #' + (editingSlotIndex + 1)"></p>
         </div>
-        <button type="button" @click="showShowcaseModal = false" class="w-7 h-7 rounded-full bg-[#2c2018] text-stone-400 hover:text-white flex items-center justify-center transition p-1" aria-label="Cerrar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        <button type="button" @click="showShowcaseModal = false" class="w-7 h-7 rounded-full bg-stone-100 text-stone-500 hover:text-stone-900 flex items-center justify-center transition p-1 cursor-pointer" aria-label="Cerrar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
       </div>
 
       <!-- Mensajes de Estado -->
       <template x-if="showcaseSuccessMsg">
-        <div class="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs text-center font-bold" x-text="showcaseSuccessMsg"></div>
+        <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs text-center font-bold" x-text="showcaseSuccessMsg"></div>
       </template>
       <template x-if="showcaseErrorMsg">
-        <div class="p-2.5 rounded-xl bg-red-500/20 border border-red-500/30 text-red-300 text-xs text-center font-bold" x-text="showcaseErrorMsg"></div>
+        <div class="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs text-center font-bold" x-text="showcaseErrorMsg"></div>
       </template>
 
       <!-- Selector Rápido de las 4 Posiciones -->
-      <div class="flex items-center justify-between gap-1.5 p-1 bg-[#17100c] rounded-2xl border border-caramel-500/20 text-xs">
+      <div class="flex items-center justify-between gap-1.5 p-1 bg-stone-100 rounded-2xl border border-stone-200 text-xs">
         <template x-for="(slot, idx) in showcaseSlots" :key="idx">
           <button type="button" @click="editingSlotIndex = idx"
-            class="flex-1 py-1.5 px-2 rounded-xl font-bold transition text-center"
-            :class="editingSlotIndex === idx ? 'bg-amber-500 text-stone-950 shadow-md' : 'text-stone-400 hover:text-white'">
+            class="flex-1 py-1.5 px-2 rounded-xl font-bold transition text-center cursor-pointer"
+            :class="editingSlotIndex === idx ? 'bg-amber-500 text-stone-950 shadow-sm' : 'text-stone-600 hover:text-stone-900'">
             <span x-text="'Slot #' + (idx + 1)"></span>
           </button>
         </template>
@@ -519,32 +977,32 @@ function profileApp() {
       <!-- Buscador en Vivo del Catálogo de Ingeniería -->
       <div class="relative">
         <input type="text" x-model="showcaseSearch" placeholder="Buscar material de ingeniería..."
-          class="w-full pl-9 pr-4 py-2 bg-[#17100c] border border-caramel-500/30 rounded-xl text-xs text-white placeholder-stone-500 focus:outline-none focus:border-[#7FB3A6] transition">
-        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></span>
+          class="w-full pl-9 pr-4 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:bg-white focus:border-caramel-500 transition shadow-xs">
+        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></span>
       </div>
 
       <!-- Lista de Documentos Disponibles -->
       <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
         <template x-for="doc in filteredDocsForShowcase()" :key="doc.id">
           <button type="button" @click="selectDocForActiveSlot(doc)"
-            class="w-full p-2.5 rounded-2xl border bg-[#1a120e] text-left flex items-center space-x-3 transition group cursor-pointer"
-            :class="showcaseSlots[editingSlotIndex] && showcaseSlots[editingSlotIndex].id === doc.id ? 'border-[#7FB3A6] bg-[#7FB3A6]/10' : 'border-white/5 hover:border-[#7FB3A6] hover:bg-[#7FB3A6]/5'">
+            class="w-full p-2.5 rounded-2xl border bg-white text-left flex items-center space-x-3 transition group cursor-pointer shadow-xs"
+            :class="showcaseSlots[editingSlotIndex] && showcaseSlots[editingSlotIndex].id === doc.id ? 'border-amber-500 bg-amber-50' : 'border-stone-200 hover:border-caramel-400 hover:bg-stone-50'">
             
-            <img :src="doc.cover_url" class="w-10 h-14 rounded-lg object-cover shadow-sm shrink-0" :alt="doc.title">
+            <img :src="doc.cover_url" class="w-10 h-14 rounded-lg object-cover shadow-xs shrink-0 border border-stone-200" :alt="doc.title">
             
             <div class="flex-1 min-w-0">
-              <h4 class="text-xs font-bold text-white group-hover:text-[#7FB3A6] transition line-clamp-1" x-text="doc.title"></h4>
-              <p class="text-[10px] text-stone-400 line-clamp-1" x-text="doc.authors"></p>
+              <h4 class="text-xs font-bold text-stone-900 group-hover:text-caramel-700 transition line-clamp-1" x-text="doc.title"></h4>
+              <p class="text-[10px] text-stone-500 line-clamp-1" x-text="doc.authors"></p>
               <div class="flex items-center space-x-2 mt-1 text-[10px]">
-                <span class="text-amber-400 font-bold" x-text="(doc.rating_avg ? doc.rating_avg.toFixed(1) : '5.0') + ' pts'"></span>
-                <span class="text-stone-500">•</span>
-                <span class="text-stone-400" x-text="'Trimestres ' + doc.trimestres"></span>
+                <span class="text-amber-700 font-bold" x-text="(doc.rating_avg ? doc.rating_avg.toFixed(1) : '5.0') + ' pts'"></span>
+                <span class="text-stone-300">•</span>
+                <span class="text-stone-500" x-text="'Trimestres ' + doc.trimestres"></span>
               </div>
             </div>
 
             <div class="shrink-0">
               <span class="text-[10px] font-bold px-2 py-1 rounded-lg"
-                    :class="showcaseSlots[editingSlotIndex] && showcaseSlots[editingSlotIndex].id === doc.id ? 'bg-amber-500 text-stone-950 font-black' : 'bg-white/5 text-stone-400 group-hover:bg-[#7FB3A6]/20 group-hover:text-[#7FB3A6]'">
+                    :class="showcaseSlots[editingSlotIndex] && showcaseSlots[editingSlotIndex].id === doc.id ? 'bg-amber-500 text-stone-950 font-black' : 'bg-stone-100 text-stone-600 group-hover:bg-amber-100 group-hover:text-amber-900'">
                 <span x-text="showcaseSlots[editingSlotIndex] && showcaseSlots[editingSlotIndex].id === doc.id ? 'Activo' : 'Elegir'"></span>
               </span>
             </div>
@@ -553,15 +1011,16 @@ function profileApp() {
         </template>
       </div>
 
-      <div class="pt-2 border-t border-caramel-500/20 flex items-center justify-between">
-        <button type="button" @click="showShowcaseModal = false" class="text-xs text-stone-400 hover:text-white transition">
+      <div class="pt-2 border-t border-stone-200 flex items-center justify-between">
+        <button type="button" @click="showShowcaseModal = false" class="text-xs text-stone-500 hover:text-stone-900 transition cursor-pointer">
           Cerrar
         </button>
-        <span class="text-[11px] text-stone-400">Selecciona cualquier material para guardarlo al instante</span>
+        <span class="text-[11px] text-stone-500">Selecciona cualquier material para guardarlo al instante</span>
       </div>
 
     </div>
   </div>
+  {% endif %}
 
 </div>
 {% endblock %}

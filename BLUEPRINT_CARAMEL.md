@@ -162,8 +162,9 @@ def extract_youtube_id(url: str | None) -> str | None:
 | `POST` | `/upload-material` | Procesa la carga (Multipart/AJAX) | JSON `{ success, doc_id }` o HTML |
 | `POST` | `/api/check-youtube-duplicate` | Verifica si el video de YouTube ya existe | JSON `{ valid, duplicate, message }` |
 | `GET` | `/validation-panel` | Panel de revisión para docentes | HTML (`validation_panel.html`) |
-| `POST` | `/document/{id}/validate` | Aprueba o rechaza un recurso propuesto | Redirección 303 |
-| `GET` | `/document/{id}` | Vista detallada del recurso (lector/video) | HTML (`document_detail.html`) |
+| `POST` | `/document/{id}/validate` | Aprueba o rechaza (modal 1 paso / 2 pasos + .txt) | Redirección 303 (`?status=...`) |
+| `GET` | `/notifications` | Centro de avisos y dictámenes del alumno | HTML (`notifications.html`) |
+| `GET` | `/document/{id}` | Vista detallada del recurso (lector/video/dictamen) | HTML (`document_detail.html`) |
 
 ---
 
@@ -178,7 +179,10 @@ def extract_youtube_id(url: str | None) -> str | None:
 * `read_url` / `external_url`: Ruta interna (`/uploads/...`) o externa (`https://youtube...`).
 * `cover_url`: Portada ilustrativa o miniatura de YouTube en HD.
 * `status`: Estado del recurso (`'pendiente'`, `'aprobado'`, `'rechazado'`).
+* `rejection_reason`: Motivo explicativo normalizado o redactado por el docente evaluador.
+* `rejection_file_url`: Ruta al informe formal `.txt` (`/uploads/motivos_rechazo/...`) para observaciones técnicas.
 * `uploaded_by_id`: Foreign Key al usuario creador (`users.id`).
+* `verified_by_id`: Foreign Key al docente/curador que dictaminó (`users.id`).
 
 ---
 

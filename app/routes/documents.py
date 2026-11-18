@@ -1,13 +1,15 @@
 import os
 import re
 import uuid
+from datetime import datetime
 from fastapi import APIRouter, Depends, Request, Form, HTTPException, status, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from ..database import get_db
-from ..models import User, Document, Review, Bookmark, UserInteraction, Catedra
+from ..database import get_db, engine, Base
+from ..models import User, Document, Review, ReviewLike, Bookmark, UserInteraction, Catedra
+from ..catedras_config import get_catedra_banner
 from .auth import get_current_user
 
 router = APIRouter()
@@ -63,6 +65,17 @@ def document_detail(doc_id: int, request: Request, db: Session = Depends(get_db)
         Bookmark.document_id == doc.id
     ).first() is not None
 
+    # Check which reviews the current user has liked ("Me Sirve")
+    try:
+        Base.metadata.create_all(bind=engine, tables=[ReviewLike.__table__])
+        liked_review_ids = set(
+            r[0] for r in db.query(ReviewLike.review_id).filter(
+                ReviewLike.user_id == current_user.id
+            ).all()
+        )
+    except Exception:
+        liked_review_ids = set()
+
     youtube_embed_url = get_youtube_embed_url(doc.external_url)
 
     return templates.TemplateResponse(
@@ -71,7 +84,9 @@ def document_detail(doc_id: int, request: Request, db: Session = Depends(get_db)
         context={
             "current_user": current_user,
             "document": doc,
+            "banner_url": doc.effective_banner_url,
             "is_bookmarked": is_bookmarked,
+            "liked_review_ids": liked_review_ids,
             "youtube_embed_url": youtube_embed_url,
             "active_nav": "feed"
         }
@@ -94,31 +109,87 @@ def add_review(
 
     rating = max(1, min(5, rating))
 
-    # Add review
-    new_review = Review(
-        user_id=current_user.id,
-        document_id=doc.id,
-        rating=rating,
-        content=content.strip(),
-        likes_count=1
-    )
-    db.add(new_review)
+    # Actualizar reseña existente o crear una nueva para evitar votos duplicados del mismo usuario
+    existing_review = db.query(Review).filter(
+        Review.user_id == current_user.id,
+        Review.document_id == doc.id
+    ).first()
 
-    # Add interaction
-    db.add(UserInteraction(
-        user_id=current_user.id,
-        document_id=doc.id,
-        interaction_type="rate",
-        weight=float(rating) / 2.0
-    ))
+    if existing_review:
+        existing_review.rating = rating
+        existing_review.content = content.strip()
+    else:
+        new_review = Review(
+            user_id=current_user.id,
+            document_id=doc.id,
+            rating=rating,
+            content=content.strip(),
+            likes_count=0
+        )
+        db.add(new_review)
+
+    # Actualizar o registrar la interacción en el historial del recomendador
+    existing_inter = db.query(UserInteraction).filter(
+        UserInteraction.user_id == current_user.id,
+        UserInteraction.document_id == doc.id,
+        UserInteraction.interaction_type == "rate"
+    ).first()
+
+    if existing_inter:
+        existing_inter.weight = float(rating) / 2.0
+    else:
+        db.add(UserInteraction(
+            user_id=current_user.id,
+            document_id=doc.id,
+            interaction_type="rate",
+            weight=float(rating) / 2.0
+        ))
 
     db.commit()
 
-    # Recalculate document rating average and 5-star histogram
+    # Recalcular promedio exacto y desglose de estrellas en el documento
     doc.update_rating_stats()
     db.commit()
 
     return RedirectResponse(url=f"/document/{doc.id}", status_code=status.HTTP_303_SEE_OTHER)
+
+@router.post("/review/{review_id}/like")
+def toggle_review_like(review_id: int, request: Request, db: Session = Depends(get_db)):
+    """Toggle Me Sirve: 1 like por usuario. Clic = agrega like; segundo clic = remueve like."""
+    current_user = get_current_user(request, db)
+    if not current_user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    try:
+        Base.metadata.create_all(bind=engine, tables=[ReviewLike.__table__])
+    except Exception:
+        pass
+
+    rev = db.query(Review).filter(Review.id == review_id).first()
+    if not rev:
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+
+    existing_like = db.query(ReviewLike).filter(
+        ReviewLike.review_id == review_id,
+        ReviewLike.user_id == current_user.id
+    ).first()
+
+    if existing_like:
+        # Toggle OFF: Segundo clic remueve el like
+        db.delete(existing_like)
+        db.commit()
+    else:
+        # Toggle ON: Primer clic agrega el like
+        new_like = ReviewLike(user_id=current_user.id, review_id=review_id)
+        db.add(new_like)
+        db.commit()
+
+    # Sincronizar conteo exacto de likes
+    rev.likes_count = db.query(ReviewLike).filter(ReviewLike.review_id == review_id).count()
+    db.commit()
+
+    target_url = request.headers.get("referer") or f"/document/{rev.document_id}"
+    return RedirectResponse(url=target_url, status_code=status.HTTP_303_SEE_OTHER)
 
 @router.post("/document/{doc_id}/bookmark")
 def toggle_bookmark(doc_id: int, request: Request, db: Session = Depends(get_db)):
@@ -157,19 +228,23 @@ async def check_youtube_duplicate(request: Request, db: Session = Depends(get_db
     if not yt_id:
         return {"valid": False, "duplicate": False, "message": "Enlace no válido"}
 
-    existing = db.query(Document).filter(
+    matching_docs = db.query(Document).filter(
         (Document.external_url.like(f"%{yt_id}%")) | 
         (Document.read_url.like(f"%{yt_id}%"))
-    ).first()
+    ).all()
 
-    if existing:
+    already_approved = any(d.status == "aprobado" for d in matching_docs)
+    rejected_count = sum(1 for d in matching_docs if d.status == "rechazado")
+
+    if already_approved or rejected_count >= 3:
         return {
             "valid": True,
             "duplicate": True,
+            "rejected_count": rejected_count,
             "message": "¡El video que intentas aprobar ya fue validado anteriormente, más atento Casi Ingeniero!"
         }
 
-    return {"valid": True, "duplicate": False}
+    return {"valid": True, "duplicate": False, "rejected_count": rejected_count}
 
 @router.get("/upload-material", response_class=HTMLResponse)
 def upload_material_page(request: Request, db: Session = Depends(get_db)):
@@ -210,8 +285,32 @@ async def upload_material_submit(
     if not materias_clean:
         materias_clean = "Programación IV"
 
-    # El título del material es automáticamente el nombre de la cátedra
-    title_clean = materias_clean
+    # Procesamiento inteligente y distintivo del título del material
+    raw_title = (title or "").strip()
+    if raw_title and raw_title.lower() != materias_clean.lower():
+        title_clean = raw_title
+    else:
+        # Si no se suministró título específico o solo se envió el nombre de la cátedra
+        if file and file.filename:
+            raw_base = os.path.splitext(file.filename)[0].replace("_", " ").replace("-", " ").strip()
+            title_clean = raw_base.title() if raw_base else f"Material de Estudio: {materias_clean}"
+        elif material_type == "video":
+            title_clean = f"Clase Audiovisual: {materias_clean}"
+        else:
+            title_clean = f"Aporte Académico: {materias_clean}"
+
+    # Control de duplicados en títulos para la misma materia
+    existing_same = db.query(Document).filter(
+        Document.materias == materias_clean,
+        Document.title.ilike(title_clean)
+    ).first()
+    if existing_same:
+        count_same = db.query(Document).filter(
+            Document.materias == materias_clean,
+            Document.title.ilike(f"{title_clean}%")
+        ).count()
+        title_clean = f"{title_clean} (Aporte #{count_same + 1})"
+
     # El aportador se toma directamente de la sesión del usuario autenticado
     authors_clean = getattr(current_user, 'full_name', None) or getattr(current_user, 'nombre_completo', None) or current_user.username or current_user.email or "Estudiante UNIMAR"
     desc_clean = (description or "").strip() or f"Material académico propuesto para la cátedra {materias_clean}. Pendiente de revisión docente para asignación temática en el plan de evaluación."
@@ -229,13 +328,16 @@ async def upload_material_submit(
                 return JSONResponse(status_code=400, content={"success": False, "error": msg})
             raise HTTPException(status_code=400, detail=msg)
 
-        # Validación estricta de duplicados
-        existing = db.query(Document).filter(
+        # Validación de duplicados: solo bloquea si ya está aprobado en la plataforma o si ya fue rechazado 3 veces
+        matching_docs = db.query(Document).filter(
             (Document.external_url.like(f"%{yt_id}%")) | 
             (Document.read_url.like(f"%{yt_id}%"))
-        ).first()
+        ).all()
 
-        if existing:
+        already_approved = any(d.status == "aprobado" for d in matching_docs)
+        rejected_count = sum(1 for d in matching_docs if d.status == "rechazado")
+
+        if already_approved or rejected_count >= 3:
             duplicate_msg = "¡El video que intentas aprobar ya fue validado anteriormente, más atento Casi Ingeniero!"
             if is_ajax:
                 return JSONResponse(status_code=400, content={"success": False, "error": duplicate_msg})
@@ -298,8 +400,8 @@ async def upload_material_submit(
                 title_clean = f"Aporte Académico: {materias_clean}"
             cover = "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400"
 
-    is_teacher = bool(current_user.can_validate)
-    initial_status = "aprobado" if is_teacher else "pendiente"
+    # Todo contenido que se suba entra en estado 'pendiente' para ser revisado en el Panel de Validación
+    initial_status = "pendiente"
 
     new_doc = Document(
         title=title_clean,
@@ -308,23 +410,23 @@ async def upload_material_submit(
         edition="Edición Digital",
         publisher="UNIMAR Digital",
         cover_url=cover,
-        header_banner_url="https://images.unsplash.com/photo-1509228468518-180dd4864904?w=1000",
+        header_banner_url=get_catedra_banner(materias_clean),
         carreras=current_user.carrera or "Ingeniería de Sistemas",
         trimestres=str(trimestres),
         materias=materias_clean,
         tags=f"{title_clean}, {materias_clean}, {material_type}",
         description=desc_clean,
-        pages=20 if material_type == "pdf" else 1,
+        pages=20 if material_type == "pdf" else 0,
         year=2026,
         read_url=read_link,
         external_url=saved_url,
         material_type=material_type,
         status=initial_status,
         uploaded_by_id=current_user.id,
-        verified_by_id=current_user.id if is_teacher else None,
-        rating_avg=5.0,
-        ratings_count=1,
-        star_5_count=1
+        verified_by_id=None,
+        rating_avg=0.0,
+        ratings_count=0,
+        star_5_count=0
     )
     db.add(new_doc)
     db.commit()
@@ -376,6 +478,9 @@ def validate_document(
     doc_id: int,
     request: Request,
     action: str = Form(...),
+    title: str = Form(None),
+    rejection_reason: str = Form(None),
+    is_custom_reason: str = Form("false"),
     db: Session = Depends(get_db)
 ):
     current_user = get_current_user(request, db)
@@ -387,11 +492,94 @@ def validate_document(
         if action == "aprobar":
             doc.status = "aprobado"
             doc.verified_by_id = current_user.id
+            assigned_title = (title or "").strip()
+            if assigned_title:
+                doc.title = assigned_title
+            doc.rejection_reason = None
+            doc.rejection_file_url = None
         elif action == "rechazar":
             doc.status = "rechazado"
+            doc.verified_by_id = current_user.id
+            
+            clean_reason = (rejection_reason or "").strip()
+            reason_option_1 = "El contenido que indicaste no tiene mucha relacion con la catedra que seleccionaste"
+            reason_option_2 = "Ya existe un contenido muy similar a este en la plataforma"
+            
+            # Determinar si es un motivo personalizado ("Otro motivo") o una de las opciones predefinidas
+            is_custom = (is_custom_reason or "").lower() == "true" or (
+                clean_reason
+                and clean_reason != reason_option_1
+                and clean_reason != reason_option_2
+                and "relacion con la catedra" not in clean_reason.lower()
+                and "similar a este" not in clean_reason.lower()
+            )
+            
+            if is_custom and clean_reason:
+                # Carpeta de almacenamiento para archivos de retroalimentación .txt
+                rechazos_dir = os.path.join(UPLOAD_DIR, "motivos_rechazo")
+                os.makedirs(rechazos_dir, exist_ok=True)
+                
+                txt_filename = f"motivo_rechazo_doc_{doc.id}_{uuid.uuid4().hex[:8]}.txt"
+                txt_filepath = os.path.join(rechazos_dir, txt_filename)
+                
+                evaluator_name = getattr(current_user, 'full_name', None) or getattr(current_user, 'nombre_completo', None) or current_user.username or "Docente Evaluador"
+                evaluator_role = getattr(current_user, 'rol_nombre', None) or "Docente de Cátedra"
+                evaluator_cargo = getattr(current_user, 'cargo_abreviado', None) or "Prof."
+                student_name = doc.uploaded_by.full_name if doc.uploaded_by else doc.authors
+                now_str = datetime.now().strftime("%d/%m/%Y a las %I:%M %p")
+                
+                txt_content = (
+                    "======================================================================\n"
+                    "UNIVERSIDAD DE MARGARITA (UNIMAR) - VICERRECTORADO ACADÉMICO\n"
+                    "DECANATO DE INGENIERÍA Y AFINES - PLATAFORMA CARAMEL\n"
+                    "DICTAMEN DE REVISIÓN Y VALIDACIÓN DE MATERIAL ACADÉMICO\n"
+                    "======================================================================\n\n"
+                    f"FECHA DE REVISIÓN: {now_str}\n"
+                    f"ESTADO: NO ADMITIDO / RECHAZADO\n\n"
+                    "----------------------------------------------------------------------\n"
+                    "DATOS DEL RECURSO EVALUADO:\n"
+                    "----------------------------------------------------------------------\n"
+                    f"• Título del recurso: {doc.title}\n"
+                    f"• Cátedra asignada:   {doc.materias}\n"
+                    f"• Nivel curricular:   Trimestre {doc.trimestres}\n"
+                    f"• Tipo de contenido:  {doc.material_type.upper()}\n"
+                    f"• Estudiante autor:   {student_name}\n\n"
+                    "----------------------------------------------------------------------\n"
+                    "DOCENTE / CURADOR EVALUADOR:\n"
+                    "----------------------------------------------------------------------\n"
+                    f"• Evaluado por:       {evaluator_cargo} {evaluator_name}\n"
+                    f"• Rol institucional:  {evaluator_role}\n"
+                    f"• Correo oficial:     {current_user.email}\n\n"
+                    "======================================================================\n"
+                    "MOTIVO DETALLADO Y OBSERVACIONES TÉCNICAS DEL RECHAZO:\n"
+                    "======================================================================\n\n"
+                    f"{clean_reason}\n\n"
+                    "----------------------------------------------------------------------\n"
+                    "ORIENTACIÓN ACADÉMICA PARA EL ALUMNO:\n"
+                    "----------------------------------------------------------------------\n"
+                    "Estimado estudiante, en la Universidad de Margarita velamos por la\n"
+                    "pertinencia y excelencia de los contenidos compartidos en Caramel.\n"
+                    "Te invitamos a tomar en cuenta las observaciones emitidas por el\n"
+                    "docente, ajustar tu recurso educativo y volver a postularlo a través\n"
+                    "de la sección 'Aportar Material'.\n\n"
+                    "======================================================================\n"
+                    "Caramel UNIMAR - Repositorio y Motor de Recomendación Curricular\n"
+                    "======================================================================\n"
+                )
+                
+                with open(txt_filepath, "w", encoding="utf-8") as f_txt:
+                    f_txt.write(txt_content)
+                
+                doc.rejection_reason = clean_reason
+                doc.rejection_file_url = f"/uploads/motivos_rechazo/{txt_filename}"
+            else:
+                # Opciones predefinidas directas (1 paso)
+                doc.rejection_reason = clean_reason or reason_option_1
+                doc.rejection_file_url = None
+                
         db.commit()
 
-    return RedirectResponse(url="/validation-panel", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(url=f"/validation-panel?status={action}", status_code=status.HTTP_303_SEE_OTHER)
 
 @router.post("/admin/user/{target_id}/approve-docente")
 def approve_docente(target_id: int, request: Request, db: Session = Depends(get_db)):
@@ -404,7 +592,7 @@ def approve_docente(target_id: int, request: Request, db: Session = Depends(get_
         target.validado_por_ceo = 1
         db.commit()
 
-    return RedirectResponse(url="/validation-panel", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(url="/validation-panel?status=docente_aprobado", status_code=status.HTTP_303_SEE_OTHER)
 
 @router.post("/admin/user/{target_id}/reject-docente")
 def reject_docente(target_id: int, request: Request, db: Session = Depends(get_db)):
@@ -420,4 +608,4 @@ def reject_docente(target_id: int, request: Request, db: Session = Depends(get_d
         target.validado_por_ceo = 1
         db.commit()
 
-    return RedirectResponse(url="/validation-panel", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(url="/validation-panel?status=docente_rechazado", status_code=status.HTTP_303_SEE_OTHER)
