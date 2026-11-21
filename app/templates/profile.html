@@ -11,7 +11,7 @@ function profileApp() {
     editTab: 'avatar', // 'avatar', 'banner', 'trimestre'
     showShowcaseModal: false,
     currentAvatar: {{ (profile_user.avatar_url or '/static/img/avatares/Flavio.jpg')|tojson }},
-    currentBanner: {{ ('/static/img/bannerdefault.jpg' if not profile_user.banner_url or profile_user.banner_url == '/static/img/login_banner.jpg' else profile_user.banner_url)|tojson }},
+    currentBanner: {{ ('/static/img/bannerdefault.jpg' if not profile_user.banner_url or profile_user.banner_url == '/static/img/login_banner.jpg' else ('/static/img/BannerCaribeOk.jpg?v=4' if 'BannerCaribe' in profile_user.banner_url else ('/static/img/Coordenada.jpg?v=2' if 'Coordenada' in profile_user.banner_url else ('/static/img/Trasnochado.jpg?v=1' if '1526374965328' in profile_user.banner_url else ('/static/img/Manguangua.jpg?v=2' if ('1558494949' in profile_user.banner_url or 'Manguangua' in profile_user.banner_url) else ('/static/img/DivsDocsDic.jpg?v=1' if '1555066931' in profile_user.banner_url else profile_user.banner_url))))))|tojson }},
     currentBannerPosition: {{ (profile_user.banner_position or '50% 50%')|tojson }},
     bannerY: 50,
     isRepositioningBanner: false,
@@ -42,9 +42,11 @@ function profileApp() {
 
     presetBanners: [
       { name: 'Predeterminado', url: '/static/img/bannerdefault.jpg' },
-      { name: 'Trasnochado', url: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200' },
-      { name: 'Divs, Docs, Dic...', url: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200' },
-      { name: 'Manguangua', url: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200' }
+      { name: 'bool wilsonFlotaLibre = true;', url: '/static/img/BannerCaribeOk.jpg?v=4' },
+      { name: 'Barbanegra se mecanizó', url: '/static/img/Coordenada.jpg?v=2' },
+      { name: 'Teóricamente Trasnochado', url: '/static/img/Trasnochado.jpg?v=1' },
+      { name: 'Dan sabe Desarrollo Web', url: '/static/img/DivsDocsDic.jpg?v=1' },
+      { name: 'Que Manguangua', url: '/static/img/Manguangua.jpg?v=2' }
     ],
 
     showcaseSlots: [
@@ -413,7 +415,7 @@ function profileApp() {
     
     <!-- Banner de Fondo del Perfil -->
     <div class="relative w-full h-36 sm:h-44 overflow-hidden bg-stone-100">
-      <img src="{{ '/static/img/bannerdefault.jpg' if not profile_user.banner_url or profile_user.banner_url == '/static/img/login_banner.jpg' else profile_user.banner_url }}" 
+      <img src="{{ '/static/img/bannerdefault.jpg' if not profile_user.banner_url or profile_user.banner_url == '/static/img/login_banner.jpg' else ('/static/img/BannerCaribeOk.jpg?v=4' if 'BannerCaribe' in profile_user.banner_url else ('/static/img/Coordenada.jpg?v=2' if 'Coordenada' in profile_user.banner_url else ('/static/img/Trasnochado.jpg?v=1' if '1526374965328' in profile_user.banner_url else ('/static/img/Manguangua.jpg?v=2' if ('1558494949' in profile_user.banner_url or 'Manguangua' in profile_user.banner_url) else ('/static/img/DivsDocsDic.jpg?v=1' if '1555066931' in profile_user.banner_url else profile_user.banner_url))))) }}" 
            :src="currentBanner" 
            class="w-full h-full object-cover brightness-95 contrast-100 transition duration-300 pointer-events-none" 
            style="object-position: {{ profile_user.banner_position or '50% 50%' }};"

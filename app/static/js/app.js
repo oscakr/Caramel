@@ -4,10 +4,63 @@ document.addEventListener('DOMContentLoaded', () => {
   window.scrollCarousel = function(carouselId, direction) {
     const el = document.getElementById(carouselId);
     if (el) {
-      const scrollAmount = direction * 280;
+      const scrollAmount = direction * 340;
       el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
+
+  // Click-and-drag horizontal scrolling for carousels
+  document.querySelectorAll('#carousel-recommendations, [data-drag-carousel]').forEach((slider) => {
+    let isDown = false;
+    let isDragging = false;
+    let startX = 0;
+    let scrollLeft = 0;
+
+    slider.classList.add('cursor-grab', 'select-none');
+
+    slider.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      isDown = true;
+      isDragging = false;
+      startX = e.pageX - slider.offsetLeft;
+      scrollLeft = slider.scrollLeft;
+      slider.classList.remove('scroll-smooth', 'cursor-grab');
+      slider.classList.add('cursor-grabbing');
+    });
+
+    const stopDrag = () => {
+      if (!isDown) return;
+      isDown = false;
+      slider.classList.remove('cursor-grabbing');
+      slider.classList.add('scroll-smooth', 'cursor-grab');
+    };
+
+    slider.addEventListener('mouseleave', stopDrag);
+    slider.addEventListener('mouseup', stopDrag);
+
+    slider.addEventListener('mousemove', (e) => {
+      if (!isDown) return;
+      const x = e.pageX - slider.offsetLeft;
+      const walk = x - startX;
+      if (Math.abs(walk) > 6) {
+        isDragging = true;
+        e.preventDefault();
+        slider.scrollLeft = scrollLeft - walk * 1.25;
+      }
+    });
+
+    // Prevent native image/link ghost dragging while dragging the carousel
+    slider.addEventListener('dragstart', (e) => e.preventDefault());
+
+    // Prevent accidental click navigation when releasing after a drag
+    slider.addEventListener('click', (e) => {
+      if (isDragging) {
+        e.preventDefault();
+        e.stopPropagation();
+        isDragging = false;
+      }
+    }, true);
+  });
 
   // Dynamic Star Rating selector in Review Modal / Forms
   window.selectStarRating = function(value) {

@@ -50,7 +50,7 @@ def home_feed(request: Request, db: Session = Depends(get_db)):
         friends_reviews = db.query(Review).order_by(Review.created_at.desc()).limit(10).all()
 
     # 4. Hybrid Recommendations with Explainability
-    recommendations = recommender.get_recommendations(current_user.id, limit=5)
+    recommendations = recommender.get_recommendations(current_user.id, limit=12)
 
     # 5. Pending materials and teacher validations count
     pending_validation_count = 0
@@ -247,6 +247,28 @@ def user_profile(request: Request, user_id: str = None, db: Session = Depends(ge
         }
     )
 
+def _cleanup_old_profile_upload(old_url: str, db: Session, column_attr, exclude_user_id: int):
+    """Elimina el archivo anterior en /uploads/ al cambiar avatar o banner si ningún otro usuario lo usa."""
+    if not old_url or not old_url.startswith("/uploads/"):
+        return
+    filename = old_url[len("/uploads/"):].strip()
+    if not filename or "/" in filename or "\\" in filename or ".." in filename:
+        return
+    if not (filename.startswith("avatar_") or filename.startswith("banner_")):
+        return
+    still_used = db.query(User).filter(
+        column_attr == old_url,
+        User.id != exclude_user_id
+    ).first()
+    if not still_used:
+        old_path = os.path.join(UPLOAD_DIR, filename)
+        if os.path.isfile(old_path):
+            try:
+                os.remove(old_path)
+            except OSError:
+                pass
+
+
 @router.post("/api/profile/upload-avatar")
 async def upload_avatar(
     request: Request,
@@ -266,6 +288,7 @@ async def upload_avatar(
     if len(contents) > 10 * 1024 * 1024:
         return JSONResponse(status_code=400, content={"success": False, "error": "La imagen no debe superar los 10 MB."})
 
+    old_avatar_url = current_user.avatar_url
     safe_name = re.sub(r'[^a-zA-Z0-9_\.-]', '_', filename)
     unique_filename = f"avatar_{uuid.uuid4().hex[:10]}_{safe_name}"
     target_path = os.path.join(UPLOAD_DIR, unique_filename)
@@ -275,6 +298,7 @@ async def upload_avatar(
     new_url = f"/uploads/{unique_filename}"
     current_user.avatar_url = new_url
     db.commit()
+    _cleanup_old_profile_upload(old_avatar_url, db, User.avatar_url, current_user.id)
 
     return {"success": True, "avatar_url": new_url, "message": "¡Foto de perfil actualizada exitosamente!"}
 
@@ -292,8 +316,11 @@ async def set_avatar_url(
     if not avatar_url:
         return JSONResponse(status_code=400, content={"success": False, "error": "La URL no puede estar vacía."})
 
+    old_avatar_url = current_user.avatar_url
     current_user.avatar_url = avatar_url
     db.commit()
+    if old_avatar_url != avatar_url:
+        _cleanup_old_profile_upload(old_avatar_url, db, User.avatar_url, current_user.id)
 
     return {"success": True, "avatar_url": avatar_url, "message": "¡Foto de perfil actualizada exitosamente!"}
 
@@ -316,6 +343,7 @@ async def upload_banner(
     if len(contents) > 10 * 1024 * 1024:
         return JSONResponse(status_code=400, content={"success": False, "error": "La imagen del banner no debe superar los 10 MB."})
 
+    old_banner_url = current_user.banner_url
     safe_name = re.sub(r'[^a-zA-Z0-9_\.-]', '_', filename)
     unique_filename = f"banner_{uuid.uuid4().hex[:10]}_{safe_name}"
     target_path = os.path.join(UPLOAD_DIR, unique_filename)
@@ -325,6 +353,7 @@ async def upload_banner(
     new_url = f"/uploads/{unique_filename}"
     current_user.banner_url = new_url
     db.commit()
+    _cleanup_old_profile_upload(old_banner_url, db, User.banner_url, current_user.id)
 
     return {"success": True, "banner_url": new_url, "message": "¡Foto de banner actualizada exitosamente!"}
 
@@ -342,8 +371,11 @@ async def set_banner_url(
     if not banner_url:
         return JSONResponse(status_code=400, content={"success": False, "error": "La URL del banner no puede estar vacía."})
 
+    old_banner_url = current_user.banner_url
     current_user.banner_url = banner_url
     db.commit()
+    if old_banner_url != banner_url:
+        _cleanup_old_profile_upload(old_banner_url, db, User.banner_url, current_user.id)
 
     return {"success": True, "banner_url": banner_url, "message": "¡Banner de perfil actualizado exitosamente!"}
 
@@ -406,6 +438,7 @@ async def update_trimestre(
         "message": f"¡Trimestre académico actualizado a {nuevo_trimestre}º Trimestre!"
     }
 
+@router.post("/api/profile/showcase")
 @router.post("/api/profile/update-showcase")
 async def update_showcase(
     request: Request,
