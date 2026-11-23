@@ -30,6 +30,12 @@
       <p class="text-xs text-stone-500 mt-1">Ingresa tus credenciales para continuar</p>
     </div>
 
+    {% if reset_success %}
+    <div class="mb-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs text-center font-semibold">
+      ¡Contraseña restablecida con éxito! Ya puedes iniciar sesión con tus nuevos datos.
+    </div>
+    {% endif %}
+
     {% if error %}
     <div class="mb-4 p-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs text-center font-medium">
       {{ error }}
@@ -68,10 +74,18 @@
         </button>
       </div>
 
-      {% if failed_attempts and failed_attempts >= 4 %}
+      {% if failed_attempts and failed_attempts >= 1 %}
+      {% set support_subject = "Soporte Caramel UNIMAR - Restablecimiento de contraseña" %}
+      {% set support_body = "Hola, equipo de soporte de Caramel:\n\nHe olvidado mi contraseña y requiero de un enlace para restablecer mis datos de acceso a la plataforma.\n\nConfirmo que estoy enviando este mensaje desde el correo con el que me registré en la cuenta. De no tener acceso a este correo o en caso de no existir, explícanos brevemente tu situación a continuación:\n\n" ~ ("Usuario o correo ingresado: " ~ username_val ~ "\n" if username_val else "") %}
       <div class="pt-1 text-center">
         <p class="text-[11.5px] text-stone-500 leading-tight">
-          ¿Olvidaste tu contraseña? <span class="font-medium text-stone-700">Contacta al soporte.</span>
+          ¿Olvidaste tu contraseña?
+          <a href="https://mail.google.com/mail/?view=cm&fs=1&to=oalvarez.7305@unimar.edu.ve&su={{ support_subject|urlencode }}&body={{ support_body|urlencode }}"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="font-semibold text-caramel-600 hover:text-caramel-700 underline transition">
+            Contacta al soporte.
+          </a>
         </p>
       </div>
       {% endif %}

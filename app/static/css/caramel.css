@@ -21,6 +21,10 @@
   box-sizing: border-box;
 }
 
+[x-cloak] {
+  display: none !important;
+}
+
 body {
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: #ffffff;
@@ -53,6 +57,20 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Smooth horizontal edge fade (true alpha transparency applied on static wrapper) */
+.carousel-fade-both {
+  -webkit-mask-image: linear-gradient(to right, transparent 0px, rgba(0, 0, 0, 0.2) 22px, rgba(0, 0, 0, 0.78) 52px, black 84px, black calc(100% - 84px), rgba(0, 0, 0, 0.78) calc(100% - 52px), rgba(0, 0, 0, 0.2) calc(100% - 22px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0px, rgba(0, 0, 0, 0.2) 22px, rgba(0, 0, 0, 0.78) 52px, black 84px, black calc(100% - 84px), rgba(0, 0, 0, 0.78) calc(100% - 52px), rgba(0, 0, 0, 0.2) calc(100% - 22px), transparent 100%);
+}
+.carousel-fade-right {
+  -webkit-mask-image: linear-gradient(to right, black 0px, black calc(100% - 84px), rgba(0, 0, 0, 0.78) calc(100% - 52px), rgba(0, 0, 0, 0.2) calc(100% - 22px), transparent 100%);
+  mask-image: linear-gradient(to right, black 0px, black calc(100% - 84px), rgba(0, 0, 0, 0.78) calc(100% - 52px), rgba(0, 0, 0, 0.2) calc(100% - 22px), transparent 100%);
+}
+.carousel-fade-left {
+  -webkit-mask-image: linear-gradient(to right, transparent 0px, rgba(0, 0, 0, 0.2) 22px, rgba(0, 0, 0, 0.78) 52px, black 84px, black 100%);
+  mask-image: linear-gradient(to right, transparent 0px, rgba(0, 0, 0, 0.2) 22px, rgba(0, 0, 0, 0.78) 52px, black 84px, black 100%);
 }
 
 /* Smooth glass effect */
@@ -157,5 +175,70 @@ body {
     box-shadow: none !important;
     border-left: 1px solid #f1f5f9;
     border-right: 1px solid #f1f5f9;
+  }
+}
+
+/* Escala tipográfica ampliada en contenido principal (<main>) y barra lateral (.caramel-sidebar-drawer)
+   Excluye intencionalmente la barra de acciones inferior (<nav>) y la barra superior institucional. */
+:is(main, .caramel-sidebar-drawer) .text-\[9px\] {
+  font-size: 11px;
+}
+:is(main, .caramel-sidebar-drawer) .text-\[10px\] {
+  font-size: 11.5px;
+}
+:is(main, .caramel-sidebar-drawer) .text-\[10\.5px\] {
+  font-size: 12px;
+}
+:is(main, .caramel-sidebar-drawer) .text-\[11px\] {
+  font-size: 12.5px;
+}
+:is(main, .caramel-sidebar-drawer) .text-\[11\.5px\] {
+  font-size: 13px;
+}
+:is(main, .caramel-sidebar-drawer) .text-xs {
+  font-size: 0.84375rem; /* 13.5px */
+  line-height: 1.25rem;
+}
+:is(main, .caramel-sidebar-drawer) .text-sm {
+  font-size: 0.96875rem; /* 15.5px */
+  line-height: 1.4rem;
+}
+:is(main, .caramel-sidebar-drawer) .text-base {
+  font-size: 1.09375rem; /* 17.5px */
+  line-height: 1.6rem;
+}
+:is(main, .caramel-sidebar-drawer) .text-lg {
+  font-size: 1.21875rem; /* 19.5px */
+  line-height: 1.75rem;
+}
+:is(main, .caramel-sidebar-drawer) .text-xl {
+  font-size: 1.375rem; /* 22px */
+  line-height: 1.85rem;
+}
+:is(main, .caramel-sidebar-drawer) .text-2xl {
+  font-size: 1.625rem; /* 26px */
+  line-height: 2.1rem;
+}
+
+@media (min-width: 640px) {
+  :is(main, .caramel-sidebar-drawer) .sm\:text-sm {
+    font-size: 0.96875rem; /* 15.5px */
+    line-height: 1.4rem;
+  }
+  :is(main, .caramel-sidebar-drawer) .sm\:text-base {
+    font-size: 1.09375rem; /* 17.5px */
+    line-height: 1.6rem;
+  }
+  :is(main, .caramel-sidebar-drawer) .sm\:text-lg {
+    font-size: 1.21875rem; /* 19.5px */
+    line-height: 1.75rem;
+  }
+  :is(main, .caramel-sidebar-drawer) .sm\:text-xl {
+    font-size: 1.375rem; /* 22px */
+    line-height: 1.85rem;
+  }
+  :is(main, .caramel-sidebar-drawer) .sm\:text-2xl {
+    font-size: 1.625rem; /* 26px */
+    line-height: 2.1rem;
   }
 }

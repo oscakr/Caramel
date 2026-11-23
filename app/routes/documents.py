@@ -459,8 +459,10 @@ def validation_panel_page(request: Request, db: Session = Depends(get_db)):
 
     # Docentes y curadores pendientes de comprobación institucional por el CEO
     pending_docentes = []
+    all_users = []
     if current_user.is_ceo:
         pending_docentes = db.query(User).filter(User.id_rol >= 2, User.validado_por_ceo == 0).order_by(User.id.desc()).all()
+        all_users = db.query(User).order_by(User.full_name.asc()).all()
 
     return templates.TemplateResponse(
         request=request,
@@ -469,7 +471,8 @@ def validation_panel_page(request: Request, db: Session = Depends(get_db)):
             "current_user": current_user,
             "active_nav": "explore",
             "pending_documents": pending_docs,
-            "pending_docentes": pending_docentes
+            "pending_docentes": pending_docentes,
+            "all_users": all_users
         }
     )
 

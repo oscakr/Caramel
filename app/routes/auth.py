@@ -1,12 +1,15 @@
+import hashlib
 import random
+import secrets
+from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import APIRouter, Depends, Request, Response, Form, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from ..database import get_db
-from ..models import User, Role, DEFAULT_AVATARS, DEFAULT_BANNER
+from ..database import get_db, engine, Base
+from ..models import User, Usuario, Role, PasswordResetToken, DEFAULT_AVATARS, DEFAULT_BANNER
 from ..security import hash_password, verify_password, validate_password_strength, validate_institutional_email
 
 router = APIRouter()
@@ -42,10 +45,17 @@ def login_page(request: Request, db: Session = Depends(get_db)):
         failed_attempts = int(request.cookies.get("caramel_login_fails", 0))
     except Exception:
         failed_attempts = 0
+    reset_success = request.query_params.get("reset") == "success"
     return templates.TemplateResponse(
         request=request,
         name="login.html",
-        context={"current_user": None, "error": None, "failed_attempts": failed_attempts, "username_val": ""}
+        context={
+            "current_user": None,
+            "error": None,
+            "failed_attempts": failed_attempts,
+            "username_val": "",
+            "reset_success": reset_success,
+        }
     )
 
 @router.post("/login")
@@ -366,4 +376,243 @@ def logout():
     """Cierra la sesión institucional y redirige al login."""
     redirect = RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
     redirect.delete_cookie(key="caramel_user_id")
+    return redirect
+
+
+def _ensure_reset_tokens_table():
+    """Garantiza que exista la tabla password_reset_tokens en SQLite o PostgreSQL."""
+    try:
+        Base.metadata.create_all(bind=engine, tables=[PasswordResetToken.__table__])
+    except Exception:
+        pass
+
+
+def _hash_reset_token(raw_token: str) -> str:
+    return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+
+
+@router.post("/api/ceo/generate-reset-link")
+async def ceo_generate_reset_link(request: Request, db: Session = Depends(get_db)):
+    """
+    Endpoint exclusivo del CEO para emitir un enlace temporal (30 min, 1 solo uso)
+    de restablecimiento de contraseña, con opción de desbloquear la edición del correo.
+    """
+    current_user = get_current_user(request, db)
+    if not current_user or not current_user.is_ceo:
+        return JSONResponse(
+            {"success": False, "error": "Acceso restringido exclusivamente al CEO."},
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    _ensure_reset_tokens_table()
+
+    try:
+        payload = await request.json()
+    except Exception:
+        return JSONResponse({"success": False, "error": "Solicitud inválida."}, status_code=400)
+
+    target_user_id = payload.get("user_id")
+    allow_email_edit = bool(payload.get("allow_email_edit", False))
+
+    if not target_user_id:
+        return JSONResponse({"success": False, "error": "Selecciona un usuario válido."}, status_code=400)
+
+    target_user = db.query(User).filter(User.id == int(target_user_id)).first()
+    if not target_user:
+        return JSONResponse({"success": False, "error": "Usuario no encontrado."}, status_code=404)
+
+    # Invalida cualquier enlace anterior pendiente de este mismo usuario
+    db.query(PasswordResetToken).filter(
+        PasswordResetToken.user_id == target_user.id,
+        PasswordResetToken.used == 0,
+    ).update({"used": 1})
+
+    raw_token = secrets.token_urlsafe(32)
+    token_record = PasswordResetToken(
+        user_id=target_user.id,
+        token_hash=_hash_reset_token(raw_token),
+        allow_email_edit=1 if allow_email_edit else 0,
+        used=0,
+        expires_at=datetime.utcnow() + timedelta(minutes=30),
+        created_by_id=current_user.id,
+    )
+    db.add(token_record)
+    db.commit()
+
+    base_url = str(request.base_url).rstrip("/")
+    reset_url = f"{base_url}/reset-password/{raw_token}"
+
+    return JSONResponse({
+        "success": True,
+        "reset_url": reset_url,
+        "expires_minutes": 30,
+        "allow_email_edit": allow_email_edit,
+        "user_email": target_user.email,
+        "user_name": target_user.full_name,
+    })
+
+
+@router.get("/reset-password/{token}", response_class=HTMLResponse)
+def reset_password_page(token: str, request: Request, db: Session = Depends(get_db)):
+    """Vista protegida por token temporal para restablecer contraseña (y correo solo si el CEO lo habilitó)."""
+    _ensure_reset_tokens_table()
+
+    token_hash = _hash_reset_token(token)
+    record = db.query(PasswordResetToken).filter(PasswordResetToken.token_hash == token_hash).first()
+
+    if not record or record.used == 1 or record.expires_at < datetime.utcnow():
+        reason = (
+            "Este enlace ya fue utilizado anteriormente."
+            if (record and record.used == 1)
+            else "Este enlace no es válido o ha expirado (validez de 30 minutos). Solicita uno nuevo al equipo de soporte."
+        )
+        return templates.TemplateResponse(
+            request=request,
+            name="reset_password.html",
+            context={
+                "current_user": None,
+                "token_invalid": True,
+                "invalid_reason": reason,
+                "allow_email_edit": False,
+                "target_user": None,
+                "token": token,
+                "error": None,
+                "form_email": "",
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    target_user = db.query(User).filter(User.id == record.user_id).first()
+    if not target_user:
+        return templates.TemplateResponse(
+            request=request,
+            name="reset_password.html",
+            context={
+                "current_user": None,
+                "token_invalid": True,
+                "invalid_reason": "La cuenta asociada a este enlace ya no existe.",
+                "allow_email_edit": False,
+                "target_user": None,
+                "token": token,
+                "error": None,
+                "form_email": "",
+            },
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="reset_password.html",
+        context={
+            "current_user": None,
+            "token_invalid": False,
+            "invalid_reason": None,
+            "allow_email_edit": bool(record.allow_email_edit),
+            "target_user": target_user,
+            "token": token,
+            "error": None,
+            "form_email": target_user.email,
+        },
+    )
+
+
+@router.post("/reset-password/{token}", response_class=HTMLResponse)
+def reset_password_submit(
+    token: str,
+    request: Request,
+    password: str = Form(...),
+    confirm_password: str = Form(...),
+    email: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+):
+    """Procesa el cambio de contraseña (y actualización de correo solo si el token fue autorizado por el CEO)."""
+    _ensure_reset_tokens_table()
+
+    token_hash = _hash_reset_token(token)
+    record = db.query(PasswordResetToken).filter(PasswordResetToken.token_hash == token_hash).first()
+
+    if not record or record.used == 1 or record.expires_at < datetime.utcnow():
+        return templates.TemplateResponse(
+            request=request,
+            name="reset_password.html",
+            context={
+                "current_user": None,
+                "token_invalid": True,
+                "invalid_reason": "Este enlace ya fue utilizado o ha expirado. Solicita uno nuevo a soporte.",
+                "allow_email_edit": False,
+                "target_user": None,
+                "token": token,
+                "error": None,
+                "form_email": "",
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    target_user = db.query(User).filter(User.id == record.user_id).first()
+    if not target_user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    allow_email_edit = bool(record.allow_email_edit)
+    submitted_email = (email or target_user.email).strip().lower() if allow_email_edit else target_user.email
+
+    def _render_error(msg: str):
+        return templates.TemplateResponse(
+            request=request,
+            name="reset_password.html",
+            context={
+                "current_user": None,
+                "token_invalid": False,
+                "invalid_reason": None,
+                "allow_email_edit": allow_email_edit,
+                "target_user": target_user,
+                "token": token,
+                "error": msg,
+                "form_email": submitted_email,
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # 1. Validar contraseñas
+    if password != confirm_password:
+        return _render_error("Las contraseñas no coinciden. Verifica ambos campos.")
+
+    pwd_ok, pwd_msg = validate_password_strength(password)
+    if not pwd_ok:
+        return _render_error(pwd_msg)
+
+    # 2. Solo si el CEO desbloqueó la edición del correo en el token, validar y actualizar correo
+    old_email = target_user.email
+    if allow_email_edit and submitted_email != old_email.lower():
+        email_ok, email_msg = validate_institutional_email(submitted_email)
+        if not email_ok:
+            return _render_error(email_msg)
+
+        duplicate_user = db.query(User).filter(
+            User.email.ilike(submitted_email),
+            User.id != target_user.id,
+        ).first()
+        if duplicate_user:
+            return _render_error("Ese correo institucional ya pertenece a otra cuenta registrada.")
+
+        target_user.email = submitted_email
+
+    # 3. Guardar nueva contraseña cifrada con bcrypt y quemar el token (un solo uso)
+    new_hash = hash_password(password)
+    target_user.password = new_hash
+    record.used = 1
+
+    # Sincronizar espejo en tabla 'usuarios' si existiera
+    try:
+        mirror_user = db.query(Usuario).filter(Usuario.correo_institucional.ilike(old_email)).first()
+        if mirror_user:
+            mirror_user.password_hash = new_hash
+            if allow_email_edit and submitted_email != old_email.lower():
+                mirror_user.correo_institucional = submitted_email
+    except Exception:
+        pass
+
+    db.commit()
+
+    redirect = RedirectResponse(url="/login?reset=success", status_code=status.HTTP_303_SEE_OTHER)
+    redirect.delete_cookie(key="caramel_login_fails")
     return redirect

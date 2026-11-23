@@ -642,12 +642,12 @@ function profileApp() {
   <!-- MODAL: EDITAR PERFIL (AVATAR, BANNER, TRIMESTRE) -->
   <div x-show="showEditProfileModal" 
        x-transition:enter="transition ease-out duration-200"
-       x-transition:enter-start="opacity-0 scale-95"
-       x-transition:enter-end="opacity-100 scale-100"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
        x-transition:leave="transition ease-in duration-150"
-       x-transition:leave-start="opacity-100 scale-100"
-       x-transition:leave-end="opacity-0 scale-95"
-       class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       class="fixed inset-0 !mt-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
        style="display: none;">
     
     <div class="w-full max-w-lg bg-white border border-stone-200 rounded-3xl p-6 shadow-2xl space-y-4 relative max-h-[88vh] overflow-y-auto"
@@ -937,12 +937,12 @@ function profileApp() {
   <!-- MODAL: PERSONALIZAR MI SHOWCASE (4 MATERIALES) -->
   <div x-show="showShowcaseModal" 
        x-transition:enter="transition ease-out duration-200"
-       x-transition:enter-start="opacity-0 scale-95"
-       x-transition:enter-end="opacity-100 scale-100"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
        x-transition:leave="transition ease-in duration-150"
-       x-transition:leave-start="opacity-100 scale-100"
-       x-transition:leave-end="opacity-0 scale-95"
-       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       class="fixed inset-0 !mt-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
        style="display: none;">
     
     <div class="w-full max-w-lg bg-white border border-stone-200 rounded-3xl p-6 shadow-2xl space-y-4 relative overflow-hidden"

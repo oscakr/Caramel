@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>{% block title %}Caramel - Recomendador de Documentos Académicos{% endblock %}</title>
+
+  <!-- Favicon & App Icons -->
+  <link rel="icon" href="/favicon.ico?v=1" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon-32x32.png?v=1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/img/favicon-16x16.png?v=1">
+  <link rel="icon" type="image/png" sizes="192x192" href="/static/img/favicon-192x192.png?v=1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png?v=1">
+  <meta name="theme-color" content="#7FB3A6">
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -71,7 +79,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
 
   <!-- Google Fonts & Custom CSS -->
-  <link rel="stylesheet" href="/static/css/caramel.css">
+  <link rel="stylesheet" href="/static/css/caramel.css?v=4">
   
   {% block extra_head %}{% endblock %}
 </head>
@@ -185,7 +193,7 @@
        x-transition:leave-end="opacity-0 -translate-x-full"
        class="fixed inset-0 z-50 flex" style="display: none;">
     
-    <div class="w-72 bg-white h-full p-5 border-r border-stone-200 flex flex-col justify-between shadow-2xl">
+    <div class="caramel-sidebar-drawer w-72 bg-white h-full p-5 border-r border-stone-200 flex flex-col justify-between shadow-2xl">
       <div class="space-y-4">
         <!-- Sidebar Brand Header with 4-click CEO Trigger -->
         <div class="flex items-center justify-between pb-3 border-b border-stone-200">

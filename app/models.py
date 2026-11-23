@@ -504,3 +504,19 @@ class UserInteraction(Base):
 
     user = relationship("User", back_populates="interactions")
     document = relationship("Document", back_populates="interactions")
+
+
+class PasswordResetToken(Base):
+    """Tabla PASSWORD_RESET_TOKENS: Enlaces temporales de un solo uso emitidos por el CEO."""
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    token_hash = Column(String(64), unique=True, index=True, nullable=False)
+    allow_email_edit = Column(SmallInteger, default=0, nullable=False)  # 0 = bloqueado, 1 = desbloqueado por CEO
+    used = Column(SmallInteger, default=0, nullable=False)              # 0 = activo, 1 = consumido
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    user = relationship("User", foreign_keys=[user_id])
