@@ -242,3 +242,93 @@ body {
     line-height: 2.1rem;
   }
 }
+
+/* Transiciones nativas globales (instantáneas, sin retrasar clics) */
+@view-transition {
+  navigation: auto;
+}
+
+.caramel-topbar {
+  view-transition-name: caramel-topbar;
+}
+
+.caramel-bottom-dock {
+  view-transition-name: caramel-bottom-dock;
+}
+
+::view-transition-old(caramel-topbar),
+::view-transition-new(caramel-topbar),
+::view-transition-old(caramel-bottom-dock),
+::view-transition-new(caramel-bottom-dock) {
+  animation: none;
+}
+
+::view-transition-old(root) {
+  animation: caramelRootFadeOut 0.16s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+::view-transition-new(root) {
+  animation: caramelRootFadeIn 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes caramelRootFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes caramelRootFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes caramelPageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.caramel-page-enter {
+  animation: caramelPageEnter 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Transiciones fluidas entre Login, Registro Estudiantil y Acreditación Docente */
+@keyframes caramelAuthEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.caramel-auth-enter {
+  animation: caramelAuthEnter 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.caramel-auth-stage {
+  transition: opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1), transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html.caramel-auth-leaving .caramel-auth-stage {
+  opacity: 0 !important;
+  transform: translateY(-10px) scale(0.99) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  .caramel-page-enter,
+  .caramel-auth-enter {
+    animation: none !important;
+  }
+  .caramel-auth-stage {
+    transition: none !important;
+  }
+}

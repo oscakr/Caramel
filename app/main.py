@@ -47,6 +47,10 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 async def favicon():
     return FileResponse(os.path.join(static_dir, "favicon.ico"), media_type="image/x-icon")
 
+@app.get("/healthz", include_in_schema=False)
+async def healthz():
+    return {"status": "ok"}
+
 # Mount Uploads Directory
 uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
 os.makedirs(uploads_dir, exist_ok=True)

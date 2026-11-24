@@ -4,8 +4,11 @@
 
 {% block extra_head %}
 <style>
+  @view-transition {
+    navigation: auto;
+  }
   body, .app-frame-container, main {
-    background: linear-gradient(155deg, #f7ece0 0%, #ebd0b0 32%, #dca067 66%, #CC7F38 100%) !important;
+    background: linear-gradient(155deg, #FCF8F2 0%, #F7EBDA 42%, #F0DDC3 100%) !important;
     background-attachment: fixed !important;
   }
   main {
@@ -15,7 +18,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="flex flex-col items-center justify-center min-h-[90vh] py-6 px-4"
+<div class="caramel-auth-stage caramel-auth-enter flex flex-col items-center justify-center min-h-[90vh] py-6 px-4"
   x-data="{ 
     email: '{{ form_data.email if form_data and form_data.email else '' }}',
     password: '',
@@ -224,7 +227,7 @@
     <div class="mt-4 text-center">
       <p class="text-xs text-stone-600">
         ¿Ya tienes cuenta? 
-        <a href="/login" class="text-caramel-600 hover:text-caramel-700 font-bold underline ml-1">Inicia sesión</a>
+        <a href="/login" data-auth-transition class="text-caramel-600 hover:text-caramel-700 font-bold underline ml-1">Inicia sesión</a>
       </p>
     </div>
 
@@ -241,7 +244,7 @@
           El cuerpo profesoral dispone de un canal de acreditación específico para la validación pedagógica de recursos.
         </p>
         <div class="pl-7 pt-1">
-          <a href="/docente/registro" class="inline-flex items-center space-x-1 text-[11px] font-bold text-amber-800 hover:text-amber-950 hover:underline">
+          <a href="/docente/registro" data-auth-transition class="inline-flex items-center space-x-1 text-[11px] font-bold text-amber-800 hover:text-amber-950 hover:underline">
             <span>Solicitar Acreditación Docente →</span>
           </a>
         </div>

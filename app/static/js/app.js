@@ -80,4 +80,35 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   };
+
+  // Transición suave entre /login, /register y /docente/registro
+  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('a[data-auth-transition]').forEach((link) => {
+    link.addEventListener('click', (e) => {
+      if (
+        reducedMotion ||
+        e.defaultPrevented ||
+        e.button !== 0 ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.shiftKey ||
+        e.altKey ||
+        link.target === '_blank'
+      ) {
+        return;
+      }
+      const href = link.getAttribute('href');
+      if (!href || href.startsWith('#')) return;
+      e.preventDefault();
+      document.documentElement.classList.add('caramel-auth-leaving');
+      window.setTimeout(() => {
+        window.location.href = href;
+      }, 210);
+    });
+  });
+
+  // Limpiar estado de salida si el usuario vuelve con el botón Atrás (bfcache)
+  window.addEventListener('pageshow', () => {
+    document.documentElement.classList.remove('caramel-auth-leaving');
+  });
 });

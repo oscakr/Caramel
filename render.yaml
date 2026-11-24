@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: caramel-unimar
+    runtime: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: CARAMEL_DB_MODE
+        value: online
+      - key: DATABASE_URL
+        sync: false

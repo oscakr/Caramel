@@ -4,8 +4,11 @@
 
 {% block extra_head %}
 <style>
+  @view-transition {
+    navigation: auto;
+  }
   body, .app-frame-container, main {
-    background: linear-gradient(155deg, #f7ece0 0%, #ebd0b0 32%, #dca067 66%, #CC7F38 100%) !important;
+    background: linear-gradient(155deg, #FCF8F2 0%, #F7EBDA 42%, #F0DDC3 100%) !important;
     background-attachment: fixed !important;
   }
   main {
@@ -15,7 +18,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="flex flex-col items-center justify-center min-h-[90vh] py-6 px-4"
+<div class="caramel-auth-stage caramel-auth-enter flex flex-col items-center justify-center min-h-[90vh] py-6 px-4"
   x-data="{ 
     email: '{{ form_data.email if form_data and form_data.email else '' }}',
     password: '',
@@ -255,11 +258,11 @@
     <div class="mt-4 pt-3 border-t border-stone-100 text-center space-y-1">
       <p class="text-xs text-stone-600">
         ¿Es estudiante regular de la UNIMAR? 
-        <a href="/register" class="text-caramel-600 hover:text-caramel-700 font-bold underline ml-1">Portal Estudiantil</a>
+        <a href="/register" data-auth-transition class="text-caramel-600 hover:text-caramel-700 font-bold underline ml-1">Portal Estudiantil</a>
       </p>
       <p class="text-[11px] text-stone-500">
         ¿Ya posee acreditación aprobada? 
-        <a href="/login" class="text-stone-700 hover:text-stone-900 font-semibold underline ml-1">Iniciar Sesión</a>
+        <a href="/login" data-auth-transition class="text-stone-700 hover:text-stone-900 font-semibold underline ml-1">Iniciar Sesión</a>
       </p>
     </div>
 

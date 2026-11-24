@@ -4,6 +4,9 @@
 
 {% block extra_head %}
 <style>
+  @view-transition {
+    navigation: auto;
+  }
   main {
     padding: 0 !important;
     overflow-x: hidden;
@@ -12,7 +15,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="min-h-screen w-full grid grid-cols-1 lg:grid-cols-12 bg-white">
+<div class="min-h-screen w-full grid grid-cols-1 lg:grid-cols-12 bg-[#FCF8F2]">
 
   <!-- ================================================================== -->
   <!-- PANEL VISUAL IZQUIERDO (Desktop 7/12) / CABECERA CAMPUS (Móvil)    -->
@@ -23,13 +26,13 @@
          class="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
          alt="Campus Universidad de Margarita">
 
-    <!-- Baño cálido sutil en tono caramelo para armonizar con la identidad visual -->
+    <!-- Baño sutil en tono crema (sour cream #FCF8F2 -> #F7EBDA -> #F0DDC3) sin tintes naranjas -->
     <div class="absolute inset-0 pointer-events-none"
-         style="background: linear-gradient(155deg, rgba(220, 160, 103, 0.12) 0%, rgba(198, 134, 77, 0.14) 55%, rgba(183, 113, 61, 0.24) 100%);"></div>
+         style="background: linear-gradient(155deg, rgba(252, 248, 242, 0.12) 0%, rgba(247, 235, 218, 0.18) 45%, rgba(240, 221, 195, 0.28) 100%);"></div>
 
-    <!-- Degradado editorial inferior para legibilidad impecable del texto sobre la foto -->
+    <!-- Sombra editorial neutra inferior solo para legibilidad limpia del texto -->
     <div class="absolute inset-0 pointer-events-none"
-         style="background: linear-gradient(to top, rgba(36, 21, 12, 0.86) 0%, rgba(54, 29, 19, 0.42) 38%, rgba(36, 21, 12, 0.08) 72%, rgba(36, 21, 12, 0.18) 100%);"></div>
+         style="background: linear-gradient(to top, rgba(22, 20, 18, 0.76) 0%, rgba(22, 20, 18, 0.30) 36%, rgba(22, 20, 18, 0.04) 68%, transparent 100%);"></div>
 
     <!-- Contenido superpuesto en el panel fotográfico -->
     <div class="relative z-10 h-full flex flex-col justify-between p-5 sm:p-7 lg:p-10">
@@ -46,7 +49,7 @@
       <!-- Mensaje editorial (Desktop) -->
       <div class="hidden lg:block max-w-xl space-y-3 pb-2">
         <h2 class="text-3xl xl:text-4xl font-extrabold text-white leading-tight tracking-tight drop-shadow-sm">
-          Capital intelectual curado para el <span class="text-[#f0c79b]">Eje de Programación</span>.
+          El capital intelectual <span class="text-[#F0DDC3]">del programador</span>.
         </h2>
 
         <p class="text-sm text-stone-200/95 leading-relaxed max-w-lg">
@@ -56,7 +59,7 @@
 
       <!-- Texto compacto en móvil -->
       <div class="lg:hidden pb-4">
-        <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-[#f0c79b]">Universidad de Margarita</p>
+        <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-[#F0DDC3]">Universidad de Margarita</p>
         <p class="text-sm font-bold text-white leading-snug drop-shadow-xs">Plataforma Académica del Eje de Programación</p>
       </div>
     </div>
@@ -65,9 +68,9 @@
   <!-- ================================================================== -->
   <!-- PANEL DE ACCESO DERECHO (Desktop 5/12) / TARJETA PRINCIPAL (Móvil) -->
   <!-- ================================================================== -->
-  <section class="relative z-10 lg:col-span-5 -mt-5 lg:mt-0 rounded-t-3xl lg:rounded-none bg-gradient-to-b from-white via-white to-[#fbf7f2] flex flex-col justify-center items-center px-6 sm:px-10 py-8 lg:py-10 lg:border-l border-stone-200/80 shadow-xl lg:shadow-none">
+  <section class="relative z-10 lg:col-span-5 -mt-5 lg:mt-0 rounded-t-3xl lg:rounded-none bg-gradient-to-b from-[#FCF8F2] via-[#FCF8F2] to-[#F0DDC3]/45 flex flex-col justify-center items-center px-6 sm:px-10 py-8 lg:py-10 lg:border-l border-stone-200/80 shadow-xl lg:shadow-none">
 
-    <div class="w-full max-w-[390px] space-y-5" x-data="{ showPassword: false }">
+    <div class="caramel-auth-stage caramel-auth-enter w-full max-w-[390px] space-y-5" x-data="{ showPassword: false }">
 
       <!-- Identidad y Encabezado del Formulario -->
       <div class="space-y-3">
@@ -165,7 +168,7 @@
       <div class="text-center pt-1">
         <p class="text-xs text-stone-600">
           ¿No tienes cuenta?
-          <a href="/register" class="text-caramel-600 hover:text-caramel-700 font-bold underline ml-1">Regístrate como estudiante</a>
+          <a href="/register" data-auth-transition class="text-caramel-600 hover:text-caramel-700 font-bold underline ml-1">Regístrate como estudiante</a>
         </p>
       </div>
 
@@ -182,7 +185,7 @@
             ¿Es profesor de la UNIMAR y desea validar contenidos en el Eje de Programación?
           </p>
           <div class="pl-8 pt-0.5">
-            <a href="/docente/registro" class="inline-flex items-center space-x-1 text-[11px] font-bold text-amber-800 hover:text-amber-950 hover:underline">
+            <a href="/docente/registro" data-auth-transition class="inline-flex items-center space-x-1 text-[11px] font-bold text-amber-800 hover:text-amber-950 hover:underline">
               <span>Solicitar Acreditación Docente →</span>
             </a>
           </div>

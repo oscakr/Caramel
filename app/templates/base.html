@@ -79,7 +79,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
 
   <!-- Google Fonts & Custom CSS -->
-  <link rel="stylesheet" href="/static/css/caramel.css?v=4">
+  <link rel="stylesheet" href="/static/css/caramel.css?v=6">
   
   {% block extra_head %}{% endblock %}
 </head>
@@ -110,7 +110,7 @@
 
   <!-- Top Control Bar (Header Institucional) - Solo visible tras iniciar sesión -->
   {% if current_user %}
-  <div class="flex items-center justify-between px-3 sm:px-6 py-2 bg-white border-b border-stone-200 text-xs text-stone-600 shadow-2xs">
+  <div class="caramel-topbar flex items-center justify-between px-3 sm:px-6 py-2 bg-white border-b border-stone-200 text-xs text-stone-600 shadow-2xs">
     <div class="flex items-center space-x-2 sm:space-x-2.5 select-none {% if current_user.is_ceo %}cursor-pointer group{% endif %}"
          title="Caramel"
          {% if current_user.is_ceo %}
@@ -137,13 +137,13 @@
   <div class="app-frame-container {% if active_nav == 'profile' or is_profile_view or profile_user is defined %}app-frame-container--profile{% endif %} flex flex-col justify-between bg-white">
 
     <!-- Main Dynamic Content -->
-    <main class="flex-1 pb-24 px-3 sm:px-6 lg:px-8 overflow-y-auto bg-white">
+    <main class="flex-1 pb-24 px-3 sm:px-6 lg:px-8 overflow-y-auto bg-white {% if current_user %}caramel-page-enter{% endif %}">
       {% block content %}{% endblock %}
     </main>
 
     <!-- Floating Bottom Navigation Bar -->
     {% if current_user %}
-    <nav class="fixed bottom-3 left-1/2 -translate-x-1/2 w-[92%] max-w-[420px] md:max-w-lg z-50">
+    <nav class="caramel-bottom-dock fixed bottom-3 left-1/2 -translate-x-1/2 w-[92%] max-w-[420px] md:max-w-lg z-50">
       <div class="glass-panel rounded-full py-2.5 px-6 shadow-xl flex items-center justify-between border border-stone-200">
         <!-- Home -->
         <a href="/" class="flex flex-col items-center group transition {% if active_nav == 'feed' %}text-caramel-600 font-bold{% else %}text-stone-400 hover:text-caramel-600{% endif %}">
@@ -248,7 +248,7 @@
   </div>
   {% endif %}
 
-  <script src="/static/js/app.js?v=20261118c"></script>
+  <script src="/static/js/app.js?v=20261124a"></script>
   {% block extra_scripts %}{% endblock %}
 </body>
 </html>
