@@ -13,5 +13,9 @@ services:
         value: 3.11.9
       - key: CARAMEL_DB_MODE
         value: online
+      - key: SESSION_SECRET_KEY
+        generateValue: true
+      - key: SUPPORT_EMAIL
+        sync: false
       - key: DATABASE_URL
         sync: false

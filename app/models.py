@@ -64,8 +64,6 @@ class Usuario(Base):
 
     @property
     def username(self):
-        if self.is_ceo:
-            return "P3"
         return self.correo_institucional.split("@")[0]
 
     @property
@@ -101,7 +99,7 @@ class Usuario(Base):
     @property
     def is_ceo(self) -> bool:
         return (
-            self.correo_institucional == "oalvarez.7305@unimar.edu.ve"
+            self.id_rol == 4
             or (self.rol and self.rol.nombre_rol == "CEO")
             or self.rol_nombre == "CEO"
         )
@@ -300,8 +298,7 @@ class User(Base):
     @property
     def is_ceo(self) -> bool:
         return (
-            self.email == "oalvarez.7305@unimar.edu.ve"
-            or (self.username or "").lower() in ("oalvarez.7305", "p3")
+            self.id_rol == 4
             or self.rol_nombre == "CEO"
             or (self.rol and self.rol.nombre_rol == "CEO")
         )

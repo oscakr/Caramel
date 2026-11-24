@@ -171,7 +171,7 @@ def recommender_lab(request: Request, db: Session = Depends(get_db)):
     if not current_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
-    # Acceso estrictamente reservado para rango CEO (Oscar Alvarez)
+    # Acceso estrictamente reservado para rango CEO (RBAC)
     if not getattr(current_user, "is_ceo", False):
         return RedirectResponse(url="/?error=unauthorized_ceo", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -205,16 +205,10 @@ def user_profile(request: Request, user_id: str = None, db: Session = Depends(ge
             target_user = db.query(User).filter(User.id == int(user_id)).first()
         if not target_user:
             target_user = db.query(User).filter(User.username.ilike(user_id)).first()
-        if not target_user and user_id.lower() in ("p3", "oalvarez.7305"):
-            target_user = db.query(User).filter(User.email == "oalvarez.7305@unimar.edu.ve").first()
         if not target_user:
             return RedirectResponse(url="/profile", status_code=status.HTTP_303_SEE_OTHER)
         profile_user = target_user
         is_own_profile = (profile_user.id == current_user.id)
-
-    if profile_user.is_ceo and profile_user.username != "P3":
-        profile_user.username = "P3"
-        db.commit()
 
     # Catálogo de documentos aprobados disponibles para selección en Mi Showcase (solo si es el propio perfil)
     all_engineering_docs = []

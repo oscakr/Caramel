@@ -152,7 +152,7 @@
         <div class="pt-0.5 text-center">
           <p class="text-[11.5px] text-stone-500 leading-tight">
             ¿Olvidaste tu contraseña?
-            <a href="https://mail.google.com/mail/?view=cm&fs=1&to=oalvarez.7305@unimar.edu.ve&su={{ support_subject|urlencode }}&body={{ support_body|urlencode }}"
+            <a href="https://mail.google.com/mail/?view=cm&fs=1&to={{ support_email|default('soporte.caramel@unimar.edu.ve')|urlencode }}&su={{ support_subject|urlencode }}&body={{ support_body|urlencode }}"
                target="_blank"
                rel="noopener noreferrer"
                onclick="try { var inp = document.querySelector('input[name=username]'); var val = inp ? inp.value.trim() : ''; fetch('/api/support/password-reset-request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier: val }), keepalive: true }); } catch(e) {}"

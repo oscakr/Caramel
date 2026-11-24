@@ -1,4 +1,5 @@
 import hashlib
+import os
 import random
 import secrets
 from datetime import datetime, timedelta
@@ -12,7 +13,30 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db, engine, Base
 from ..models import User, Usuario, Role, ReviewLike, PasswordResetToken, PasswordResetRequest, DocumentValidation, DEFAULT_AVATARS, DEFAULT_BANNER
-from ..security import hash_password, verify_password, validate_password_strength, validate_institutional_email
+from ..security import (
+    hash_password,
+    verify_password,
+    is_bcrypt_hash,
+    validate_password_strength,
+    validate_institutional_email,
+    sign_session_user_id,
+    verify_session_cookie,
+    SESSION_MAX_AGE_SECONDS,
+)
+
+SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL", "soporte.caramel@unimar.edu.ve").strip()
+
+
+def _set_signed_session_cookie(response: Response, request: Request, user_id: int) -> None:
+    """Emite la cookie de sesión firmada con HMAC-SHA256, HTTP-Only, SameSite=Lax y Secure en HTTPS."""
+    response.set_cookie(
+        key="caramel_user_id",
+        value=sign_session_user_id(user_id),
+        max_age=SESSION_MAX_AGE_SECONDS,
+        httponly=True,
+        samesite="lax",
+        secure=(request.url.scheme == "https"),
+    )
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -66,16 +90,14 @@ def ensure_notification_schema():
 
 
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> Optional[User]:
-    """Extrae el usuario autenticado a través de la cookie HTTP-Only."""
+    """Extrae y valida el usuario autenticado mediante cookie de sesión firmada (HMAC-SHA256)."""
     ensure_notification_schema()
-    user_id = request.cookies.get("caramel_user_id")
-    if user_id:
+    raw_cookie = request.cookies.get("caramel_user_id")
+    verified_user_id = verify_session_cookie(raw_cookie)
+    if verified_user_id is not None:
         try:
-            user = db.query(User).filter(User.id == int(user_id)).first()
+            user = db.query(User).filter(User.id == verified_user_id).first()
             if user:
-                if user.is_ceo and user.username != "P3":
-                    user.username = "P3"
-                    db.commit()
                 try:
                     from .feed import get_contextual_notifications
                     notifs = get_contextual_notifications(user, db)
@@ -115,6 +137,7 @@ def login_page(request: Request, db: Session = Depends(get_db)):
             "username_val": "",
             "reset_success": reset_success,
             "reset_email_updated": reset_email_updated,
+            "support_email": SUPPORT_EMAIL,
         }
     )
 
@@ -128,10 +151,10 @@ def login_submit(
 ):
     """
     Autenticación institucional bajo estándar ISO/IEC 27001 & ISO 21001:
-    - Búsqueda por correo institucional o username.
-    - Verificación mediante función criptográfica bcrypt.
+    - Búsqueda por correo institucional o username en base de datos (sin cuentas hardcodeadas).
+    - Verificación mediante función criptográfica bcrypt (auto-migración transparente de hashes heredados).
     - Protección contra enumeración de usuarios (mensaje neutro).
-    - Sesión persistente protegida mediante cookie HTTP-Only.
+    - Sesión persistente firmada con HMAC-SHA256 en cookie HTTP-Only.
     """
     clean_user = username.strip().lower()
     clean_pwd = password.strip()
@@ -139,11 +162,6 @@ def login_submit(
     user = db.query(User).filter(
         (User.username.ilike(clean_user)) | (User.email.ilike(clean_user))
     ).first()
-    if not user and clean_user in ("p3", "oalvarez.7305"):
-        user = db.query(User).filter(User.email == "oalvarez.7305@unimar.edu.ve").first()
-    if user and user.is_ceo and user.username != "P3":
-        user.username = "P3"
-        db.commit()
 
     if not user or not verify_password(clean_pwd, user.password):
         try:
@@ -159,7 +177,8 @@ def login_submit(
                 "current_user": None,
                 "error": "Credenciales inválidas. Por favor verifica tu correo institucional (@unimar.edu.ve) y contraseña.",
                 "failed_attempts": failed_attempts,
-                "username_val": username
+                "username_val": username,
+                "support_email": SUPPORT_EMAIL,
             },
             status_code=status.HTTP_400_BAD_REQUEST
         )
@@ -168,19 +187,21 @@ def login_submit(
             value=str(failed_attempts),
             max_age=3600,
             httponly=True,
-            samesite="lax"
+            samesite="lax",
+            secure=(request.url.scheme == "https"),
         )
         return template_resp
 
+    # Auto-migración transparente a bcrypt factor 12 si la cuenta tenía un formato legado
+    if not is_bcrypt_hash(user.password):
+        try:
+            user.password = hash_password(clean_pwd)
+            db.commit()
+        except Exception:
+            db.rollback()
+
     redirect = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
-    # Cookie segura conforme a directivas OWASP
-    redirect.set_cookie(
-        key="caramel_user_id",
-        value=str(user.id),
-        max_age=604800, # 7 días
-        httponly=True,
-        samesite="lax"
-    )
+    _set_signed_session_cookie(redirect, request, user.id)
     redirect.delete_cookie(key="caramel_login_fails")
     return redirect
 
@@ -308,13 +329,7 @@ def register_submit(
         )
 
     redirect = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
-    redirect.set_cookie(
-        key="caramel_user_id",
-        value=str(new_user.id),
-        max_age=604800,
-        httponly=True,
-        samesite="lax"
-    )
+    _set_signed_session_cookie(redirect, request, new_user.id)
     return redirect
 
 @router.get("/docente/registro", response_class=HTMLResponse)
@@ -448,13 +463,7 @@ def docente_register_submit(
 
     # El docente inicia sesión de inmediato con perfil estándar de consulta
     redirect = RedirectResponse(url="/?welcome=docente_pending", status_code=status.HTTP_303_SEE_OTHER)
-    redirect.set_cookie(
-        key="caramel_user_id",
-        value=str(new_docente.id),
-        max_age=604800,
-        httponly=True,
-        samesite="lax"
-    )
+    _set_signed_session_cookie(redirect, request, new_docente.id)
     return redirect
 
 @router.get("/logout")
