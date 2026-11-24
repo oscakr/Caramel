@@ -2,7 +2,7 @@ from datetime import datetime
 import random
 import uuid
 from sqlalchemy import (
-    Column, Integer, String, Float, Text, DateTime, ForeignKey, Table, BigInteger, SmallInteger
+    Column, Integer, String, Float, Text, DateTime, ForeignKey, Table, BigInteger, SmallInteger, UniqueConstraint
 )
 from sqlalchemy.orm import relationship
 from .database import Base
@@ -97,10 +97,6 @@ class Usuario(Base):
                 return "Doctora"
             return "Profesor"
         return "Casi Ingeniero"
-
-    @property
-    def nombre_completo(self):
-        return self.full_name
 
     @property
     def is_ceo(self) -> bool:
@@ -258,6 +254,7 @@ class User(Base):
     banner_position = Column(String(50), default="50% 50%")
     catedra_asignada = Column(String(100), default="Todas las Cátedras del Eje")
     last_trimestre_change = Column(DateTime, nullable=True) # 1 = Validado por CEO, 0 = Pendiente de validación
+    notifications_cleared_at = Column(DateTime, nullable=True)
 
     rol = relationship("Role", foreign_keys=[id_rol], lazy="joined")
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
@@ -372,12 +369,14 @@ class Document(Base):
     star_1_count = Column(Integer, default=0)
 
     status = Column(String(30), default="pendiente")
+    consensus_state = Column(String(30), default="pendiente")  # pendiente | aprobado_provisional | en_revision | aprobado_definitivo | rechazado
     rejection_reason = Column(Text, nullable=True)
     rejection_file_url = Column(String(350), nullable=True)
     material_type = Column(String(50), default="pdf")
     external_url = Column(String(350), nullable=True)
     uploaded_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     verified_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    verified_at = Column(DateTime, nullable=True)
 
     uploaded_by = relationship("User", foreign_keys=[uploaded_by_id], lazy="joined")
     verified_by = relationship("User", foreign_keys=[verified_by_id], lazy="joined")
@@ -398,11 +397,56 @@ class Document(Base):
         return "Docente de Cátedra"
 
     @property
-    def effective_banner_url(self) -> str | None:
+    def effective_banner_url(self) -> str:
         if self.header_banner_url and "photo-1509228468518-180dd4864904" not in self.header_banner_url:
             return self.header_banner_url
-        from .catedras_config import get_catedra_banner
-        return get_catedra_banner(self.materias or self.title)
+        from .catedras_config import get_catedra_banner, get_random_document_banner
+        return get_catedra_banner(self.materias or self.title) or get_random_document_banner(self.id)
+
+    @staticmethod
+    def _ordinal_trimestre(num: int) -> str:
+        ordinals = {
+            1: "1er",
+            2: "2do",
+            3: "3er",
+            4: "4to",
+            5: "5to",
+            6: "6to",
+            7: "7mo",
+            8: "8vo",
+            9: "9no",
+            10: "10mo",
+            11: "11vo",
+            12: "12vo",
+        }
+        return ordinals.get(num, f"{num}º")
+
+    def _format_trimestres(self, suffix: str) -> str:
+        raw = str(self.trimestres or "").strip()
+        if not raw:
+            return suffix
+        parts = [p.strip() for p in raw.split(",") if p.strip()]
+        formatted = []
+        for p in parts:
+            try:
+                formatted.append(self._ordinal_trimestre(int(p)))
+            except ValueError:
+                formatted.append(p)
+        if not formatted:
+            return suffix
+        if len(formatted) == 1:
+            return f"{formatted[0]} {suffix}"
+        if len(formatted) == 2:
+            return f"{formatted[0]} y {formatted[1]} {suffix}"
+        return f"{', '.join(formatted[:-1])} y {formatted[-1]} {suffix}"
+
+    @property
+    def trimestre_badge_label(self) -> str:
+        return self._format_trimestres("Trimestre")
+
+    @property
+    def trimestre_short_label(self) -> str:
+        return self._format_trimestres("Tri")
 
     def update_rating_stats(self):
         """Recalculate average rating and histogram from actual reviews."""
@@ -515,8 +559,41 @@ class PasswordResetToken(Base):
     token_hash = Column(String(64), unique=True, index=True, nullable=False)
     allow_email_edit = Column(SmallInteger, default=0, nullable=False)  # 0 = bloqueado, 1 = desbloqueado por CEO
     used = Column(SmallInteger, default=0, nullable=False)              # 0 = activo, 1 = consumido
+    email_changed = Column(SmallInteger, default=0, nullable=False)     # 1 = se cambió también el correo
+    used_at = Column(DateTime, nullable=True)
     expires_at = Column(DateTime, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
     user = relationship("User", foreign_keys=[user_id])
+
+
+class PasswordResetRequest(Base):
+    """Tabla PASSWORD_RESET_REQUESTS: Avisos al CEO cuando un usuario solicita soporte desde el login."""
+    __tablename__ = "password_reset_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    identifier = Column(String(150), nullable=False, default="")
+    matched_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    status = Column(String(20), nullable=False, default="pendiente")  # 'pendiente', 'atendida', 'descartada'
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    matched_user = relationship("User", foreign_keys=[matched_user_id])
+
+
+class DocumentValidation(Base):
+    """Tabla DOCUMENT_VALIDATIONS: Dictámenes individuales de docentes para consenso 2-de-3 y control de concurrencia."""
+    __tablename__ = "document_validations"
+    __table_args__ = (
+        UniqueConstraint("document_id", "validator_id", name="uq_doc_validator"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    document_id = Column(Integer, ForeignKey("documents.id"), nullable=False, index=True)
+    validator_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    decision = Column(String(20), nullable=False)  # 'aprobar' | 'rechazar'
+    reason = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    document = relationship("Document")
+    validator = relationship("User", lazy="joined")

@@ -290,7 +290,7 @@ step: 1, // 1: Cátedra, 2: Tipo de archivo, 3: Contenido/Upload, 4: Confirmaci�
     formData.append('title', '');
     // El autor se toma automáticamente del usuario autenticado
     formData.append('authors', '{{ current_user.full_name or current_user.nombre_completo or current_user.username or current_user.email }}');
-    formData.append('description', `Material académico para la cátedra ${this.selectedCatedra}. Pendiente de revisión docente para asignación temática.`);
+    formData.append('description', '');
 
     if (this.materialType === 'video') {
       formData.append('external_url', this.youtubeUrl.trim());

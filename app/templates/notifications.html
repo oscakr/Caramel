@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Caramel - Centro de Avisos Académicos{% endblock %}
+{% block title %}Caramel - Avisos{% endblock %}
 
 {% block content %}
 <div class="w-full max-w-7xl mx-auto py-2 pb-10" x-data="{
@@ -18,22 +18,21 @@
     <!-- Header Panel with Title and Action Buttons -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-stone-100">
       <div>
-        <h1 class="text-xl font-black text-stone-900 tracking-wide">Avisos Académicos</h1>
-        <p class="text-xs text-stone-500 mt-0.5">Novedades institucionales, estado de validaciones y actividad de cátedras UNIMAR</p>
+        <h1 class="text-xl font-black text-stone-900 tracking-wide">Avisos</h1>
       </div>
 
-      <!-- Action Button: Marcar todos como revisados -->
-      {% if notifications %}
-      <div class="flex items-center space-x-2 self-start sm:self-auto">
-        <button type="button" 
-                @click="clearAvisosBadge()"
+      <!-- Action Button: Limpiar avisos informativos ya leídos -->
+      {% set has_clearable = notifications|selectattr('is_pending_task', 'equalto', False)|list|length > 0 %}
+      {% if has_clearable %}
+      <form action="/notifications/clear" method="POST" @submit="clearAvisosBadge()" class="flex items-center space-x-2 self-start sm:self-auto">
+        <button type="submit"
                 class="px-3.5 py-1.5 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200 text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer shadow-2xs">
           <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7"></path>
           </svg>
-          <span>Revisado</span>
+          <span>Limpiar avisos</span>
         </button>
-      </div>
+      </form>
       {% endif %}
     </div>
 

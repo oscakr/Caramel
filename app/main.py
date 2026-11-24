@@ -9,6 +9,9 @@ from .models import User
 from .seed_data import seed_database
 from .routes import auth, feed, documents, api_recommender
 
+# Ensure incremental schema columns exist before any ORM query
+auth.ensure_notification_schema()
+
 # Initialize DB tables and seed data only when necessary
 try:
     _db = SessionLocal()

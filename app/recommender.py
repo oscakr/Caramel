@@ -79,13 +79,13 @@ class AcademicRecommender:
         """Creates rich textual representations for content-based matching."""
         corpus = []
         for doc in documents:
-            text = f"{doc.title} {doc.subtitle or ''} {doc.authors} {doc.carreras} {doc.materias} {doc.tags} {doc.description}"
+            text = f"{doc.title or ''} {doc.subtitle or ''} {doc.authors or ''} {doc.carreras or ''} {doc.materias or ''} {doc.tags or ''} {doc.description or ''}"
             corpus.append(text.lower())
         return corpus
 
     def _get_user_interest_text(self, user: User, documents_by_id: Dict[int, Document]) -> str:
         """Constructs a composite profile text reflecting user's academic level and interactions."""
-        profile_tokens = [user.carrera.lower(), f"trimestre {user.trimestre}"]
+        profile_tokens = [(user.carrera or "").lower(), f"trimestre {user.trimestre or 3}"]
 
         # Materias sugeridas según el trimestre real del pensum UNIMAR
         sugeridas = PENSUM_CATEDRAS_POR_TRIMESTRE.get(user.trimestre or 3, [])
@@ -93,7 +93,7 @@ class AcademicRecommender:
             profile_tokens.append(mat.lower())
 
         if getattr(user, "catedra_asignada", None):
-            profile_tokens.append(user.catedra_asignada.lower())
+            profile_tokens.append((user.catedra_asignada or "").lower())
 
         # Showcase documents (4 Materiales Favoritos del usuario)
         if getattr(user, "showcase_ids", None):
@@ -101,27 +101,27 @@ class AcademicRecommender:
             for sid in raw_ids:
                 if sid in documents_by_id:
                     doc = documents_by_id[sid]
-                    profile_tokens.extend([doc.title, doc.materias, doc.tags])
+                    profile_tokens.extend([doc.title or "", doc.materias or "", doc.tags or ""])
 
         # Positively rated documents (4 or 5 stars)
         for rev in user.reviews:
-            if rev.rating >= 4 and rev.document_id in documents_by_id:
+            if (rev.rating or 0) >= 4 and rev.document_id in documents_by_id:
                 doc = documents_by_id[rev.document_id]
-                profile_tokens.extend([doc.title, doc.materias, doc.tags])
+                profile_tokens.extend([doc.title or "", doc.materias or "", doc.tags or ""])
 
         # Bookmarks
         for bm in user.bookmarks:
             if bm.document_id in documents_by_id:
                 doc = documents_by_id[bm.document_id]
-                profile_tokens.extend([doc.title, doc.materias, doc.tags])
+                profile_tokens.extend([doc.title or "", doc.materias or "", doc.tags or ""])
 
         # Explicit interactions
         for inter in user.interactions:
             if inter.document_id in documents_by_id and inter.interaction_type in ('read', 'save'):
                 doc = documents_by_id[inter.document_id]
-                profile_tokens.extend([doc.materias, doc.tags])
+                profile_tokens.extend([doc.materias or "", doc.tags or ""])
 
-        return " ".join(profile_tokens)
+        return " ".join(t for t in profile_tokens if t)
 
     def _get_friend_ids(self, user_id: int) -> List[int]:
         friendships = self.db.query(Friendship).filter(
@@ -183,14 +183,14 @@ class AcademicRecommender:
 
             # A. Academic Contextual Score (0.0 to 1.0)
             acad_score = 0.0
-            doc_carreras = [c.strip().lower() for c in doc.carreras.split(",")]
-            user_carrera = user.carrera.strip().lower()
+            doc_carreras = [c.strip().lower() for c in (doc.carreras or "").split(",") if c.strip()]
+            user_carrera = (user.carrera or "").strip().lower()
 
-            if any(user_carrera in c or c in user_carrera for c in doc_carreras):
+            if user_carrera and any(user_carrera in c or c in user_carrera for c in doc_carreras):
                 acad_score += 0.55  # Carrera afín
 
             # Trimestre & Pensum UNIMAR proximity score
-            doc_trimestres = [int(t.strip()) for t in doc.trimestres.split(",") if t.strip().isdigit()]
+            doc_trimestres = [int(t.strip()) for t in str(doc.trimestres or "").split(",") if t.strip().isdigit()]
             doc_materia_clean = (doc.materias or "").strip().lower()
             if doc_materia_clean in CATEDRA_TRIMESTRE_MAP:
                 official_tri = CATEDRA_TRIMESTRE_MAP[doc_materia_clean]
@@ -204,7 +204,7 @@ class AcademicRecommender:
                 acad_score += 0.45  # Coincide con su trimestre actual o cátedra asignada
             elif user_sugeridas and doc_materia_clean == user_sugeridas[0]:
                 acad_score += 0.45  # Materia prioritaria de su trimestre en el pensum UNIMAR
-            elif any(abs(user.trimestre - t) == 1 for t in doc_trimestres) or doc_materia_clean in user_sugeridas:
+            elif any(abs((user.trimestre or 0) - t) == 1 for t in doc_trimestres) or doc_materia_clean in user_sugeridas:
                 acad_score += 0.30  # Trimestre contiguo (+/- 1) o materia del bloque sugerido
             acad_score = min(1.0, acad_score)
 
@@ -216,7 +216,7 @@ class AcademicRecommender:
             for rev in doc.reviews:
                 if rev.user_id in friend_ids:
                     friends_who_read.append(rev.user)
-                    if rev.rating >= 4:
+                    if (rev.rating or 0) >= 4:
                         friends_high_rating_count += 1
 
             if friends_who_read:
@@ -225,7 +225,7 @@ class AcademicRecommender:
                 # Cohort proxy: peers from same career and trimester
                 cohort_reviews = [
                     r for r in doc.reviews
-                    if r.user and r.user.carrera.lower() == user_carrera and r.user.trimestre == user.trimestre
+                    if r.user and (r.user.carrera or "").lower() == user_carrera and r.user.trimestre == user.trimestre
                 ]
                 if cohort_reviews:
                     social_score = min(0.7, 0.2 + len(cohort_reviews) * 0.15)
@@ -234,8 +234,8 @@ class AcademicRecommender:
             content_score = float(content_similarities[idx])
 
             # D. Bayesian Quality Score (0.0 to 1.0 normalized)
-            v = float(doc.ratings_count)
-            r = float(doc.rating_avg)
+            v = float(doc.ratings_count or 0)
+            r = float(doc.rating_avg or 0.0)
             bayesian_score = ((v / (v + m)) * r + (m / (v + m)) * global_avg_c) / 5.0
 
             # --- Hybrid Combination ---
@@ -282,7 +282,7 @@ class AcademicRecommender:
         sugeridas = [m.lower() for m in PENSUM_CATEDRAS_POR_TRIMESTRE.get(user.trimestre or 3, [])]
         matched = []
         for d in docs:
-            t_list = [t.strip() for t in d.trimestres.split(",")]
+            t_list = [t.strip() for t in str(d.trimestres or "").split(",") if t.strip()]
             d_mat = (d.materias or "").strip().lower()
             if d_mat in CATEDRA_TRIMESTRE_MAP:
                 t_list.append(str(CATEDRA_TRIMESTRE_MAP[d_mat]))
@@ -296,8 +296,8 @@ class AcademicRecommender:
         # Sort by exact trimester match first, then ratings_count and rating_avg
         matched.sort(
             key=lambda d: (
-                1 if target in [t.strip() for t in d.trimestres.split(",")] else 0,
-                d.ratings_count * d.rating_avg
+                1 if target in [t.strip() for t in str(d.trimestres or "").split(",") if t.strip()] else 0,
+                (d.ratings_count or 0) * (d.rating_avg or 0.0)
             ),
             reverse=True
         )

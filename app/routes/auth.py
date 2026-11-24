@@ -6,17 +6,68 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Request, Response, Form, status
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..database import get_db, engine, Base
-from ..models import User, Usuario, Role, PasswordResetToken, DEFAULT_AVATARS, DEFAULT_BANNER
+from ..models import User, Usuario, Role, ReviewLike, PasswordResetToken, PasswordResetRequest, DocumentValidation, DEFAULT_AVATARS, DEFAULT_BANNER
 from ..security import hash_password, verify_password, validate_password_strength, validate_institutional_email
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
+_NOTIF_SCHEMA_READY = False
+_RESET_SCHEMA_READY = False
+
+
+def ensure_notification_schema():
+    """Garantiza tablas auxiliares y columnas de notificaciones una sola vez por proceso."""
+    global _NOTIF_SCHEMA_READY
+    if _NOTIF_SCHEMA_READY:
+        return
+    try:
+        Base.metadata.create_all(
+            bind=engine,
+            tables=[
+                DocumentValidation.__table__,
+                ReviewLike.__table__,
+                PasswordResetToken.__table__,
+                PasswordResetRequest.__table__,
+            ],
+        )
+    except Exception:
+        pass
+    for ddl in (
+        "ALTER TABLE users ADD COLUMN notifications_cleared_at TIMESTAMP",
+        "ALTER TABLE documents ADD COLUMN verified_at TIMESTAMP",
+        "ALTER TABLE documents ADD COLUMN consensus_state VARCHAR(30) DEFAULT 'pendiente'",
+    ):
+        try:
+            with engine.begin() as conn:
+                conn.execute(text(ddl))
+        except Exception:
+            pass
+    # Inicializar consensus_state en documentos históricos ya resueltos antes de esta migración
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(
+                "UPDATE documents SET consensus_state = 'aprobado_definitivo' "
+                "WHERE status = 'aprobado' AND (consensus_state IS NULL OR consensus_state = '' OR consensus_state = 'pendiente')"
+            ))
+            conn.execute(text(
+                "UPDATE documents SET consensus_state = 'rechazado' "
+                "WHERE status = 'rechazado' AND (consensus_state IS NULL OR consensus_state = '' OR consensus_state = 'pendiente')"
+            ))
+    except Exception:
+        pass
+    _NOTIF_SCHEMA_READY = True
+    _ensure_reset_tokens_table()
+
+
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> Optional[User]:
     """Extrae el usuario autenticado a través de la cookie HTTP-Only."""
+    ensure_notification_schema()
     user_id = request.cookies.get("caramel_user_id")
     if user_id:
         try:
@@ -30,12 +81,18 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> Optiona
                     notifs = get_contextual_notifications(user, db)
                     user.has_notifications = len(notifs) > 0
                     user.notifications_count = len(notifs)
+                    sig_raw = "|".join(str(n.get("notif_id", "")) for n in notifs)
+                    user.notifications_signature = (
+                        hashlib.sha1(sig_raw.encode("utf-8")).hexdigest()[:16] if sig_raw else ""
+                    )
                 except Exception:
+                    db.rollback()
                     user.has_notifications = False
                     user.notifications_count = 0
+                    user.notifications_signature = ""
                 return user
         except Exception:
-            pass
+            db.rollback()
     return None
 
 @router.get("/login", response_class=HTMLResponse)
@@ -45,7 +102,9 @@ def login_page(request: Request, db: Session = Depends(get_db)):
         failed_attempts = int(request.cookies.get("caramel_login_fails", 0))
     except Exception:
         failed_attempts = 0
-    reset_success = request.query_params.get("reset") == "success"
+    reset_param = request.query_params.get("reset", "")
+    reset_success = reset_param in ("success", "password", "email_and_password")
+    reset_email_updated = reset_param == "email_and_password"
     return templates.TemplateResponse(
         request=request,
         name="login.html",
@@ -55,6 +114,7 @@ def login_page(request: Request, db: Session = Depends(get_db)):
             "failed_attempts": failed_attempts,
             "username_val": "",
             "reset_success": reset_success,
+            "reset_email_updated": reset_email_updated,
         }
     )
 
@@ -231,8 +291,21 @@ def register_submit(
         validado_por_ceo=1
     )
     db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    try:
+        db.commit()
+        db.refresh(new_user)
+    except IntegrityError:
+        db.rollback()
+        return templates.TemplateResponse(
+            request=request,
+            name="register.html",
+            context={
+                "current_user": None,
+                "error": "El usuario o correo institucional ya se encuentra registrado.",
+                "form_data": form_data
+            },
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
     redirect = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
     redirect.set_cookie(
@@ -357,8 +430,21 @@ def docente_register_submit(
         validado_por_ceo=0 # CUARENTENA: Espera ratificación del CEO para validar recursos
     )
     db.add(new_docente)
-    db.commit()
-    db.refresh(new_docente)
+    try:
+        db.commit()
+        db.refresh(new_docente)
+    except IntegrityError:
+        db.rollback()
+        return templates.TemplateResponse(
+            request=request,
+            name="docente_register.html",
+            context={
+                "current_user": None,
+                "error": "El usuario o correo institucional ya se encuentra registrado.",
+                "form_data": form_data
+            },
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
     # El docente inicia sesión de inmediato con perfil estándar de consulta
     redirect = RedirectResponse(url="/?welcome=docente_pending", status_code=status.HTTP_303_SEE_OTHER)
@@ -380,11 +466,85 @@ def logout():
 
 
 def _ensure_reset_tokens_table():
-    """Garantiza que exista la tabla password_reset_tokens en SQLite o PostgreSQL."""
+    """Garantiza que existan las tablas y columnas de restablecimiento una sola vez por proceso."""
+    global _RESET_SCHEMA_READY
+    if _RESET_SCHEMA_READY:
+        return
     try:
-        Base.metadata.create_all(bind=engine, tables=[PasswordResetToken.__table__])
+        Base.metadata.create_all(
+            bind=engine,
+            tables=[PasswordResetToken.__table__, PasswordResetRequest.__table__],
+        )
     except Exception:
         pass
+    # Migración segura de columnas nuevas si la tabla ya existía previamente
+    for ddl in (
+        "ALTER TABLE password_reset_tokens ADD COLUMN email_changed SMALLINT NOT NULL DEFAULT 0",
+        "ALTER TABLE password_reset_tokens ADD COLUMN used_at TIMESTAMP",
+    ):
+        try:
+            with engine.begin() as conn:
+                conn.execute(text(ddl))
+        except Exception:
+            pass
+    _RESET_SCHEMA_READY = True
+
+
+@router.post("/api/support/password-reset-request")
+async def create_password_reset_request(request: Request, db: Session = Depends(get_db)):
+    """
+    Registra un aviso interno para el CEO cuando un usuario pulsa 'Contacta al soporte'
+    desde /login para restablecer su contraseña.
+    """
+    _ensure_reset_tokens_table()
+
+    identifier = ""
+    try:
+        payload = await request.json()
+        identifier = str(payload.get("identifier") or "").strip()[:150]
+    except Exception:
+        pass
+
+    clean_id = identifier.lower()
+    matched_user = None
+    if clean_id:
+        matched_user = db.query(User).filter(
+            (User.username.ilike(clean_id)) | (User.email.ilike(clean_id))
+        ).first()
+
+    # Evitar duplicados si ya existe una solicitud pendiente idéntica en los últimos 5 minutos
+    five_min_ago = datetime.utcnow() - timedelta(minutes=5)
+    existing_recent = db.query(PasswordResetRequest).filter(
+        PasswordResetRequest.status == "pendiente",
+        PasswordResetRequest.identifier == (identifier or "No especificado"),
+        PasswordResetRequest.created_at >= five_min_ago,
+    ).first()
+
+    if not existing_recent:
+        req = PasswordResetRequest(
+            identifier=identifier or "No especificado",
+            matched_user_id=matched_user.id if matched_user else None,
+            status="pendiente",
+        )
+        db.add(req)
+        db.commit()
+
+    return JSONResponse({"success": True})
+
+
+@router.post("/api/ceo/dismiss-reset-request/{req_id}")
+def ceo_dismiss_reset_request(req_id: int, request: Request, db: Session = Depends(get_db)):
+    """Permite al CEO descartar una solicitud de soporte ya revisada."""
+    current_user = get_current_user(request, db)
+    if not current_user or not current_user.is_ceo:
+        return JSONResponse({"success": False, "error": "Solo CEO."}, status_code=403)
+
+    _ensure_reset_tokens_table()
+    req = db.query(PasswordResetRequest).filter(PasswordResetRequest.id == req_id).first()
+    if req:
+        req.status = "descartada"
+        db.commit()
+    return JSONResponse({"success": True})
 
 
 def _hash_reset_token(raw_token: str) -> str:
@@ -413,11 +573,17 @@ async def ceo_generate_reset_link(request: Request, db: Session = Depends(get_db
 
     target_user_id = payload.get("user_id")
     allow_email_edit = bool(payload.get("allow_email_edit", False))
+    request_id = payload.get("request_id")
 
     if not target_user_id:
         return JSONResponse({"success": False, "error": "Selecciona un usuario válido."}, status_code=400)
 
-    target_user = db.query(User).filter(User.id == int(target_user_id)).first()
+    try:
+        target_user_id_int = int(target_user_id)
+    except (ValueError, TypeError):
+        return JSONResponse({"success": False, "error": "Identificador de usuario inválido."}, status_code=400)
+
+    target_user = db.query(User).filter(User.id == target_user_id_int).first()
     if not target_user:
         return JSONResponse({"success": False, "error": "Usuario no encontrado."}, status_code=404)
 
@@ -426,6 +592,24 @@ async def ceo_generate_reset_link(request: Request, db: Session = Depends(get_db
         PasswordResetToken.user_id == target_user.id,
         PasswordResetToken.used == 0,
     ).update({"used": 1})
+
+    # Marca como atendidas las solicitudes de soporte pendientes de este usuario (y el request_id exacto)
+    if request_id is not None and str(request_id).strip() != "":
+        try:
+            db.query(PasswordResetRequest).filter(
+                PasswordResetRequest.id == int(request_id)
+            ).update({"status": "atendida"}, synchronize_session=False)
+        except (ValueError, TypeError):
+            pass
+
+    db.query(PasswordResetRequest).filter(
+        PasswordResetRequest.status == "pendiente",
+        (
+            (PasswordResetRequest.matched_user_id == target_user.id)
+            | (PasswordResetRequest.identifier.ilike(target_user.email))
+            | (PasswordResetRequest.identifier.ilike(target_user.username))
+        ),
+    ).update({"status": "atendida"}, synchronize_session=False)
 
     raw_token = secrets.token_urlsafe(32)
     token_record = PasswordResetToken(
@@ -582,6 +766,7 @@ def reset_password_submit(
 
     # 2. Solo si el CEO desbloqueó la edición del correo en el token, validar y actualizar correo
     old_email = target_user.email
+    did_change_email = False
     if allow_email_edit and submitted_email != old_email.lower():
         email_ok, email_msg = validate_institutional_email(submitted_email)
         if not email_ok:
@@ -595,24 +780,40 @@ def reset_password_submit(
             return _render_error("Ese correo institucional ya pertenece a otra cuenta registrada.")
 
         target_user.email = submitted_email
+        did_change_email = True
 
     # 3. Guardar nueva contraseña cifrada con bcrypt y quemar el token (un solo uso)
     new_hash = hash_password(password)
     target_user.password = new_hash
     record.used = 1
+    record.used_at = datetime.utcnow()
+    record.email_changed = 1 if did_change_email else 0
 
-    # Sincronizar espejo en tabla 'usuarios' si existiera
+    # Sincronizar espejo en tabla 'usuarios' con savepoint seguro (evita abortar la transacción en PostgreSQL)
     try:
-        mirror_user = db.query(Usuario).filter(Usuario.correo_institucional.ilike(old_email)).first()
-        if mirror_user:
-            mirror_user.password_hash = new_hash
-            if allow_email_edit and submitted_email != old_email.lower():
-                mirror_user.correo_institucional = submitted_email
+        with db.begin_nested():
+            if did_change_email:
+                db.execute(
+                    text(
+                        "UPDATE usuarios SET password_hash = :pwd, correo_institucional = :new_email "
+                        "WHERE LOWER(correo_institucional) = :old_email"
+                    ),
+                    {"pwd": new_hash, "new_email": submitted_email, "old_email": old_email.lower()},
+                )
+            else:
+                db.execute(
+                    text(
+                        "UPDATE usuarios SET password_hash = :pwd "
+                        "WHERE LOWER(correo_institucional) = :old_email"
+                    ),
+                    {"pwd": new_hash, "old_email": old_email.lower()},
+                )
     except Exception:
         pass
 
     db.commit()
 
-    redirect = RedirectResponse(url="/login?reset=success", status_code=status.HTTP_303_SEE_OTHER)
+    reset_flag = "email_and_password" if did_change_email else "password"
+    redirect = RedirectResponse(url=f"/login?reset={reset_flag}", status_code=status.HTTP_303_SEE_OTHER)
     redirect.delete_cookie(key="caramel_login_fails")
     return redirect

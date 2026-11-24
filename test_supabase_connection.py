@@ -19,7 +19,9 @@ if not DATABASE_URL or "sqlite" in DATABASE_URL:
     sys.exit(1)
 
 if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+elif DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 try:
     from sqlalchemy import create_engine, inspect, text

@@ -6,19 +6,30 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 # Carga variables de entorno desde el archivo .env si existe
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./caramel.db")
+# Permite alternar entre SQLite local y Supabase sin modificar .env:
+#   CARAMEL_DB_MODE=local  -> fuerza sqlite:///./caramel.db
+#   CARAMEL_DB_MODE=online -> usa DATABASE_URL de .env (Supabase PostgreSQL)
+CARAMEL_DB_MODE = os.getenv("CARAMEL_DB_MODE", "").strip().lower()
+if CARAMEL_DB_MODE == "local":
+    DATABASE_URL = "sqlite:///./caramel.db"
+else:
+    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./caramel.db")
 
-# Muchos proveedores de nube (Supabase, Neon, Render, Railway) proveen la URI con 'postgres://'
-# SQLAlchemy 1.4+ requiere 'postgresql://'
+# Normalizar prefijo para usar el driver psycopg2 instalado en el venv
 if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+elif DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+
+IS_LOCAL_DB = DATABASE_URL.startswith("sqlite")
 
 # Configuración del motor según dialecto
-if DATABASE_URL.startswith("sqlite"):
+if IS_LOCAL_DB:
     engine = create_engine(
         DATABASE_URL,
         connect_args={"check_same_thread": False}
     )
+    print("[Caramel DB] Modo activo: LOCAL (SQLite -> caramel.db)")
 else:
     # Configuración de grado de producción para PostgreSQL / Nube:
     # - pool_pre_ping: verifica la vida de la conexión antes de usarla (evita cortes SSL o desconexiones de nube)
@@ -30,6 +41,7 @@ else:
         pool_size=10,
         max_overflow=20
     )
+    print("[Caramel DB] Modo activo: ONLINE (PostgreSQL / Supabase Cloud)")
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

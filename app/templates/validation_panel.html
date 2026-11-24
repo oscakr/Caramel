@@ -31,85 +31,87 @@ function validationPanelForm() {
     toastMessage: '',
     toastType: 'success',
 
-    // Soporte CEO: Enlaces temporales de restablecimiento de contraseña / correo
-    resetUserSearch: '',
-    resetSelectedUserId: '',
-    resetAllowEmailEdit: false,
-    isGeneratingResetLink: false,
-    generatedResetUrl: '',
-    generatedResetEmail: '',
-    generatedResetName: '',
-    generatedResetAllowEmail: false,
-    resetErrorMsg: '',
-    resetCopied: false,
+    // Solicitudes activas de restablecimiento de contraseña (solo aparecen cuando alguien pulsa 'Contacta al soporte')
     allUsersForReset: [
       {% for u in (all_users or []) %}
-      { id: {{ u.id }}, name: {{ u.full_name|tojson }}, email: {{ u.email|tojson }}, username: {{ u.username|tojson }}, rol: {{ u.rol_nombre|tojson }} }{% if not loop.last %},{% endif %}
+      { id: {{ u.id }}, name: {{ u.full_name|tojson }}, email: {{ u.email|tojson }} }{% if not loop.last %},{% endif %}
       {% endfor %}
     ],
+    pendingResetRequests: [
+      {% for req in (pending_reset_requests or []) %}
+      {
+        id: {{ req.id }},
+        identifier: {{ req.identifier|tojson }},
+        matched_user_id: {{ req.matched_user_id if req.matched_user_id else 'null' }},
+        selected_user_id: {{ (req.matched_user_id|string)|tojson if req.matched_user_id else '""' }},
+        matched_name: {{ (req.matched_user.full_name if req.matched_user else '')|tojson }},
+        matched_email: {{ (req.matched_user.email if req.matched_user else '')|tojson }},
+        allow_email_edit: {{ 'false' if req.matched_user_id else 'true' }},
+        is_generating: false,
+        error_msg: '',
+        time: {{ (req.created_at.strftime('%d/%m %H:%M') if req.created_at else 'Reciente')|tojson }}
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ],
+    lastGeneratedResetUrl: '',
+    lastGeneratedResetName: '',
 
-    filteredResetUsers() {
-      const q = (this.resetUserSearch || '').toLowerCase().trim();
-      if (!q) return this.allUsersForReset;
-      return this.allUsersForReset.filter(u =>
-        (u.name && u.name.toLowerCase().includes(q)) ||
-        (u.email && u.email.toLowerCase().includes(q)) ||
-        (u.username && u.username.toLowerCase().includes(q))
-      );
+    async dismissResetRequest(reqId) {
+      try {
+        await fetch('/api/ceo/dismiss-reset-request/' + reqId, { method: 'POST' });
+        this.pendingResetRequests = this.pendingResetRequests.filter(r => r.id !== reqId);
+      } catch (e) {}
     },
 
-    async generateResetLink() {
-      if (!this.resetSelectedUserId) {
-        this.resetErrorMsg = 'Selecciona el usuario al que deseas generarle el enlace.';
+    async generateAndSendResetLink(req) {
+      const targetId = req.matched_user_id || (req.selected_user_id ? parseInt(req.selected_user_id, 10) : null);
+      if (!targetId) {
+        req.error_msg = 'Selecciona la cuenta correspondiente para generar el link.';
         return;
       }
-      this.isGeneratingResetLink = true;
-      this.resetErrorMsg = '';
-      this.resetCopied = false;
+      req.is_generating = true;
+      req.error_msg = '';
+
+      // Abrir ventana en el mismo evento del clic para evitar bloqueo de popups
+      const gmailWin = window.open('about:blank', '_blank');
+
       try {
         const resp = await fetch('/api/ceo/generate-reset-link', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            user_id: parseInt(this.resetSelectedUserId, 10),
-            allow_email_edit: this.resetAllowEmailEdit
+            user_id: targetId,
+            allow_email_edit: !!req.allow_email_edit,
+            request_id: req.id
           })
         });
         const data = await resp.json();
-        this.isGeneratingResetLink = false;
+        req.is_generating = false;
+
         if (resp.ok && data.success) {
-          this.generatedResetUrl = data.reset_url;
-          this.generatedResetEmail = data.user_email;
-          this.generatedResetName = data.user_name;
-          this.generatedResetAllowEmail = !!data.allow_email_edit;
+          const su = 'Caramel UNIMAR - Restablecimiento de credenciales';
+          const body = `Accede al siguiente link para restablecer tus credenciales, dependiendo de la solicitud de tu correo inicial, se te estará otorgando acceso para cambiar a un correo válido de la institución, o solamente tu contraseña, gracias por entender.\n\n${data.reset_url}`;
+          const recipient = data.user_email || (req.identifier && req.identifier.includes('@') ? req.identifier : '');
+          const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(recipient)}&su=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`;
+
+          if (gmailWin) {
+            gmailWin.location.href = gmailUrl;
+          } else {
+            window.open(gmailUrl, '_blank', 'noopener,noreferrer');
+          }
+
+          this.lastGeneratedResetUrl = data.reset_url;
+          this.lastGeneratedResetName = data.user_name || req.identifier;
+          this.pendingResetRequests = this.pendingResetRequests.filter(r => r.id !== req.id);
         } else {
-          this.resetErrorMsg = data.error || 'No se pudo generar el enlace.';
+          if (gmailWin) gmailWin.close();
+          req.error_msg = data.error || 'No se pudo generar el enlace.';
         }
       } catch (err) {
-        this.isGeneratingResetLink = false;
-        this.resetErrorMsg = 'Error de conexión con el servidor.';
+        if (gmailWin) gmailWin.close();
+        req.is_generating = false;
+        req.error_msg = 'Error de conexión con el servidor.';
       }
-    },
-
-    async copyResetLink() {
-      if (!this.generatedResetUrl) return;
-      try {
-        await navigator.clipboard.writeText(this.generatedResetUrl);
-        this.resetCopied = true;
-        setTimeout(() => { this.resetCopied = false; }, 2200);
-      } catch (e) {
-        this.resetErrorMsg = 'No se pudo copiar automáticamente; selecciona y copia el enlace manualmente.';
-      }
-    },
-
-    getResetGmailHref() {
-      if (!this.generatedResetUrl) return '#';
-      const su = 'Caramel UNIMAR - Enlace para restablecer tu contraseña';
-      const extraEmailNote = this.generatedResetAllowEmail
-        ? '\nAdemás, soporte ha habilitado la casilla para que puedas corregir tu correo institucional en el mismo formulario.\n'
-        : '';
-      const body = `Hola ${this.generatedResetName || ''},\n\nHemos recibido tu solicitud de soporte en Caramel UNIMAR. Utiliza el siguiente enlace temporal (válido por 30 minutos y de un solo uso) para restablecer tu contraseña:${extraEmailNote}\n${this.generatedResetUrl}\n\nSi no solicitaste este cambio, puedes ignorar este mensaje.\n\nEquipo de Soporte Caramel — UNIMAR`;
-      return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(this.generatedResetEmail || '')}&su=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`;
     },
 
     init() {
@@ -125,6 +127,16 @@ function validationPanelForm() {
       this.toastType = 'success';
       window.history.replaceState({}, document.title, window.location.pathname);
       setTimeout(() => { this.toastMessage = ''; }, 6500);
+    } else if (st === 'ya_aprobado') {
+      this.toastMessage = 'ℹ️ Acción no aplicada: este material ya fue aprobado correctamente por otro validador.';
+      this.toastType = 'warning';
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setTimeout(() => { this.toastMessage = ''; }, 7000);
+    } else if (st === 'ya_rechazado') {
+      this.toastMessage = 'ℹ️ Acción no aplicada: este material ya fue rechazado por otro validador.';
+      this.toastType = 'warning';
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setTimeout(() => { this.toastMessage = ''; }, 7000);
     } else if (st === 'docente_aprobado') {
       this.toastMessage = '✅ Solicitud docente autorizada por el CEO con éxito.';
       this.toastType = 'success';
@@ -347,111 +359,86 @@ function validationPanelForm() {
     {% endif %}
   </div>
 
-  <!-- Sección Exclusiva del CEO: Soporte y Restablecimiento de Contraseña / Correo -->
-  <div class="p-4 rounded-3xl bg-white border border-stone-200 space-y-3.5 shadow-md">
-    <div class="flex items-center justify-between gap-2">
-      <div class="flex items-center space-x-2.5">
-        <div class="w-8 h-8 rounded-xl bg-caramel-100 text-caramel-800 flex items-center justify-center shrink-0">
-          <svg class="w-4 h-4 text-caramel-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
-          </svg>
+  <!-- Solicitudes de restablecimiento de contraseña (solo visible cuando un usuario pulsa 'Contacta al soporte') -->
+  <div x-show="pendingResetRequests.length > 0 || lastGeneratedResetUrl"
+       x-cloak
+       class="space-y-3">
+    <template x-for="req in pendingResetRequests" :key="req.id">
+      <div class="p-4 rounded-3xl bg-white border border-caramel-300 space-y-3 shadow-sm">
+        <div class="flex items-start justify-between gap-2">
+          <div class="min-w-0">
+            <h2 class="text-xs font-bold text-stone-900">
+              Solicitud de restablecimiento de contraseña
+            </h2>
+            <p class="text-xs font-semibold text-caramel-700 mt-0.5 truncate"
+               x-text="req.matched_name ? (req.matched_name + ' • ' + req.matched_email) : req.identifier"></p>
+            <p class="text-[10px] text-stone-500 font-mono mt-0.5"
+               x-text="'Ingresado en login: ' + req.identifier + ' • ' + req.time"></p>
+          </div>
+          <button type="button"
+                  @click="dismissResetRequest(req.id)"
+                  class="text-stone-400 hover:text-stone-700 p-1 rounded-lg transition cursor-pointer shrink-0"
+                  title="Descartar aviso"
+                  aria-label="Descartar aviso">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
         </div>
-        <div>
-          <h2 class="text-xs font-bold text-stone-900 uppercase tracking-wider">Soporte CEO: Restablecer Acceso</h2>
-          <p class="text-[10px] text-stone-500">Genera un enlace temporal de un solo uso (30 min) para alumnos o docentes</p>
+
+        <!-- Solo si el correo/usuario escrito no coincide con ninguna cuenta, permitir vincular la cuenta real -->
+        <template x-if="!req.matched_user_id">
+          <div>
+            <select x-model="req.selected_user_id"
+                    class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs text-stone-900 focus:outline-none focus:bg-white focus:border-caramel-500 transition">
+              <option value="">-- Vincular con la cuenta del estudiante --</option>
+              <template x-for="u in allUsersForReset" :key="u.id">
+                <option :value="u.id" x-text="u.name + ' (' + u.email + ')'"></option>
+              </template>
+            </select>
+          </div>
+        </template>
+
+        <!-- Permiso del CEO para desbloquear la casilla de correo -->
+        <label class="flex items-center space-x-2 text-[11px] text-stone-700 cursor-pointer select-none">
+          <input type="checkbox"
+                 x-model="req.allow_email_edit"
+                 class="w-3.5 h-3.5 rounded accent-[#7FB3A6] cursor-pointer shrink-0">
+          <span>Permitir también editar el correo institucional en el formulario</span>
+        </label>
+
+        <template x-if="req.error_msg">
+          <p class="text-[11px] text-red-600 font-semibold" x-text="req.error_msg"></p>
+        </template>
+
+        <div class="pt-1 border-t border-stone-100">
+          <button type="button"
+                  @click="generateAndSendResetLink(req)"
+                  :disabled="req.is_generating"
+                  class="text-xs font-semibold text-caramel-600 hover:text-caramel-700 underline transition cursor-pointer disabled:opacity-50">
+            <span x-text="req.is_generating ? 'Generando enlace...' : 'Generar link para sustitución de contraseña'"></span>
+          </button>
         </div>
       </div>
-      <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 border border-stone-200 shrink-0">
-        Solo CEO
-      </span>
-    </div>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-      <div>
-        <label class="block text-[10px] font-semibold text-stone-600 mb-1">Filtrar usuario</label>
-        <input type="text"
-               x-model="resetUserSearch"
-               placeholder="Buscar por nombre o correo..."
-               class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:bg-white focus:border-caramel-500 transition">
-      </div>
-      <div>
-        <label class="block text-[10px] font-semibold text-stone-600 mb-1">Cuenta a restablecer</label>
-        <select x-model="resetSelectedUserId"
-                class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs text-stone-900 focus:outline-none focus:bg-white focus:border-caramel-500 transition">
-          <option value="">-- Selecciona un usuario --</option>
-          <template x-for="u in filteredResetUsers()" :key="u.id">
-            <option :value="u.id" x-text="u.name + ' (' + u.email + ')'"></option>
-          </template>
-        </select>
-      </div>
-    </div>
-
-    <!-- Switch Exclusivo del CEO para Desbloquear Edición de Correo -->
-    <label class="flex items-start space-x-2.5 p-3 rounded-2xl border cursor-pointer transition select-none"
-           :class="resetAllowEmailEdit ? 'bg-amber-50 border-amber-300' : 'bg-stone-50 border-stone-200 hover:border-stone-300'">
-      <input type="checkbox"
-             x-model="resetAllowEmailEdit"
-             class="mt-0.5 w-4 h-4 rounded accent-[#7FB3A6] cursor-pointer shrink-0">
-      <div class="space-y-0.5">
-        <span class="block text-xs font-bold text-stone-900">
-          Desbloquear casilla para editar correo institucional
-        </span>
-        <span class="block text-[10px] text-stone-500 leading-snug">
-          Activa esta opción únicamente si el estudiante reportó en su correo de soporte haber registrado un correo falso o inexistente por error.
-        </span>
-      </div>
-    </label>
-
-    <template x-if="resetErrorMsg">
-      <div class="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold text-center" x-text="resetErrorMsg"></div>
     </template>
 
-    <button type="button"
-            @click="generateResetLink()"
-            :disabled="isGeneratingResetLink || !resetSelectedUserId"
-            class="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99]">
-      <span x-text="isGeneratingResetLink ? 'Generando enlace seguro...' : 'Generar enlace temporal de restablecimiento'"></span>
-    </button>
-
-    <!-- Resultado del enlace generado -->
-    <div x-show="generatedResetUrl"
+    <!-- Confirmación breve con acceso directo al último link generado -->
+    <div x-show="lastGeneratedResetUrl"
          x-cloak
-         x-transition
-         class="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-2.5">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <span class="text-xs font-bold text-emerald-950">
-          Enlace listo para <span x-text="generatedResetName"></span>
-        </span>
-        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border"
-              :class="generatedResetAllowEmail ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-white text-stone-700 border-stone-200'"
-              x-text="generatedResetAllowEmail ? 'Correo desbloqueado (editable)' : 'Correo bloqueado (solo lectura)'">
-        </span>
-      </div>
-
-      <input type="text"
-             readonly
-             :value="generatedResetUrl"
-             @click="$el.select()"
-             class="w-full px-3 py-2 bg-white border border-emerald-200 rounded-xl text-[11px] font-mono text-stone-800 select-all">
-
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+         class="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+      <span class="text-emerald-900 font-medium">
+        Enlace generado para <strong x-text="lastGeneratedResetName"></strong>.
+      </span>
+      <div class="flex items-center space-x-3">
+        <a :href="lastGeneratedResetUrl"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="font-semibold text-caramel-600 hover:text-caramel-700 underline">
+          Abrir link ↗
+        </a>
         <button type="button"
-                @click="copyResetLink()"
-                class="py-2 px-3 rounded-xl bg-white hover:bg-stone-100 border border-stone-300 text-stone-800 text-[11px] font-bold transition cursor-pointer">
-          <span x-text="resetCopied ? '¡Enlace copiado!' : 'Copiar enlace'"></span>
-        </button>
-        <a :href="generatedResetUrl"
-           target="_blank"
-           rel="noopener noreferrer"
-           class="py-2 px-3 rounded-xl bg-white hover:bg-stone-100 border border-stone-300 text-stone-800 text-[11px] font-bold text-center transition">
-          Abrir enlace ↗
-        </a>
-        <a :href="getResetGmailHref()"
-           target="_blank"
-           rel="noopener noreferrer"
-           class="py-2 px-3 rounded-xl bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] hover:brightness-105 text-white text-[11px] font-bold text-center transition shadow-xs">
-          Enviar por Gmail
-        </a>
+                @click="lastGeneratedResetUrl = ''"
+                class="text-stone-400 hover:text-stone-700 cursor-pointer">✕</button>
       </div>
     </div>
   </div>
@@ -486,7 +473,7 @@ function validationPanelForm() {
                 Material de Estudio
               </span>
               {% endif %}
-              <span class="text-[10px] text-stone-500 font-medium">Trimestre {{ doc.trimestres }}</span>
+              <span class="text-[10px] text-stone-500 font-medium">{{ doc.trimestre_badge_label }}</span>
               <span class="text-stone-300">•</span>
               <span class="text-[10px] text-amber-800 font-semibold">{{ doc.materias }}</span>
             </div>
@@ -500,9 +487,11 @@ function validationPanelForm() {
           </div>
         </div>
 
+        {% if doc.description and 'Pendiente de revisión docente para asignación temática' not in doc.description %}
         <p class="text-xs text-stone-700 leading-relaxed bg-stone-50 p-3 rounded-2xl border border-stone-200">
           {{ doc.description }}
         </p>
+        {% endif %}
 
         <!-- Bloque de Inspección y Descarga de Contenido -->
         <div class="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 space-y-2.5">

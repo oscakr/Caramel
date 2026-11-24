@@ -57,7 +57,9 @@ function profileApp() {
         authors: {{ doc.authors|tojson }},
         cover_url: {{ doc.cover_url|tojson }},
         rating_avg: {{ doc.rating_avg }},
-        trimestres: {{ doc.trimestres|tojson }}
+        trimestres: {{ doc.trimestres|tojson }},
+        trimestre_label: {{ doc.trimestre_badge_label|tojson }},
+        trimestre_short: {{ doc.trimestre_short_label|tojson }}
       }{% if not loop.last %},{% endif %}
       {% endfor %}
     ],
@@ -78,7 +80,9 @@ function profileApp() {
         authors: {{ doc.authors|tojson }},
         cover_url: {{ doc.cover_url|tojson }},
         rating_avg: {{ doc.rating_avg }},
-        trimestres: {{ doc.trimestres|tojson }}
+        trimestres: {{ doc.trimestres|tojson }},
+        trimestre_label: {{ doc.trimestre_badge_label|tojson }},
+        trimestre_short: {{ doc.trimestre_short_label|tojson }}
       }{% if not loop.last %},{% endif %}
       {% endfor %}
     ],
@@ -91,6 +95,34 @@ function profileApp() {
 
     init() {
       this.initBannerPosition();
+      this.$watch('showEditProfileModal', (open) => {
+        this._syncBodyScrollLock();
+        if (open) {
+          this.$nextTick(() => this.resetEditModalScroll());
+        }
+      });
+      this.$watch('showShowcaseModal', () => {
+        this._syncBodyScrollLock();
+      });
+    },
+
+    _syncBodyScrollLock() {
+      const locked = this.showEditProfileModal || this.showShowcaseModal;
+      document.body.style.overflow = locked ? 'hidden' : '';
+    },
+
+    resetEditModalScroll() {
+      if (this.$refs && this.$refs.editModalBody) {
+        this.$refs.editModalBody.scrollTop = 0;
+      }
+    },
+
+    normalizeBannerPath(url) {
+      return (url || '').split('?')[0].trim();
+    },
+
+    isBannerSelected(url) {
+      return this.normalizeBannerPath(this.currentBanner) === this.normalizeBannerPath(url);
     },
 
     initBannerPosition() {
@@ -107,7 +139,10 @@ function profileApp() {
 
     isCustomBanner() {
       if (!this.currentBanner) return false;
-      const isPreset = this.presetBanners.some(p => p.url === this.currentBanner) || this.currentBanner === '/static/img/login_banner.jpg' || this.currentBanner === '/static/img/bannerdefault.jpg';
+      const cur = this.normalizeBannerPath(this.currentBanner);
+      const isPreset = this.presetBanners.some(p => this.normalizeBannerPath(p.url) === cur)
+        || cur === '/static/img/login_banner.jpg'
+        || cur === '/static/img/bannerdefault.jpg';
       return !isPreset;
     },
 
@@ -125,6 +160,7 @@ function profileApp() {
     },
 
     async selectPresetBanner(url) {
+      if (this.isUploading) return;
       this.currentBannerPosition = '50% 50%';
       this.bannerY = 50;
       await this.saveBannerUrl(url);
@@ -138,11 +174,20 @@ function profileApp() {
 
     openEditProfile(tab = 'avatar') {
       this.editTab = tab;
+      this.bannerTab = this.isCustomBanner() ? 'upload' : 'presets';
       this.showTrimestreConfirm = false;
       this.editSuccessMsg = '';
       this.editErrorMsg = '';
       this.selectedTrimestre = this.currentTrimestre;
       this.showEditProfileModal = true;
+    },
+
+    switchEditTab(tab) {
+      this.editTab = tab;
+      this.showTrimestreConfirm = false;
+      this.editErrorMsg = '';
+      this.editSuccessMsg = '';
+      this.$nextTick(() => this.resetEditModalScroll());
     },
 
     async saveAvatarUrl(urlToSave) {
@@ -200,6 +245,8 @@ function profileApp() {
       } catch (err) {
         this.isUploading = false;
         this.editErrorMsg = 'Error de conexión al subir la imagen.';
+      } finally {
+        event.target.value = '';
       }
     },
 
@@ -261,6 +308,8 @@ function profileApp() {
       } catch (err) {
         this.isUploading = false;
         this.editErrorMsg = 'Error al subir la imagen del banner.';
+      } finally {
+        event.target.value = '';
       }
     },
 
@@ -557,7 +606,7 @@ function profileApp() {
 
               <div class="mt-2 pt-2 border-t border-stone-100 flex items-center justify-between text-[10px]">
                 <span class="text-amber-700 font-bold" x-text="(slot.rating_avg && slot.rating_avg > 0 ? slot.rating_avg.toFixed(1) + ' pts' : 'Sin calificar')"></span>
-                <span class="text-stone-500 font-medium" x-text="'Tri ' + slot.trimestres"></span>
+                <span class="text-stone-500 font-medium" x-text="slot.trimestre_short || ('Tri ' + slot.trimestres)"></span>
               </div>
             </div>
           </template>
@@ -608,7 +657,7 @@ function profileApp() {
           <div class="flex items-center space-x-2 mt-1 text-[10px]">
             <span class="font-bold text-amber-700">{{ bm.document.rating_avg }} pts</span>
             <span class="text-stone-300">•</span>
-            <span class="text-stone-500">Trimestres {{ bm.document.trimestres }}</span>
+            <span class="text-stone-500">{{ bm.document.trimestre_badge_label }}</span>
           </div>
         </div>
       </a>
@@ -647,22 +696,47 @@ function profileApp() {
        x-transition:leave="transition ease-in duration-150"
        x-transition:leave-start="opacity-100"
        x-transition:leave-end="opacity-0"
-       class="fixed inset-0 !mt-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+       @keydown.escape.window="if (showEditProfileModal && !showTrimestreConfirm) showEditProfileModal = false"
+       class="fixed inset-0 !mt-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overscroll-contain"
        style="display: none;">
     
-    <div class="w-full max-w-lg bg-white border border-stone-200 rounded-3xl p-6 shadow-2xl space-y-4 relative max-h-[88vh] overflow-y-auto"
+    <div class="w-full max-w-lg bg-white border border-stone-200 rounded-3xl shadow-2xl relative max-h-[88vh] flex flex-col overflow-hidden"
          @click.away="if (!showTrimestreConfirm) showEditProfileModal = false">
       
-      <!-- Header Modal -->
-      <div class="flex items-center justify-between pb-3 border-b border-stone-200">
-        <div>
-          <h3 class="text-base font-black text-stone-900">Editar Perfil</h3>
-          <p class="text-[11px] text-stone-500">Personaliza tu foto, imagen de banner y trimestre académico</p>
+      <!-- Header + Pestañas Fijas (no se desplazan al scrollear) -->
+      <div class="shrink-0 px-6 pt-5 pb-3.5 border-b border-stone-200 bg-white space-y-3.5">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-base font-black text-stone-900">Editar Perfil</h3>
+            <p class="text-[11px] text-stone-500">Personaliza tu foto, imagen de banner y trimestre académico</p>
+          </div>
+          <button type="button" @click="showEditProfileModal = false" class="w-7 h-7 rounded-full bg-stone-100 text-stone-500 hover:text-stone-900 flex items-center justify-center transition p-1 cursor-pointer shrink-0" aria-label="Cerrar">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
         </div>
-        <button type="button" @click="showEditProfileModal = false" class="w-7 h-7 rounded-full bg-stone-100 text-stone-500 hover:text-stone-900 flex items-center justify-center transition p-1 cursor-pointer" aria-label="Cerrar">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
+
+        <!-- Selector de Pestañas Principales -->
+        <div class="grid grid-cols-3 gap-1.5 p-1 bg-stone-100 rounded-2xl border border-stone-200 text-center text-xs">
+          <button type="button" @click="switchEditTab('avatar')"
+            class="py-2 rounded-xl font-bold transition cursor-pointer"
+            :class="editTab === 'avatar' ? 'bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] text-white shadow-sm' : 'text-stone-600 hover:text-stone-900'">
+            Foto Perfil
+          </button>
+          <button type="button" @click="switchEditTab('banner')"
+            class="py-2 rounded-xl font-bold transition cursor-pointer"
+            :class="editTab === 'banner' ? 'bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] text-white shadow-sm' : 'text-stone-600 hover:text-stone-900'">
+            Foto Banner
+          </button>
+          <button type="button" @click="switchEditTab('trimestre')"
+            class="py-2 rounded-xl font-bold transition cursor-pointer"
+            :class="editTab === 'trimestre' ? 'bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] text-white shadow-sm' : 'text-stone-600 hover:text-stone-900'">
+            Trimestre
+          </button>
+        </div>
       </div>
+
+      <!-- Cuerpo Único con Scroll Fluido (sin scrolls anidados) -->
+      <div x-ref="editModalBody" class="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4 space-y-4">
 
       <!-- Notificaciones de éxito / error -->
       <template x-if="editSuccessMsg">
@@ -671,25 +745,6 @@ function profileApp() {
       <template x-if="editErrorMsg">
         <div class="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs text-center font-bold" x-text="editErrorMsg"></div>
       </template>
-
-      <!-- Selector de Pestañas Principales -->
-      <div class="grid grid-cols-3 gap-1.5 p-1 bg-stone-100 rounded-2xl border border-stone-200 text-center text-xs">
-        <button type="button" @click="editTab = 'avatar'; showTrimestreConfirm = false; editErrorMsg = ''; editSuccessMsg = '';"
-          class="py-2 rounded-xl font-bold transition cursor-pointer"
-          :class="editTab === 'avatar' ? 'bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] text-white shadow-sm' : 'text-stone-600 hover:text-stone-900'">
-          Foto Perfil
-        </button>
-        <button type="button" @click="editTab = 'banner'; showTrimestreConfirm = false; editErrorMsg = ''; editSuccessMsg = '';"
-          class="py-2 rounded-xl font-bold transition cursor-pointer"
-          :class="editTab === 'banner' ? 'bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] text-white shadow-sm' : 'text-stone-600 hover:text-stone-900'">
-          Foto Banner
-        </button>
-        <button type="button" @click="editTab = 'trimestre'; showTrimestreConfirm = false; editErrorMsg = ''; editSuccessMsg = '';"
-          class="py-2 rounded-xl font-bold transition cursor-pointer"
-          :class="editTab === 'trimestre' ? 'bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] text-white shadow-sm' : 'text-stone-600 hover:text-stone-900'">
-          Trimestre
-        </button>
-      </div>
 
       <!-- ============================================== -->
       <!-- PESTAÑA: FOTO DE PERFIL -->
@@ -747,14 +802,15 @@ function profileApp() {
         </div>
 
         <!-- Avatar Presets -->
-        <div x-show="avatarTab === 'presets'" class="space-y-2 pt-1">
-          <p class="text-xs text-stone-600">O elige uno de nuestros avatares oficiales:</p>
-          <div class="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1">
+        <div x-show="avatarTab === 'presets'" class="space-y-2.5 pt-1">
+          <p class="text-xs text-stone-600">Elige uno de nuestros avatares oficiales:</p>
+          <div class="grid grid-cols-3 gap-2.5">
             <template x-for="item in presetAvatars" :key="item.url">
-              <button type="button" @click="saveAvatarUrl(item.url)"
-                class="p-2 rounded-xl bg-stone-50 border border-stone-200 hover:border-caramel-500 hover:bg-caramel-50 text-center space-y-1 transition group cursor-pointer shadow-2xs">
+              <button type="button" @click="saveAvatarUrl(item.url)" :disabled="isUploading"
+                class="p-2.5 rounded-2xl border-2 text-center space-y-1.5 transition group cursor-pointer shadow-2xs"
+                :class="currentAvatar === item.url ? 'border-caramel-500 bg-caramel-50/70 shadow-xs' : 'border-stone-200 bg-stone-50 hover:border-caramel-400 hover:bg-caramel-50/40'">
                 <img :src="item.url" class="w-12 h-12 mx-auto rounded-full object-cover border border-stone-200 group-hover:border-caramel-400 transition" :alt="item.name">
-                <p class="text-[9px] font-bold text-stone-800 line-clamp-1 group-hover:text-caramel-800" x-text="item.name"></p>
+                <p class="text-[10px] font-bold text-stone-800 line-clamp-1 group-hover:text-caramel-800" x-text="item.name"></p>
               </button>
             </template>
           </div>
@@ -765,15 +821,15 @@ function profileApp() {
       <!-- PESTAÑA: FOTO DEL BANNER -->
       <!-- ============================================== -->
       <div x-show="editTab === 'banner'" class="space-y-3">
-        <!-- Sub-pestañas Banner: Solo Subir y Elegir Banner -->
+        <!-- Sub-pestañas Banner: Elegir Banner y Subir Banner -->
         <div class="grid grid-cols-2 gap-1.5 p-1 bg-stone-50 rounded-xl border border-stone-200 text-center text-xs">
-          <button type="button" @click="bannerTab = 'upload'" class="py-2 rounded-lg font-bold transition cursor-pointer"
-            :class="bannerTab === 'upload' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-900'">
-            Subir Banner
-          </button>
-          <button type="button" @click="bannerTab = 'presets'" class="py-2 rounded-lg font-bold transition cursor-pointer"
+          <button type="button" @click="bannerTab = 'presets'; $nextTick(() => resetEditModalScroll())" class="py-2 rounded-lg font-bold transition cursor-pointer"
             :class="bannerTab === 'presets' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-900'">
             Elegir Banner
+          </button>
+          <button type="button" @click="bannerTab = 'upload'; $nextTick(() => resetEditModalScroll())" class="py-2 rounded-lg font-bold transition cursor-pointer"
+            :class="bannerTab === 'upload' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-900'">
+            Subir Banner
           </button>
         </div>
 
@@ -795,21 +851,21 @@ function profileApp() {
           <!-- Mover / Ajustar Posición: SOLO aparece si hay una imagen personalizada insertada -->
           <template x-if="isCustomBanner()">
             <div class="space-y-2.5 pt-3 border-t border-stone-200">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-2">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center flex-wrap gap-2">
                   <span class="text-xs font-bold text-stone-800">Ajustar Posición del Banner</span>
                   <button type="button" @click="resetToDefaultBanner()" :disabled="isUploading"
-                    class="px-1.5 py-0.5 rounded-md bg-stone-100 hover:bg-stone-200 text-stone-600 hover:text-stone-900 border border-stone-300 text-[9px] font-bold transition inline-flex items-center space-x-1 cursor-pointer shadow-2xs"
+                    class="px-2 py-0.5 rounded-md bg-stone-100 hover:bg-stone-200 text-stone-600 hover:text-stone-900 border border-stone-300 text-[9px] font-bold transition inline-flex items-center space-x-1 cursor-pointer shadow-2xs"
                     title="Restaurar al banner predeterminado">
                     <svg class="w-2.5 h-2.5 text-caramel-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                     <span>Banner default</span>
                   </button>
                 </div>
-                <span class="text-[11px] font-mono text-caramel-700 font-bold" x-text="bannerY + '%'"></span>
+                <span class="text-[11px] font-mono text-caramel-700 font-bold shrink-0" x-text="bannerY + '%'"></span>
               </div>
 
               <!-- Previsualización del Encuadre en Vivo -->
-              <div class="relative w-full h-24 rounded-2xl overflow-hidden border-2 border-caramel-400 bg-stone-100 shadow-inner select-none">
+              <div class="relative w-full h-28 rounded-2xl overflow-hidden border-2 border-caramel-400 bg-stone-100 shadow-inner select-none">
                 <img :src="currentBanner" 
                      class="w-full h-full object-cover brightness-95 contrast-100 pointer-events-none" 
                      :style="'object-position: 50% ' + bannerY + '%'"
@@ -817,7 +873,7 @@ function profileApp() {
                 <div class="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none"></div>
               </div>
 
-              <!-- Deslizador Único (Sin botones Arriba/Centro/Abajo) -->
+              <!-- Deslizador Único -->
               <div class="space-y-1 p-3 rounded-2xl bg-stone-50 border border-stone-200">
                 <div class="flex items-center justify-between text-[10px] font-bold text-stone-500 uppercase">
                   <span>Arriba</span>
@@ -836,16 +892,22 @@ function profileApp() {
           </template>
         </div>
 
-        <!-- Elegir Banner (Estáticos - Sin deslizador) -->
-        <div x-show="bannerTab === 'presets'" class="space-y-2 pt-1">
+        <!-- Elegir Banner (Grid limpio sin scroll anidado ni bordes cortados) -->
+        <div x-show="bannerTab === 'presets'" class="space-y-2.5 pt-1">
           <p class="text-xs text-stone-600">Selecciona uno de los banners disponibles:</p>
-          <div class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <template x-for="item in presetBanners" :key="item.url">
-              <button type="button" @click="selectPresetBanner(item.url)"
-                class="p-1.5 rounded-xl bg-stone-50 border border-stone-200 hover:border-caramel-500 hover:bg-caramel-50 text-left transition group cursor-pointer shadow-2xs"
-                :class="currentBanner === item.url ? 'ring-2 ring-caramel-500 bg-caramel-50/50' : ''">
-                <img :src="item.url" class="w-full h-14 rounded-lg object-cover border border-stone-200 group-hover:border-caramel-400 transition" :alt="item.name">
-                <p class="text-[10px] font-bold text-stone-800 mt-1 line-clamp-1 group-hover:text-caramel-800" x-text="item.name"></p>
+              <button type="button" @click="selectPresetBanner(item.url)" :disabled="isUploading"
+                class="relative p-2 rounded-2xl border-2 text-left transition group cursor-pointer shadow-2xs disabled:opacity-60"
+                :class="isBannerSelected(item.url) ? 'border-caramel-500 bg-caramel-50/70 shadow-sm' : 'border-stone-200 bg-stone-50 hover:border-caramel-400 hover:bg-caramel-50/30'">
+                <div class="relative w-full aspect-[16/6] rounded-xl overflow-hidden bg-stone-200 border border-stone-200/80">
+                  <img :src="item.url" class="w-full h-full object-cover object-center group-hover:scale-[1.03] transition-transform duration-200" :alt="item.name">
+                  <span x-show="isBannerSelected(item.url)"
+                        class="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-caramel-600 text-white flex items-center justify-center shadow-sm">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                  </span>
+                </div>
+                <p class="text-[11px] font-bold text-stone-800 mt-1.5 px-0.5 truncate group-hover:text-caramel-800" x-text="item.name"></p>
               </button>
             </template>
           </div>
@@ -924,9 +986,12 @@ function profileApp() {
 
       </div>
 
-      <!-- Footer Modal -->
-      <div class="pt-2 border-t border-stone-200 text-center">
-        <button type="button" @click="showEditProfileModal = false" class="text-xs text-stone-500 hover:text-stone-900 transition cursor-pointer">
+      </div>
+      <!-- Fin Cuerpo Único con Scroll -->
+
+      <!-- Footer Fijo del Modal -->
+      <div class="shrink-0 px-6 py-3 border-t border-stone-200 bg-white text-center">
+        <button type="button" @click="showEditProfileModal = false" class="text-xs font-semibold text-stone-500 hover:text-stone-900 transition cursor-pointer">
           Cerrar
         </button>
       </div>
@@ -998,7 +1063,7 @@ function profileApp() {
               <div class="flex items-center space-x-2 mt-1 text-[10px]">
                 <span class="text-amber-700 font-bold" x-text="(doc.rating_avg ? doc.rating_avg.toFixed(1) : '5.0') + ' pts'"></span>
                 <span class="text-stone-300">•</span>
-                <span class="text-stone-500" x-text="'Trimestres ' + doc.trimestres"></span>
+                <span class="text-stone-500" x-text="doc.trimestre_label || ('Trimestres ' + doc.trimestres)"></span>
               </div>
             </div>
 

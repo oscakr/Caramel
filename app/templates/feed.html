@@ -365,17 +365,19 @@
             {% elif rev.document.material_type == 'pdf' %}Documento:
             {% else %}Material:{% endif %} {{ rev.document.title }}
           </span>
-          <form action="/review/{{ rev.id }}/like" method="POST" class="inline">
-            {% set is_liked = rev.id in (liked_review_ids or []) %}
-            <button type="submit" 
-                    title="{% if is_liked %}Quitar Me Sirve{% else %}Marcar como Me Sirve{% endif %}"
-                    class="flex items-center space-x-1 py-0.5 px-2 rounded-full transition cursor-pointer {% if is_liked %}text-rose-600 bg-rose-50 font-bold border border-rose-200/80{% else %}text-stone-400 hover:text-rose-600 hover:bg-stone-50 border border-transparent{% endif %}">
-              <svg class="w-3 h-3 shrink-0 inline-block transition {% if is_liked %}text-rose-500 fill-current scale-110{% else %}text-stone-400 group-hover:text-rose-400{% endif %}" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/>
-              </svg>
-              <span>Me Sirve{% if rev.likes_count > 0 %} <span class="text-[9px] {% if is_liked %}text-rose-700{% else %}text-stone-500{% endif %}">({{ rev.likes_count }})</span>{% endif %}</span>
-            </button>
-          </form>
+          <div class="flex items-center">
+            <form action="/review/{{ rev.id }}/like" method="POST" class="inline">
+              {% set is_liked = rev.id in (liked_review_ids or []) %}
+              <button type="submit" 
+                      title="{% if is_liked %}Quitar Me Sirve{% else %}Marcar como Me Sirve{% endif %}"
+                      class="flex items-center space-x-1 py-0.5 px-2 rounded-full transition cursor-pointer {% if is_liked %}text-rose-600 bg-rose-50 font-bold border border-rose-200/80{% else %}text-stone-400 hover:text-rose-600 hover:bg-stone-50 border border-transparent{% endif %}">
+                <svg class="w-3 h-3 shrink-0 inline-block transition {% if is_liked %}text-rose-500 fill-current scale-110{% else %}text-stone-400 group-hover:text-rose-400{% endif %}" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/>
+                </svg>
+                <span>Me Sirve{% if rev.likes_count > 0 %} <span class="text-[9px] {% if is_liked %}text-rose-700{% else %}text-stone-500{% endif %}">({{ rev.likes_count }})</span>{% endif %}</span>
+              </button>
+            </form>
+          </div>
         </div>
       </div>
       {% endfor %}

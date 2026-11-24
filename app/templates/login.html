@@ -2,123 +2,195 @@
 
 {% block title %}Caramel - Iniciar Sesión{% endblock %}
 
+{% block extra_head %}
+<style>
+  main {
+    padding: 0 !important;
+    overflow-x: hidden;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<!-- Header Invisible Estético para forzar scroll inferior al registro docente -->
-<div class="w-full h-12 invisible pointer-events-none select-none" aria-hidden="true"></div>
+<div class="min-h-screen w-full grid grid-cols-1 lg:grid-cols-12 bg-white">
 
-<div class="flex flex-col items-center justify-start min-h-[90vh] py-2 pb-16 px-4 bg-white">
+  <!-- ================================================================== -->
+  <!-- PANEL VISUAL IZQUIERDO (Desktop 7/12) / CABECERA CAMPUS (Móvil)    -->
+  <!-- ================================================================== -->
+  <section class="relative lg:col-span-7 h-52 sm:h-60 lg:h-auto lg:min-h-screen overflow-hidden bg-stone-900">
+    <!-- Fotografía del campus UNIMAR -->
+    <img src="/static/img/universidadbannerlogin.jpeg"
+         class="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
+         alt="Campus Universidad de Margarita">
 
-  <!-- Header Collage & Visual Banner -->
-  <div class="relative w-full max-w-[380px] h-44 rounded-3xl overflow-hidden mb-4 border border-stone-200 shadow-md">
-    <img src="/static/img/login_banner.jpg" class="w-full h-full object-cover brightness-95 contrast-100" alt="Caramel Banner">
-    
-    <!-- Floating Caramel Brand Monogram -->
-    <div class="absolute inset-0 flex flex-col items-center justify-center">
-      <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-400 to-amber-200 p-0.5 shadow-xl">
-        <div class="w-full h-full bg-white rounded-2xl flex items-center justify-center p-2.5 shadow-sm">
-          <img src="/static/img/caramel_logo.png" class="w-full h-full object-contain drop-shadow-sm" alt="Logo Caramel">
-        </div>
-      </div>
-      <h1 class="text-2xl font-bold tracking-wide text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)] mt-2 font-serif">Caramel</h1>
-    </div>
-  </div>
+    <!-- Baño cálido sutil en tono caramelo para armonizar con la identidad visual -->
+    <div class="absolute inset-0 pointer-events-none"
+         style="background: linear-gradient(155deg, rgba(220, 160, 103, 0.12) 0%, rgba(198, 134, 77, 0.14) 55%, rgba(183, 113, 61, 0.24) 100%);"></div>
 
-  <!-- Form Card -->
-  <div class="w-full max-w-[380px] bg-white p-6 rounded-3xl border border-stone-200 shadow-xl">
-    <div class="text-center mb-5">
-      <h2 class="text-xl font-bold text-stone-900">Iniciar Sesión</h2>
-      <p class="text-xs text-stone-500 mt-1">Ingresa tus credenciales para continuar</p>
-    </div>
+    <!-- Degradado editorial inferior para legibilidad impecable del texto sobre la foto -->
+    <div class="absolute inset-0 pointer-events-none"
+         style="background: linear-gradient(to top, rgba(36, 21, 12, 0.86) 0%, rgba(54, 29, 19, 0.42) 38%, rgba(36, 21, 12, 0.08) 72%, rgba(36, 21, 12, 0.18) 100%);"></div>
 
-    {% if reset_success %}
-    <div class="mb-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs text-center font-semibold">
-      ¡Contraseña restablecida con éxito! Ya puedes iniciar sesión con tus nuevos datos.
-    </div>
-    {% endif %}
-
-    {% if error %}
-    <div class="mb-4 p-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs text-center font-medium">
-      {{ error }}
-    </div>
-    {% endif %}
-
-    <form method="POST" action="/login" class="space-y-4">
-      <div>
-        <label class="block text-[11px] font-medium text-stone-700 mb-1 ml-1">
-          Correo institucional o usuario
-        </label>
-        <div class="relative">
-          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></span>
-          <input type="text" name="username" required placeholder="tu.nombre@unimar.edu.ve o usuario"
-            value="{{ username_val if username_val else '' }}"
-            class="w-full pl-9 pr-4 py-2.5 bg-stone-50 border border-stone-300 rounded-2xl text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:bg-white focus:border-caramel-500 transition shadow-xs">
+    <!-- Contenido superpuesto en el panel fotográfico -->
+    <div class="relative z-10 h-full flex flex-col justify-between p-5 sm:p-7 lg:p-10">
+      <!-- Pill institucional superior: Caramel | UNIMAR -->
+      <div class="flex items-center">
+        <div class="inline-flex items-center space-x-2.5 px-3.5 py-2 rounded-2xl bg-white/95 backdrop-blur-md border border-white/80 shadow-lg">
+          <img src="/static/img/caramel_logo.png" class="w-5 h-5 sm:w-6 sm:h-6 object-contain" alt="Logo Caramel">
+          <span class="font-serif font-bold text-sm sm:text-base text-stone-900 tracking-tight">Caramel</span>
+          <span class="text-stone-300 font-light">|</span>
+          <img src="/static/img/UNIVERSIDADDEMARGARITA.png" class="h-5 sm:h-6 w-auto object-contain" alt="Universidad de Margarita">
         </div>
       </div>
 
-      <div>
-        <label class="block text-[11px] font-medium text-stone-700 mb-1 ml-1">
-          Contraseña
-        </label>
-        <div class="relative">
-          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span>
-          <input type="password" name="password" required placeholder="••••••••"
-            class="w-full pl-9 pr-4 py-2.5 bg-stone-50 border border-stone-300 rounded-2xl text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:bg-white focus:border-caramel-500 transition shadow-xs">
-        </div>
-      </div>
+      <!-- Mensaje editorial (Desktop) -->
+      <div class="hidden lg:block max-w-xl space-y-3 pb-2">
+        <h2 class="text-3xl xl:text-4xl font-extrabold text-white leading-tight tracking-tight drop-shadow-sm">
+          Capital intelectual curado para el <span class="text-[#f0c79b]">Eje de Programación</span>.
+        </h2>
 
-      <div class="pt-2">
-        <button type="submit" 
-          class="group relative overflow-hidden w-full py-3.5 px-6 rounded-full text-xs sm:text-sm font-bold tracking-wide shadow-xl flex items-center justify-center space-x-2 text-[#18110c] bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] hover:brightness-105 active:scale-[0.985] transition-all duration-300 ease-out cursor-pointer hover:shadow-2xl hover:shadow-caramel-500/30">
-          <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none"></span>
-          <span>Iniciar Sesión</span>
-        </button>
-      </div>
-
-      {% if failed_attempts and failed_attempts >= 1 %}
-      {% set support_subject = "Soporte Caramel UNIMAR - Restablecimiento de contraseña" %}
-      {% set support_body = "Hola, equipo de soporte de Caramel:\n\nHe olvidado mi contraseña y requiero de un enlace para restablecer mis datos de acceso a la plataforma.\n\nConfirmo que estoy enviando este mensaje desde el correo con el que me registré en la cuenta. De no tener acceso a este correo o en caso de no existir, explícanos brevemente tu situación a continuación:\n\n" ~ ("Usuario o correo ingresado: " ~ username_val ~ "\n" if username_val else "") %}
-      <div class="pt-1 text-center">
-        <p class="text-[11.5px] text-stone-500 leading-tight">
-          ¿Olvidaste tu contraseña?
-          <a href="https://mail.google.com/mail/?view=cm&fs=1&to=oalvarez.7305@unimar.edu.ve&su={{ support_subject|urlencode }}&body={{ support_body|urlencode }}"
-             target="_blank"
-             rel="noopener noreferrer"
-             class="font-semibold text-caramel-600 hover:text-caramel-700 underline transition">
-            Contacta al soporte.
-          </a>
+        <p class="text-sm text-stone-200/95 leading-relaxed max-w-lg">
+          Descubre guías, clases audiovisuales y proyectos verificados por docentes, con recomendaciones personalizadas según tu trimestre y cátedras.
         </p>
+      </div>
+
+      <!-- Texto compacto en móvil -->
+      <div class="lg:hidden pb-4">
+        <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-[#f0c79b]">Universidad de Margarita</p>
+        <p class="text-sm font-bold text-white leading-snug drop-shadow-xs">Plataforma Académica del Eje de Programación</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================== -->
+  <!-- PANEL DE ACCESO DERECHO (Desktop 5/12) / TARJETA PRINCIPAL (Móvil) -->
+  <!-- ================================================================== -->
+  <section class="relative z-10 lg:col-span-5 -mt-5 lg:mt-0 rounded-t-3xl lg:rounded-none bg-gradient-to-b from-white via-white to-[#fbf7f2] flex flex-col justify-center items-center px-6 sm:px-10 py-8 lg:py-10 lg:border-l border-stone-200/80 shadow-xl lg:shadow-none">
+
+    <div class="w-full max-w-[390px] space-y-5" x-data="{ showPassword: false }">
+
+      <!-- Identidad y Encabezado del Formulario -->
+      <div class="space-y-3">
+        <div class="flex items-center space-x-3">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#b7713d] via-[#c6864d] to-[#e1be9e] p-0.5 shadow-md shrink-0">
+            <div class="w-full h-full bg-white rounded-[14px] flex items-center justify-center p-2">
+              <img src="/static/img/caramel_logo.png" class="w-full h-full object-contain" alt="Caramel">
+            </div>
+          </div>
+          <div>
+            <h1 class="text-xl font-extrabold text-stone-900 tracking-tight leading-tight">Iniciar Sesión</h1>
+            <p class="text-xs text-stone-500">Accede con tu cuenta institucional UNIMAR</p>
+          </div>
+        </div>
+      </div>
+
+      {% if reset_success %}
+      <div class="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs text-center font-semibold">
+        {% if reset_email_updated %}
+        ¡Tu correo institucional y contraseña fueron restablecidos con éxito! Ya puedes iniciar sesión con tus nuevos datos.
+        {% else %}
+        ¡Tu contraseña fue restablecida con éxito! Ya puedes iniciar sesión con tu nueva clave.
+        {% endif %}
       </div>
       {% endif %}
-    </form>
 
-    <div class="mt-5 text-center">
-      <p class="text-xs text-stone-600">
-        ¿No tienes cuenta? 
-        <a href="/register" class="text-caramel-600 hover:text-caramel-700 font-bold underline ml-1">Regístrate como estudiante</a>
-      </p>
-    </div>
+      {% if error %}
+      <div class="p-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs text-center font-medium">
+        {{ error }}
+      </div>
+      {% endif %}
 
-    <!-- Callout Institucional para Acreditación Docente -->
-    <div class="mt-4 pt-4 border-t border-stone-100 text-center">
-      <div class="p-3 rounded-2xl bg-amber-50 border border-amber-200/80 space-y-1 text-left">
-        <div class="flex items-center space-x-2">
-          <div class="w-5 h-5 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
-            <svg class="w-3 h-3 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+      <!-- Formulario de Credenciales -->
+      <form method="POST" action="/login" class="space-y-4">
+        <div>
+          <label class="block text-[11px] font-semibold text-stone-700 mb-1.5 ml-0.5">
+            Correo institucional o usuario
+          </label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            </span>
+            <input type="text" name="username" required placeholder="tu.nombre@unimar.edu.ve o usuario"
+              value="{{ username_val if username_val else '' }}"
+              class="w-full pl-10 pr-4 py-3 bg-stone-50/80 border border-stone-300 rounded-2xl text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:bg-white focus:border-caramel-500 focus:ring-2 focus:ring-caramel-400/20 transition shadow-2xs">
           </div>
-          <span class="text-[11px] font-bold text-amber-950">Acceso del Personal Docente</span>
         </div>
-        <p class="text-[10px] text-amber-800/90 leading-relaxed pl-7">
-          ¿Es profesor de la UNIMAR y desea validar contenidos en el Eje de Programación?
+
+        <div>
+          <label class="block text-[11px] font-semibold text-stone-700 mb-1.5 ml-0.5">
+            Contraseña
+          </label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            </span>
+            <input :type="showPassword ? 'text' : 'password'" name="password" required placeholder="••••••••"
+              class="w-full pl-10 pr-10 py-3 bg-stone-50/80 border border-stone-300 rounded-2xl text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:bg-white focus:border-caramel-500 focus:ring-2 focus:ring-caramel-400/20 transition shadow-2xs">
+            <button type="button" @click="showPassword = !showPassword"
+              class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-stone-400 hover:text-stone-700 transition cursor-pointer"
+              :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+              <svg x-show="!showPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              <svg x-show="showPassword" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-1">
+          <button type="submit" 
+            class="group relative overflow-hidden w-full py-3.5 px-6 rounded-2xl text-xs sm:text-sm font-bold tracking-wide shadow-lg flex items-center justify-center space-x-2 text-[#18110c] bg-gradient-to-r from-[#dca067] via-[#c6864d] to-[#b7713d] hover:brightness-105 active:scale-[0.985] transition-all duration-300 ease-out cursor-pointer hover:shadow-xl hover:shadow-caramel-500/25">
+            <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none"></span>
+            <span>Iniciar Sesión</span>
+          </button>
+        </div>
+
+        {% if failed_attempts and failed_attempts >= 1 %}
+        {% set support_subject = "Soporte Caramel UNIMAR - Restablecimiento de contraseña" %}
+        {% set support_body = "Hola, equipo de soporte de Caramel:\n\nHe olvidado mi contraseña y requiero de un enlace para restablecer mis datos de acceso a la plataforma.\n\nConfirmo que estoy enviando este mensaje desde el correo con el que me registré en la cuenta. De no tener acceso a este correo o en caso de no existir, explícanos brevemente tu situación a continuación:\n\n" ~ ("Usuario o correo ingresado: " ~ username_val ~ "\n" if username_val else "") %}
+        <div class="pt-0.5 text-center">
+          <p class="text-[11.5px] text-stone-500 leading-tight">
+            ¿Olvidaste tu contraseña?
+            <a href="https://mail.google.com/mail/?view=cm&fs=1&to=oalvarez.7305@unimar.edu.ve&su={{ support_subject|urlencode }}&body={{ support_body|urlencode }}"
+               target="_blank"
+               rel="noopener noreferrer"
+               onclick="try { var inp = document.querySelector('input[name=username]'); var val = inp ? inp.value.trim() : ''; fetch('/api/support/password-reset-request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier: val }), keepalive: true }); } catch(e) {}"
+               class="font-semibold text-caramel-600 hover:text-caramel-700 underline transition">
+              Contacta al soporte.
+            </a>
+          </p>
+        </div>
+        {% endif %}
+      </form>
+
+      <!-- Registro Estudiantil -->
+      <div class="text-center pt-1">
+        <p class="text-xs text-stone-600">
+          ¿No tienes cuenta?
+          <a href="/register" class="text-caramel-600 hover:text-caramel-700 font-bold underline ml-1">Regístrate como estudiante</a>
         </p>
-        <div class="pl-7 pt-1">
-          <a href="/docente/registro" class="inline-flex items-center space-x-1 text-[11px] font-bold text-amber-800 hover:text-amber-950 hover:underline">
-            <span>Solicitar Acreditación Docente →</span>
-          </a>
+      </div>
+
+      <!-- Callout Institucional para Acreditación Docente -->
+      <div class="pt-4 border-t border-stone-200/80">
+        <div class="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/80 space-y-1.5">
+          <div class="flex items-center space-x-2">
+            <div class="w-6 h-6 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+              <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            </div>
+            <span class="text-[11px] font-bold text-amber-950">Acceso del Personal Docente</span>
+          </div>
+          <p class="text-[10.5px] text-amber-800/90 leading-relaxed pl-8">
+            ¿Es profesor de la UNIMAR y desea validar contenidos en el Eje de Programación?
+          </p>
+          <div class="pl-8 pt-0.5">
+            <a href="/docente/registro" class="inline-flex items-center space-x-1 text-[11px] font-bold text-amber-800 hover:text-amber-950 hover:underline">
+              <span>Solicitar Acreditación Docente →</span>
+            </a>
+          </div>
         </div>
       </div>
-    </div>
 
-  </div>
+    </div>
+  </section>
 
 </div>
 {% endblock %}

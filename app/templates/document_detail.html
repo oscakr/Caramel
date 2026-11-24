@@ -3,26 +3,48 @@
 {% block title %}Caramel - {{ document.title }}{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto space-y-5 pt-1 pb-6 bg-white" x-data="{ reviewModalOpen: false, readModalOpen: false, userRating: 5 }">
+<script>
+function documentDetailApp() {
+  return {
+    reviewModalOpen: false,
+    readModalOpen: false,
+    hasExistingReview: {{ 'true' if user_review else 'false' }},
+    userRating: {{ user_review.rating if user_review else 5 }},
+    reviewContent: {{ (user_review.content if user_review else '')|tojson }},
+    init() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('edit_review') === '1') {
+        this.reviewModalOpen = true;
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    },
+    openReviewModal() {
+      this.reviewModalOpen = true;
+    }
+  };
+}
+</script>
+
+<div class="max-w-4xl mx-auto space-y-5 pt-1 pb-6 bg-white" x-data="documentDetailApp()">
 
   <!-- Header & Back Navigation Button -->
   <div class="relative w-full h-44 rounded-2xl overflow-hidden border border-stone-200 shadow-md">
     {% set current_banner = banner_url or document.effective_banner_url %}
     {% if current_banner %}
     <img src="{{ current_banner }}" 
-         class="w-full h-full object-cover brightness-95 contrast-100" alt="{{ document.title }}">
-    <div class="absolute inset-0 bg-gradient-to-t from-white via-white/50 to-transparent"></div>
+         class="w-full h-full object-cover object-center brightness-95 contrast-100" alt="{{ document.materias or document.title }}">
+    <div class="absolute inset-0 bg-gradient-to-t from-white via-white/30 to-transparent"></div>
     {% else %}
-    <!-- Banner vacío elegante a la espera de la imagen oficial de la cátedra -->
-    <div class="w-full h-full bg-gradient-to-r from-stone-100 via-amber-50/40 to-stone-100 flex items-center justify-center">
-      <div class="text-center opacity-40 select-none">
-        <span class="text-[11px] font-bold tracking-widest text-stone-400 uppercase">
-          {{ document.materias or document.title }}
-        </span>
-      </div>
-    </div>
+    <div class="w-full h-full bg-gradient-to-r from-stone-100 via-amber-50/40 to-stone-100"></div>
     <div class="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent"></div>
     {% endif %}
+
+    <!-- Nombre de la materia superpuesto sobre la imagen del banner -->
+    <div class="absolute inset-0 flex items-center justify-center px-14 pb-5 pointer-events-none select-none">
+      <span class="px-4 py-1.5 rounded-full bg-white/75 backdrop-blur-md border border-white/80 shadow-sm text-[11px] sm:text-xs font-extrabold tracking-[0.18em] text-stone-800 uppercase text-center leading-tight max-w-full truncate">
+        {{ document.materias or document.title }}
+      </span>
+    </div>
 
     <!-- Back Arrow Button -->
     <a href="/" class="absolute top-3 left-3 w-9 h-9 rounded-full bg-white/85 backdrop-blur-md border border-stone-200 flex items-center justify-center text-stone-800 hover:bg-white transition shadow-sm cursor-pointer">
@@ -77,7 +99,6 @@
         <h1 class="text-xl font-extrabold text-stone-900 leading-tight">{{ document.title }}</h1>
         <p class="text-xs text-caramel-700 font-semibold">Por: {{ document.authors }}</p>
         <p class="text-[10px] text-stone-500 font-medium">
-          {{ document.publisher }} • 
           {% if document.material_type == 'video' %}
             Video
           {% elif document.material_type == 'zip' %}
@@ -101,7 +122,7 @@
     </span>
     {% endfor %}
     <span class="px-2.5 py-1 rounded-full bg-amber-100 border border-amber-300 text-[10px] text-amber-900 font-semibold">
-      Trimestres: {{ document.trimestres }}
+      {{ document.trimestre_badge_label }}
     </span>
   </div>
 
@@ -136,7 +157,7 @@
   {% endif %}
 
   <!-- Action Buttons -->
-  <div class="grid grid-cols-3 gap-2 pt-1">
+  <div class="grid {% if user_review %}grid-cols-2{% else %}grid-cols-3{% endif %} gap-2 pt-1">
     {% if document.material_type == 'video' and document.external_url %}
     <a href="{{ document.external_url }}" target="_blank" rel="noopener noreferrer" 
        class="py-2.5 px-3 rounded-2xl btn-caramel text-xs font-bold flex items-center justify-center space-x-1.5 shadow">
@@ -163,10 +184,12 @@
       </button>
     </form>
 
-    <button @click="reviewModalOpen = true" class="py-2.5 px-3 rounded-2xl bg-white hover:bg-stone-50 text-stone-800 border border-stone-300 text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-xs cursor-pointer">
+    {% if not user_review %}
+    <button @click="openReviewModal()" class="py-2.5 px-3 rounded-2xl bg-white hover:bg-stone-50 text-stone-800 border border-stone-300 text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-xs cursor-pointer">
       <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
       <span>Calificar</span>
     </button>
+    {% endif %}
   </div>
 
   <!-- Embedded Video Player if YouTube link exists -->
@@ -189,14 +212,6 @@
     </div>
   </div>
   {% endif %}
-
-  <!-- Description Snippet -->
-  <div class="p-3.5 rounded-2xl bg-white border border-stone-200 shadow-xs">
-    <h3 class="text-xs font-bold text-stone-900 mb-1.5">Sinopsis y Contenido Académico</h3>
-    <p class="text-xs text-stone-700 leading-relaxed font-normal">
-      {{ document.description }}
-    </p>
-  </div>
 
   <!-- Rating Section & 5-tier Histogram -->
   <div class="p-4 rounded-2xl bg-white border border-stone-200 space-y-4 shadow-xs">
@@ -302,9 +317,11 @@
         Reviews de la Comunidad 
         <span class="text-xs text-stone-500 font-normal">({{ document.reviews|length }})</span>
       </h3>
-      <button @click="reviewModalOpen = true" class="text-xs text-caramel-600 hover:text-caramel-700 font-bold underline cursor-pointer">
+      {% if not user_review %}
+      <button @click="openReviewModal()" class="text-xs text-caramel-600 hover:text-caramel-700 font-bold underline cursor-pointer">
         + Dejar Reseña
       </button>
+      {% endif %}
     </div>
 
     {% if document.reviews and document.reviews|length > 0 %}
@@ -337,17 +354,28 @@
 
         <div class="flex items-center justify-between pt-1 text-[10px] text-stone-500">
           <span>{{ rev.created_at.strftime('%d/%m/%Y') }}</span>
-          <form action="/review/{{ rev.id }}/like" method="POST" class="inline">
-            {% set is_liked = rev.id in liked_review_ids %}
-            <button type="submit" 
-                    title="{% if is_liked %}Quitar Me Sirve{% else %}Marcar como Me Sirve{% endif %}"
-                    class="flex items-center space-x-1.5 py-1 px-2.5 rounded-full transition cursor-pointer {% if is_liked %}text-rose-600 bg-rose-50 font-bold border border-rose-200/80{% else %}text-stone-500 hover:text-rose-600 hover:bg-stone-50 border border-transparent{% endif %}">
-              <svg class="w-3.5 h-3.5 shrink-0 inline-block transition {% if is_liked %}text-rose-500 fill-current scale-110{% else %}text-stone-400 group-hover:text-rose-400{% endif %}" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/>
-              </svg>
-              <span>Me Sirve{% if rev.likes_count > 0 %} <span class="text-[10px] {% if is_liked %}text-rose-700{% else %}text-stone-600{% endif %}">({{ rev.likes_count }})</span>{% endif %}</span>
+          <div class="flex items-center space-x-2">
+            {% if rev.user.id == current_user.id %}
+            <button type="button"
+                    @click="openReviewModal()"
+                    class="inline-flex items-center space-x-1 py-1 px-2.5 rounded-full bg-stone-100 hover:bg-amber-50 border border-stone-200 hover:border-[#7FB3A6] text-stone-700 hover:text-stone-900 font-semibold transition cursor-pointer"
+                    title="Editar tu valoración y comentario">
+              <svg class="w-3 h-3 text-caramel-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+              <span>Editar</span>
             </button>
-          </form>
+            {% endif %}
+            <form action="/review/{{ rev.id }}/like" method="POST" class="inline">
+              {% set is_liked = rev.id in liked_review_ids %}
+              <button type="submit" 
+                      title="{% if is_liked %}Quitar Me Sirve{% else %}Marcar como Me Sirve{% endif %}"
+                      class="flex items-center space-x-1.5 py-1 px-2.5 rounded-full transition cursor-pointer {% if is_liked %}text-rose-600 bg-rose-50 font-bold border border-rose-200/80{% else %}text-stone-500 hover:text-rose-600 hover:bg-stone-50 border border-transparent{% endif %}">
+                <svg class="w-3.5 h-3.5 shrink-0 inline-block transition {% if is_liked %}text-rose-500 fill-current scale-110{% else %}text-stone-400 group-hover:text-rose-400{% endif %}" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/>
+                </svg>
+                <span>Me Sirve{% if rev.likes_count > 0 %} <span class="text-[10px] {% if is_liked %}text-rose-700{% else %}text-stone-600{% endif %}">({{ rev.likes_count }})</span>{% endif %}</span>
+              </button>
+            </form>
+          </div>
         </div>
       </div>
       {% endfor %}
@@ -361,44 +389,54 @@
     {% endif %}
   </div>
 
-  <!-- Review Submission Modal -->
-  <div x-show="reviewModalOpen" class="fixed inset-0 z-50 flex items-center justify-center px-4" style="display: none;">
-    <div @click="reviewModalOpen = false" class="fixed inset-0 bg-black/40 backdrop-blur-xs"></div>
+  <!-- Review Submission / Edit Modal -->
+  <div x-show="reviewModalOpen" x-cloak class="fixed inset-0 !mt-0 z-[9999] flex items-center justify-center px-4" style="display: none;">
+    <div @click="reviewModalOpen = false" class="fixed inset-0 bg-black/55 backdrop-blur-sm"></div>
 
     <div class="relative w-full max-w-sm bg-white rounded-3xl p-5 border border-stone-200 shadow-2xl z-10 space-y-4">
       <div class="flex items-center justify-between pb-2 border-b border-stone-200">
-        <h4 class="text-sm font-bold text-stone-900">Calificar {{ document.title }}</h4>
+        <h4 class="text-sm font-bold text-stone-900">
+          <span x-text="hasExistingReview ? 'Editar mi valoración' : 'Calificar {{ document.title|replace("'", "\\'") }}'"></span>
+        </h4>
         <button @click="reviewModalOpen = false" class="text-stone-400 hover:text-stone-800 p-1 transition cursor-pointer" aria-label="Cerrar"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
       </div>
 
       <form action="/document/{{ document.id }}/review" method="POST" class="space-y-4">
-        <!-- Interactive Star Selector -->
+        <!-- Interactive Star Selector (Reactive Alpine) -->
         <div class="text-center space-y-1.5">
-          <label class="block text-xs text-stone-600">Selecciona tu calificación</label>
+          <label class="block text-xs text-stone-600">
+            <span x-text="hasExistingReview ? 'Actualiza tus estrellas (' + userRating + ' / 5)' : 'Selecciona tu calificación (' + userRating + ' / 5)'"></span>
+          </label>
           <div class="flex items-center justify-center space-x-2 text-2xl">
-            <input type="hidden" name="rating" id="selectedRatingInput" value="5">
+            <input type="hidden" name="rating" :value="userRating">
             {% for i in range(1, 6) %}
-            <button type="button" onclick="selectStarRating({{ i }})" id="star-btn-{{ i }}" class="text-amber-400 hover:scale-125 transition inline-flex items-center justify-center p-1 cursor-pointer" aria-label="Calificar"><svg class="w-6 h-6 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg></button>
+            <button type="button"
+                    @click="userRating = {{ i }}"
+                    class="hover:scale-125 transition inline-flex items-center justify-center p-1 cursor-pointer"
+                    :class="userRating >= {{ i }} ? 'text-amber-500' : 'text-stone-300'"
+                    aria-label="Calificar con {{ i }} estrellas">
+              <svg class="w-6 h-6 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            </button>
             {% endfor %}
           </div>
         </div>
 
         <div>
           <label class="block text-xs text-stone-600 mb-1">Tu reseña para otros estudiantes</label>
-          <textarea name="content" required rows="3" placeholder="¿Qué temas aborda mejor? ¿Sirvió para los parciales?..."
+          <textarea name="content" x-model="reviewContent" required rows="3" placeholder="¿Qué temas aborda mejor? ¿Sirvió para los parciales?..."
             class="w-full p-3 bg-stone-50 border border-stone-300 rounded-xl text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:bg-white focus:border-caramel-500 shadow-xs"></textarea>
         </div>
 
         <button type="submit" class="w-full py-2.5 rounded-full btn-caramel text-xs font-bold shadow-md cursor-pointer">
-          Publicar y Actualizar Recomendaciones
+          <span x-text="hasExistingReview ? 'Guardar cambios y actualizar valoración' : 'Publicar y Actualizar Recomendaciones'"></span>
         </button>
       </form>
     </div>
   </div>
 
   <!-- Document Reader Simulator Modal -->
-  <div x-show="readModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none;">
-    <div @click="readModalOpen = false" class="fixed inset-0 bg-black/40 backdrop-blur-xs"></div>
+  <div x-show="readModalOpen" x-cloak class="fixed inset-0 !mt-0 z-[9999] flex items-center justify-center p-4" style="display: none;">
+    <div @click="readModalOpen = false" class="fixed inset-0 bg-black/55 backdrop-blur-sm"></div>
 
     <div class="relative w-full max-w-lg bg-white rounded-3xl p-6 border border-stone-200 shadow-2xl z-10 space-y-4 max-h-[85vh] overflow-y-auto">
       <div class="flex items-center justify-between pb-3 border-b border-stone-200">
