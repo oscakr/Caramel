@@ -83,6 +83,81 @@
 
   <!-- Google Fonts & Custom CSS -->
   <link rel="stylesheet" href="/static/css/caramel.css?v=7">
+
+  <!-- Fallback global inmediato en <head> (antes de parsear cualquier <img>) -->
+  <script>
+    (function initCaramelCoverFallbacks() {
+      const BEIGE_BANNERS = [
+        '/static/img/document_banners/banner_1.webp',
+        '/static/img/document_banners/banner_2.jpg',
+        '/static/img/document_banners/banner_3.jpg',
+        '/static/img/document_banners/banner_4.jpg',
+      ];
+      let deck = [];
+      function nextRandomBanner() {
+        if (deck.length === 0) {
+          deck = BEIGE_BANNERS.slice();
+          for (let i = deck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const t = deck[i]; deck[i] = deck[j]; deck[j] = t;
+          }
+        }
+        return deck.pop();
+      }
+      function isEligible(img) {
+        if (!img || img.tagName !== 'IMG') return false;
+        if (img.hasAttribute('data-cover-fallback')) return true;
+        const src = (img.currentSrc || img.getAttribute('src') || '').toLowerCase();
+        return src.includes('img.youtube.com') || src.includes('i.ytimg.com') || src.includes('images.unsplash.com') || src.includes('/uploads/covers/');
+      }
+      function isExternalCover(img) {
+        const src = (img.currentSrc || img.getAttribute('src') || '').toLowerCase();
+        return src.includes('img.youtube.com') || src.includes('i.ytimg.com') || src.includes('images.unsplash.com');
+      }
+      function isYtGray(img) {
+        const src = (img.currentSrc || img.getAttribute('src') || '').toLowerCase();
+        return (src.includes('img.youtube.com') || src.includes('i.ytimg.com')) && img.complete && img.naturalWidth === 120 && img.naturalHeight === 90;
+      }
+      function applyFallback(img) {
+        if (!isEligible(img) || img.dataset.caramelFallbackApplied === '1') return;
+        img.dataset.caramelFallbackApplied = '1';
+        img.classList.add('object-cover', 'object-center');
+        img.src = nextRandomBanner();
+      }
+      function inspect(img) {
+        if (!isEligible(img) || img.dataset.caramelFallbackApplied === '1') return;
+        const rawSrc = (img.getAttribute('src') || '').trim();
+        if (!rawSrc || (img.complete && img.naturalWidth === 0) || isYtGray(img)) {
+          applyFallback(img);
+        }
+      }
+      window.__caramelCoverFallback = applyFallback;
+      document.addEventListener('error', function (e) {
+        if (e.target && e.target.tagName === 'IMG') applyFallback(e.target);
+      }, true);
+      document.addEventListener('load', function (e) {
+        if (e.target && e.target.tagName === 'IMG' && isYtGray(e.target)) applyFallback(e.target);
+      }, true);
+      function scanAll() {
+        document.querySelectorAll('img').forEach(inspect);
+      }
+      document.addEventListener('DOMContentLoaded', function () {
+        scanAll();
+        // Si una miniatura externa (YouTube/Unsplash) queda colgada sin responder tras 2.5s, aplicar fallback beige
+        window.setTimeout(function () {
+          document.querySelectorAll('img').forEach(function (img) {
+            if (isExternalCover(img) && img.dataset.caramelFallbackApplied !== '1' && (!img.complete || img.naturalWidth === 0)) {
+              applyFallback(img);
+            }
+          });
+        }, 2500);
+        if (window.MutationObserver && document.body) {
+          new MutationObserver(scanAll).observe(document.body, { childList: true, subtree: true });
+        }
+      });
+      window.addEventListener('load', scanAll);
+    })();
+  </script>
   
   {% block extra_head %}{% endblock %}
 </head>
@@ -251,7 +326,7 @@
   </div>
   {% endif %}
 
-  <script src="/static/js/app.js?v=20261125c"></script>
+  <script src="/static/js/app.js?v=20261125d"></script>
   {% block extra_scripts %}{% endblock %}
 </body>
 </html>
