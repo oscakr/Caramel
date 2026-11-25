@@ -353,7 +353,7 @@ function documentDetailApp() {
         </p>
 
         <div class="flex items-center justify-between pt-1 text-[10px] text-stone-500">
-          <span>{{ rev.created_at.strftime('%d/%m/%Y') }}</span>
+          <span>{{ rev.created_at|vet('%d/%m/%Y') }}</span>
           <div class="flex items-center space-x-2">
             {% if rev.user.id == current_user.id %}
             <button type="button"

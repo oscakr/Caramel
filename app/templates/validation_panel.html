@@ -49,7 +49,7 @@ function validationPanelForm() {
         allow_email_edit: {{ 'false' if req.matched_user_id else 'true' }},
         is_generating: false,
         error_msg: '',
-        time: {{ (req.created_at.strftime('%d/%m %H:%M') if req.created_at else 'Reciente')|tojson }}
+        time: {{ req.created_at|vet('%d/%m %H:%M')|tojson }}
       }{% if not loop.last %},{% endif %}
       {% endfor %}
     ],
@@ -331,7 +331,7 @@ function validationPanelForm() {
               </div>
               {% endif %}
             </div>
-            <span class="text-[9px] text-stone-400 shrink-0 font-mono">{{ doc_user.created_at.strftime('%d/%m/%Y') if doc_user.created_at else 'Reciente' }}</span>
+            <span class="text-[9px] text-stone-400 shrink-0 font-mono">{{ doc_user.created_at|vet('%d/%m/%Y') }}</span>
           </div>
 
           <div class="grid grid-cols-2 gap-2 pt-1 border-t border-stone-200">

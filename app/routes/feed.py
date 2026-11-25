@@ -11,10 +11,12 @@ from datetime import datetime, timedelta
 from ..database import get_db, engine, Base
 from ..models import User, Document, CuratedList, Review, ReviewLike, Friendship, Bookmark, PasswordResetToken, PasswordResetRequest
 from ..recommender import AcademicRecommender
+from ..time_utils import format_vet
 from .auth import get_current_user
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+templates.env.filters["vet"] = format_vet
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -514,7 +516,7 @@ def get_contextual_notifications(user: User, db: Session):
         for tok in completed_resets:
             if not _is_info_visible(tok.used_at):
                 continue
-            when_str = tok.used_at.strftime("%d/%m/%Y %H:%M") if tok.used_at else "Reciente"
+            when_str = format_vet(tok.used_at, "%d/%m/%Y %H:%M")
             if getattr(tok, "email_changed", 0) == 1:
                 notifications.append({
                     "notif_id": f"reset_tok_{tok.id}_email",
@@ -556,7 +558,7 @@ def get_contextual_notifications(user: User, db: Session):
                 verifier_name = verifier.full_name if verifier else "Comisión Docente"
                 # Fallback determinista para documentos validados antes de existir verified_at
                 sort_ts = ver_dt if ver_dt else datetime(2000, 1, 1) + timedelta(seconds=doc.id)
-                time_label = ver_dt.strftime("%d/%m %H:%M") if ver_dt else ("Aprobado" if doc.status == "aprobado" else "Revisado")
+                time_label = format_vet(ver_dt, "%d/%m %H:%M", fallback=("Aprobado" if doc.status == "aprobado" else "Revisado"))
                 if doc.status == "aprobado":
                     notifications.append({
                         "notif_id": f"doc_ok_{doc.id}_{int(sort_ts.timestamp())}",
@@ -612,7 +614,7 @@ def get_contextual_notifications(user: User, db: Session):
                         "border_class": "border-sky-300",
                         "title": f"Nueva valoración en '{doc.title}'",
                         "description": f"{reviewer_name} calificó tu aporte con {rev.rating}★: \"{review_snippet}\"",
-                        "time": rev_dt.strftime("%d/%m %H:%M") if rev_dt else "Reciente",
+                        "time": format_vet(rev_dt, "%d/%m %H:%M"),
                         "link": f"/document/{doc.id}"
                     })
 
@@ -670,7 +672,7 @@ def get_contextual_notifications(user: User, db: Session):
                     "border_class": "border-caramel-300",
                     "title": f"Solicitud de restablecimiento de contraseña — {who}",
                     "description": "Este usuario pulsó 'Contacta al soporte' desde el inicio de sesión. Entra para generarle su enlace de sustitución de contraseña.",
-                    "time": req.created_at.strftime("%d/%m %H:%M") if req.created_at else "Reciente",
+                    "time": format_vet(req.created_at, "%d/%m %H:%M"),
                     "link": "/validation-panel"
                 })
         except Exception:

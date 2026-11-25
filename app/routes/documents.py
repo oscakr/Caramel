@@ -11,10 +11,12 @@ from sqlalchemy.exc import IntegrityError
 from ..database import get_db, engine, Base
 from ..models import User, Document, Review, ReviewLike, Bookmark, UserInteraction, Catedra, PasswordResetRequest, DocumentValidation
 from ..catedras_config import get_catedra_banner, get_random_document_banner
+from ..time_utils import format_vet, now_vet
 from .auth import get_current_user
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+templates.env.filters["vet"] = format_vet
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -619,7 +621,7 @@ def validate_document(
             evaluator_role = getattr(current_user, 'rol_nombre', None) or "Docente de Cátedra"
             evaluator_cargo = getattr(current_user, 'cargo_abreviado', None) or "Prof."
             student_name = doc.uploaded_by.full_name if doc.uploaded_by else doc.authors
-            now_str = datetime.now().strftime("%d/%m/%Y a las %I:%M %p")
+            now_str = now_vet().strftime("%d/%m/%Y a las %I:%M %p")
 
             txt_content = (
                 "======================================================================\n"
