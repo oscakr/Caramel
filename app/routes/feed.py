@@ -11,15 +11,13 @@ from datetime import datetime, timedelta
 from ..database import get_db, engine, Base
 from ..models import User, Document, CuratedList, Review, ReviewLike, Friendship, Bookmark, PasswordResetToken, PasswordResetRequest
 from ..recommender import AcademicRecommender
+from ..storage import UPLOAD_DIR, upload_bytes, delete_uploaded_url, extract_managed_rel_path
 from ..time_utils import format_vet
 from .auth import get_current_user
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 templates.env.filters["vet"] = format_vet
-
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.get("/", response_class=HTMLResponse)
 def home_feed(request: Request, db: Session = Depends(get_db)):
@@ -250,25 +248,18 @@ def user_profile(request: Request, user_id: str = None, db: Session = Depends(ge
     )
 
 def _cleanup_old_profile_upload(old_url: str, db: Session, column_attr, exclude_user_id: int):
-    """Elimina el archivo anterior en /uploads/ al cambiar avatar o banner si ningún otro usuario lo usa."""
-    if not old_url or not old_url.startswith("/uploads/"):
+    """Elimina el archivo anterior (en Supabase Storage o /uploads/) al cambiar avatar o banner si ningún otro usuario lo usa."""
+    rel = extract_managed_rel_path(old_url)
+    if not rel or "/" in rel or "\\" in rel:
         return
-    filename = old_url[len("/uploads/"):].strip()
-    if not filename or "/" in filename or "\\" in filename or ".." in filename:
-        return
-    if not (filename.startswith("avatar_") or filename.startswith("banner_")):
+    if not (rel.startswith("avatar_") or rel.startswith("banner_")):
         return
     still_used = db.query(User).filter(
         column_attr == old_url,
         User.id != exclude_user_id
     ).first()
     if not still_used:
-        old_path = os.path.join(UPLOAD_DIR, filename)
-        if os.path.isfile(old_path):
-            try:
-                os.remove(old_path)
-            except OSError:
-                pass
+        delete_uploaded_url(old_url)
 
 
 @router.post("/api/profile/upload-avatar")
@@ -293,11 +284,8 @@ async def upload_avatar(
     old_avatar_url = current_user.avatar_url
     safe_name = re.sub(r'[^a-zA-Z0-9_\.-]', '_', filename)
     unique_filename = f"avatar_{uuid.uuid4().hex[:10]}_{safe_name}"
-    target_path = os.path.join(UPLOAD_DIR, unique_filename)
-    with open(target_path, "wb") as f_out:
-        f_out.write(contents)
+    new_url = upload_bytes(unique_filename, contents, content_type=file.content_type)
 
-    new_url = f"/uploads/{unique_filename}"
     current_user.avatar_url = new_url
     db.commit()
     _cleanup_old_profile_upload(old_avatar_url, db, User.avatar_url, current_user.id)
@@ -351,11 +339,8 @@ async def upload_banner(
     old_banner_url = current_user.banner_url
     safe_name = re.sub(r'[^a-zA-Z0-9_\.-]', '_', filename)
     unique_filename = f"banner_{uuid.uuid4().hex[:10]}_{safe_name}"
-    target_path = os.path.join(UPLOAD_DIR, unique_filename)
-    with open(target_path, "wb") as f_out:
-        f_out.write(contents)
+    new_url = upload_bytes(unique_filename, contents, content_type=file.content_type)
 
-    new_url = f"/uploads/{unique_filename}"
     current_user.banner_url = new_url
     db.commit()
     _cleanup_old_profile_upload(old_banner_url, db, User.banner_url, current_user.id)

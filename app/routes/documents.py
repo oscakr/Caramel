@@ -11,6 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from ..database import get_db, engine, Base
 from ..models import User, Document, Review, ReviewLike, Bookmark, UserInteraction, Catedra, PasswordResetRequest, DocumentValidation
 from ..catedras_config import get_catedra_banner, get_random_document_banner
+from ..storage import UPLOAD_DIR, upload_bytes, expected_url
 from ..time_utils import format_vet, now_vet
 from .auth import get_current_user
 
@@ -18,20 +19,17 @@ router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 templates.env.filters["vet"] = format_vet
 
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 MAX_FILE_SIZE = 30 * 1024 * 1024  # 30 MB
 
-def generate_pdf_cover(pdf_path: str) -> tuple[str | None, int]:
+def generate_pdf_cover(pdf_bytes: bytes) -> tuple[str | None, int]:
     """
-    Renderiza la primera página de un PDF como imagen JPEG de portada en /uploads/covers/
+    Renderiza la primera página de un PDF desde memoria como JPEG de portada
+    (en Supabase Storage en modo online o en /uploads/covers/ en modo local)
     y retorna (cover_url, page_count). Si falla, retorna (None, 0).
     """
     try:
         import pymupdf
-        covers_dir = os.path.join(UPLOAD_DIR, "covers")
-        os.makedirs(covers_dir, exist_ok=True)
-        with pymupdf.open(pdf_path) as pdf_doc:
+        with pymupdf.open(stream=pdf_bytes, filetype="pdf") as pdf_doc:
             page_count = len(pdf_doc)
             if page_count == 0:
                 return None, 0
@@ -40,9 +38,9 @@ def generate_pdf_cover(pdf_path: str) -> tuple[str | None, int]:
             scale = min(2.0, max(1.0, 600.0 / max(rect.width, 1.0)))
             pix = page.get_pixmap(matrix=pymupdf.Matrix(scale, scale), alpha=False)
             cover_filename = f"pdf_cover_{uuid.uuid4().hex[:10]}.jpg"
-            cover_path = os.path.join(covers_dir, cover_filename)
-            pix.save(cover_path, jpg_quality=88)
-            return f"/uploads/covers/{cover_filename}", page_count
+            jpg_bytes = pix.tobytes("jpeg", jpg_quality=88)
+            cover_url = upload_bytes(f"covers/{cover_filename}", jpg_bytes, content_type="image/jpeg")
+            return cover_url, page_count
     except Exception:
         return None, 0
 
@@ -424,11 +422,8 @@ async def upload_material_submit(
 
             safe_name = re.sub(r'[^a-zA-Z0-9_\.-]', '_', file.filename)
             unique_filename = f"{uuid.uuid4().hex[:10]}_{safe_name}"
-            target_path = os.path.join(UPLOAD_DIR, unique_filename)
-            with open(target_path, "wb") as f_out:
-                f_out.write(contents)
-
-            read_link = f"/uploads/{unique_filename}"
+            file_mime = "application/pdf" if material_type == "pdf" else ("application/zip" if material_type == "zip" else file.content_type)
+            read_link = upload_bytes(unique_filename, contents, content_type=file_mime)
             saved_url = read_link
 
             if not title_clean:
@@ -436,10 +431,10 @@ async def upload_material_submit(
 
             pdf_page_count = 0
             if material_type == "pdf":
-                generated_cover, pdf_page_count = generate_pdf_cover(target_path)
-                cover = generated_cover or "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400"
+                generated_cover, pdf_page_count = generate_pdf_cover(contents)
+                cover = generated_cover or get_random_document_banner()
             else:
-                cover = "https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?w=400"
+                cover = get_random_document_banner()
         else:
             pdf_page_count = 0
             if external_url and external_url.strip():
@@ -447,7 +442,7 @@ async def upload_material_submit(
                 read_link = external_url.strip()
             if not title_clean:
                 title_clean = f"Aporte Académico: {materias_clean}"
-            cover = "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400"
+            cover = get_random_document_banner()
     else:
         pdf_page_count = 0
 
@@ -612,10 +607,8 @@ def validate_document(
         effective_reason = clean_reason or reason_option_1
 
         if is_custom and clean_reason:
-            rechazos_dir = os.path.join(UPLOAD_DIR, "motivos_rechazo")
-            os.makedirs(rechazos_dir, exist_ok=True)
             txt_filename = f"motivo_rechazo_doc_{doc.id}_{uuid.uuid4().hex[:8]}.txt"
-            txt_filepath = os.path.join(rechazos_dir, txt_filename)
+            txt_rel_path = f"motivos_rechazo/{txt_filename}"
 
             evaluator_name = getattr(current_user, 'full_name', None) or getattr(current_user, 'nombre_completo', None) or current_user.username or "Docente Evaluador"
             evaluator_role = getattr(current_user, 'rol_nombre', None) or "Docente de Cátedra"
@@ -661,10 +654,10 @@ def validate_document(
                 "Caramel UNIMAR - Repositorio y Motor de Recomendación Curricular\n"
                 "======================================================================\n"
             )
-            pending_txt_filepath = txt_filepath
+            pending_txt_filepath = txt_rel_path
             pending_txt_content = txt_content
             effective_reason = clean_reason
-            generated_txt_url = f"/uploads/motivos_rechazo/{txt_filename}"
+            generated_txt_url = expected_url(txt_rel_path)
 
         update_fields["status"] = "rechazado"
         update_fields["consensus_state"] = "rechazado"
@@ -685,10 +678,19 @@ def validate_document(
             return RedirectResponse(url="/validation-panel?status=ya_aprobado", status_code=status.HTTP_303_SEE_OTHER)
         return RedirectResponse(url="/validation-panel?status=ya_rechazado", status_code=status.HTTP_303_SEE_OTHER)
 
-    # Escribir el informe .txt en disco únicamente tras ganar el Compare-And-Swap
+    # Subir el informe .txt (Supabase Storage o disco local) únicamente tras ganar el Compare-And-Swap
     if pending_txt_filepath and pending_txt_content:
-        with open(pending_txt_filepath, "w", encoding="utf-8") as f_txt:
-            f_txt.write(pending_txt_content)
+        actual_txt_url = upload_bytes(
+            pending_txt_filepath,
+            pending_txt_content.encode("utf-8"),
+            content_type="text/plain; charset=utf-8",
+        )
+        if actual_txt_url != generated_txt_url:
+            db.query(Document).filter(Document.id == doc_id).update(
+                {"rejection_file_url": actual_txt_url},
+                synchronize_session=False,
+            )
+            db.commit()
 
     return RedirectResponse(url=f"/validation-panel?status={action}", status_code=status.HTTP_303_SEE_OTHER)
 
