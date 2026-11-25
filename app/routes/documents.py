@@ -356,7 +356,7 @@ async def upload_material_submit(
     if "Pendiente de revisión docente para asignación temática" in desc_clean:
         desc_clean = ""
 
-    cover = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400"
+    cover = get_random_document_banner()
     read_link = "#"
     saved_url = external_url.strip() if external_url else "#"
 

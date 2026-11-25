@@ -592,7 +592,7 @@ function profileApp() {
 
               <a :href="'/document/' + slot.id" class="block space-y-2 group">
                 <div class="w-full h-32 rounded-xl overflow-hidden bg-stone-100 relative shadow-xs">
-                  <img :src="slot.cover_url" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" :alt="slot.title">
+                  <img :src="slot.cover_url" data-cover-fallback="true" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" :alt="slot.title">
                   <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
                     <span class="text-[10px] font-bold text-white">Ver Material →</span>
                   </div>
@@ -650,7 +650,7 @@ function profileApp() {
     <div class="space-y-2.5">
       {% for bm in profile_user.bookmarks %}
       <a href="/document/{{ bm.document.id }}" class="flex items-center space-x-3 p-3 rounded-2xl bg-white border border-stone-200 hover:border-caramel-400 transition shadow-xs">
-        <img src="{{ bm.document.cover_url }}" class="w-12 h-16 rounded-lg object-cover border border-stone-200" alt="{{ bm.document.title }}">
+        <img src="{{ bm.document.cover_url }}" data-cover-fallback="true" class="w-12 h-16 rounded-lg object-cover border border-stone-200" alt="{{ bm.document.title }}">
         <div class="flex-1">
           <h3 class="text-xs font-bold text-stone-900 line-clamp-1">{{ bm.document.title }}</h3>
           <p class="text-[10px] text-stone-500">{{ bm.document.authors }}</p>
@@ -1055,7 +1055,7 @@ function profileApp() {
             class="w-full p-2.5 rounded-2xl border bg-white text-left flex items-center space-x-3 transition group cursor-pointer shadow-xs"
             :class="showcaseSlots[editingSlotIndex] && showcaseSlots[editingSlotIndex].id === doc.id ? 'border-amber-500 bg-amber-50' : 'border-stone-200 hover:border-caramel-400 hover:bg-stone-50'">
             
-            <img :src="doc.cover_url" class="w-10 h-14 rounded-lg object-cover shadow-xs shrink-0 border border-stone-200" :alt="doc.title">
+            <img :src="doc.cover_url" data-cover-fallback="true" class="w-10 h-14 rounded-lg object-cover shadow-xs shrink-0 border border-stone-200" :alt="doc.title">
             
             <div class="flex-1 min-w-0">
               <h4 class="text-xs font-bold text-stone-900 group-hover:text-caramel-700 transition line-clamp-1" x-text="doc.title"></h4>

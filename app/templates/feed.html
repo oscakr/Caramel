@@ -141,7 +141,7 @@
           <!-- Stack of Document Mini Covers -->
           <div class="flex -space-x-4 mb-2.5 overflow-hidden py-1 pl-1">
             {% for doc in clist.documents[:2] %}
-            <img src="{{ doc.cover_url }}" class="w-11 h-15 rounded-md object-cover border border-stone-200 shadow-sm transform hover:rotate-0 hover:z-10 transition duration-200 {% if loop.index == 1 %}-rotate-3{% else %}rotate-6{% endif %}" alt="{{ doc.title }}">
+            <img src="{{ doc.cover_url }}" data-cover-fallback="true" class="w-11 h-15 rounded-md object-cover border border-stone-200 shadow-sm transform hover:rotate-0 hover:z-10 transition duration-200 {% if loop.index == 1 %}-rotate-3{% else %}rotate-6{% endif %}" alt="{{ doc.title }}">
             {% endfor %}
           </div>
 
@@ -243,7 +243,7 @@
       {% for rec in recommendations %}
       <a href="/document/{{ rec.document.id }}" class="flex-none w-[290px] sm:w-[330px] p-3 rounded-2xl bg-white border border-stone-200 hover:border-caramel-400 hover:bg-stone-50/70 transition-all duration-200 hover:-translate-y-0.5 group shadow-xs">
         <div class="flex space-x-3">
-          <img src="{{ rec.document.cover_url }}" class="w-16 h-22 shrink-0 rounded-xl object-cover border border-stone-200 shadow-sm group-hover:scale-105 transition duration-300" alt="{{ rec.document.title }}">
+          <img src="{{ rec.document.cover_url }}" data-cover-fallback="true" class="w-16 h-22 shrink-0 rounded-xl object-cover border border-stone-200 shadow-sm group-hover:scale-105 transition duration-300" alt="{{ rec.document.title }}">
           
           <div class="flex-1 min-w-0 flex flex-col justify-between py-0.5">
             <div>
@@ -352,7 +352,7 @@
 
           <a href="/document/{{ rev.document.id }}" class="flex-none group">
             <div class="w-12 h-16 rounded-lg overflow-hidden border border-stone-200 shadow-xs group-hover:scale-105 transition">
-              <img src="{{ rev.document.cover_url }}" class="w-full h-full object-cover" alt="{{ rev.document.title }}">
+              <img src="{{ rev.document.cover_url }}" data-cover-fallback="true" class="w-full h-full object-cover" alt="{{ rev.document.title }}">
             </div>
           </a>
         </div>

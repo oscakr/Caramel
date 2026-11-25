@@ -19,6 +19,9 @@
     tailwind.config = {
       theme: {
         extend: {
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', '"SF Pro Display"', '"Inter"', 'system-ui', 'sans-serif'],
+          },
           colors: {
             caramel: {
               50: '#fbf7f2',
@@ -79,7 +82,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
 
   <!-- Google Fonts & Custom CSS -->
-  <link rel="stylesheet" href="/static/css/caramel.css?v=6">
+  <link rel="stylesheet" href="/static/css/caramel.css?v=7">
   
   {% block extra_head %}{% endblock %}
 </head>
@@ -248,7 +251,7 @@
   </div>
   {% endif %}
 
-  <script src="/static/js/app.js?v=20261124a"></script>
+  <script src="/static/js/app.js?v=20261125c"></script>
   {% block extra_scripts %}{% endblock %}
 </body>
 </html>

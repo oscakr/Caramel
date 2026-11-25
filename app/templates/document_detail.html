@@ -69,7 +69,7 @@ function documentDetailApp() {
   <div class="flex space-x-4 -mt-16 px-2 relative z-10">
     <!-- Main Book Cover -->
     <div class="flex-none w-28 h-40 rounded-xl overflow-hidden shadow-xl border-2 border-caramel-400 bg-stone-100">
-      <img src="{{ document.cover_url }}" class="w-full h-full object-cover" alt="{{ document.title }}">
+      <img src="{{ document.cover_url }}" data-cover-fallback="true" class="w-full h-full object-cover" alt="{{ document.title }}">
     </div>
 
     <!-- Details -->
