@@ -10,4 +10,6 @@ ghp*
 !requirements.txt
 *.log
 .caramel.*
+caramel.db.bak
+caramel.db.sync_tmp
 
